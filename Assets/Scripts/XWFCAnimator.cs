@@ -13,7 +13,7 @@ public class XWFCAnimator : MonoBehaviour
     [SerializeField] private int iterationsPerCycle = 1;
 
     private Vector3 _unitSize;
-    private static XWFCAnimator _instance;
+    public static XWFCAnimator Instance { get; private set; }
 
     private Timer _timer = new Timer();
 
@@ -34,13 +34,13 @@ public class XWFCAnimator : MonoBehaviour
     // Start is called before the first frame update
     private void Awake()
     {
-        if (_instance != null && _instance != this) Destroy(this); 
-        else _instance = this;
+        if (Instance != null && Instance != this) Destroy(this); 
+        else Instance = this;
     }
 
     public XWFCAnimator GetInstance()
     {
-        return _instance;
+        return Instance;
     }
     void Start()
     {
@@ -265,5 +265,10 @@ public class XWFCAnimator : MonoBehaviour
             Id = id;
             Atom = atom;
         }
+    }
+
+    public void UpdateExtent()
+    {
+        Debug.Log("UPDATED!!");
     }
 }
