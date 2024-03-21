@@ -1,0 +1,9 @@
+.git/
+.idea/
+.vscode/
+Library/
+Logs/
+obj/
+Packages/
+ProjectSettings/
+UserSettings/
