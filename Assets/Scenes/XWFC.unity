@@ -461,8 +461,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitTilePrefab: {fileID: 8410042719729564467, guid: 3613ece26b5228a4a9482bacca203304, type: 3}
-  extent: {x: 20, y: 1, z: 20}
-  iterationsPerCycle: -1
+  extent: {x: 10, y: 1, z: 10}
+  iterationsPerSecond: 1
 --- !u!4 &1830932354
 Transform:
   m_ObjectHideFlags: 0

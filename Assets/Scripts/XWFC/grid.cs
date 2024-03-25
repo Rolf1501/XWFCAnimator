@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -35,7 +36,21 @@ namespace XWFC
             }
         }
 
-        private bool WithinBounds(int x, int y, int z)
+        public void Map(Action<T> func)
+        {
+            for (int i = 0; i < Height; i++)
+            {
+                for (int j = 0; j < Width; j++)
+                {
+                    for (int k = 0; k < Depth; k++)
+                    {
+                        func(_grid[i, j, k]);
+                    }
+                }
+            }
+        }
+
+        public bool WithinBounds(int x, int y, int z)
         {
             return x < Width && y < Height && z < Depth && x >= 0 && y >= 0 && z >= 0;
         }

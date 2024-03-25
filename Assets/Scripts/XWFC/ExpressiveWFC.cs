@@ -10,8 +10,8 @@ namespace XWFC
     public class ExpressiveWFC
     {
         private readonly Dictionary<int, Terminal> _terminals;
-        public readonly Vector3 GridExtent;
-        private readonly Vector3 _startCoord;
+        public Vector3 GridExtent;
+        private Vector3 _startCoord;
         private readonly Dictionary<int, float> _defaultWeights;
         private float _progress = 0;
         public readonly AdjacencyMatrix AdjMatrix;
@@ -27,33 +27,47 @@ namespace XWFC
         
         #nullable enable
         public ExpressiveWFC(Dictionary<int, Terminal> terminals, HashSetAdjacency adjacencyConstraints,
-            Vector3 gridExtent, Vector3? startCoord = null, Dictionary<int, float>? defaultWeights = null)
+            Vector3 gridExtent, Dictionary<int, float>? defaultWeights = null)
         {
             _terminals = terminals;
             GridExtent = gridExtent;
-            _startCoord = startCoord ?? Vector3Util.Mult(GridExtent, new Vector3(0.5f, 0, 0.5f));
 
             int[] keys = _terminals.Keys.ToArray();
             AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _terminals);
-            var (x, y, z) = Vector3Util.CastInt(GridExtent);
-            GridManager = new GridManager(x, y, z);
-            Offsets = OffsetFactory.GetOffsets(3);
 
             _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
-            GridManager.InitEntropy(_maxEntropy);
             _defaultWeights = ExpandDefaultWeights(defaultWeights);
+            
+            Offsets = OffsetFactory.GetOffsets(3);
+            
+            CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
+            CleanState();
+        }
 
-            GridManager.InitChoiceWeights(_defaultWeights);
+        private Vector3 CenterCoord()
+        {
+            return Vector3Util.Mult(GridExtent, new Vector3(0.5f, 0, 0.5f));
+        }
 
+        private void CleanState()
+        {
             _collapseQueue = new CollapsePriorityQueue();
-            // _collapseQueue = new CollapseQueue();
             _collapseQueue.Insert(_startCoord, GridManager.Entropy.Get(_startCoord));
-            // _collapseQueue.Enqueue(_startCoord, GridManager.Entropy.Get(_startCoord));
             _savePointManager = new SavePointManager();
 
             _counter = 0;
+            _progress = 0;
 
             _savePointManager.Save(_progress, GridManager, _collapseQueue, _counter);
+        }
+
+        private void CleanGrids(Vector3 gridExtent, Dictionary<int, float> defaultWeights, float maxEntropy)
+        {
+            var (x, y, z) = Vector3Util.CastInt(gridExtent);
+            GridManager = new GridManager(x, y, z);
+            GridManager.InitEntropy(maxEntropy);
+            GridManager.InitChoiceWeights(defaultWeights);
+            _startCoord = CenterCoord();
         }
 
         private Dictionary<int, float> ExpandDefaultWeights(Dictionary<int, float>? defaultWeights)
@@ -118,11 +132,9 @@ namespace XWFC
             Vector3 coll = head.Coord;
             if (!GridManager.WithinBounds(coll)) return affectedCells;
             
-            // Vector3 coll = _collapseQueue.Dequeue();
             while ((!GridManager.WithinBounds(coll) || GridManager.Grid.IsChosen(coll)) && !_collapseQueue.IsDone())
             {
                 coll = _collapseQueue.DeleteHead().Coord;
-                // coll = _collapseQueue.Dequeue();
             }
 
             var (x, y, z) = Vector3Util.CastInt(coll);
@@ -357,6 +369,14 @@ namespace XWFC
         public bool IsDone()
         {
             return _progress >= 100;
+        }
+
+        public void UpdateExtent(Vector3 extent)
+        {
+            if (GridExtent.Equals(extent)) return;
+            GridExtent = extent;
+            CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
+            CleanState();
         }
     }
 

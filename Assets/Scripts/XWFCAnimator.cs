@@ -2,15 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using UnityEngine;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 using XWFC;
 
 public class XWFCAnimator : MonoBehaviour
 {
     [SerializeField] private GameObject unitTilePrefab;
-    [SerializeField] private Vector3 extent;
-    [SerializeField] private int iterationsPerCycle = 1;
+    [SerializeField] public Vector3 extent;
+    [SerializeField] private float iterationsPerSecond = 1;
+    private float _iterationsPerSecondInv;
+    private float _iterationDeltaTime;
 
     private Vector3 _unitSize;
     public static XWFCAnimator Instance { get; private set; }
@@ -38,12 +43,10 @@ public class XWFCAnimator : MonoBehaviour
         else Instance = this;
     }
 
-    public XWFCAnimator GetInstance()
-    {
-        return Instance;
-    }
     void Start()
     {
+        _iterationsPerSecondInv = 1.0f / iterationsPerSecond;
+        _iterationDeltaTime = _iterationsPerSecondInv;
         var terminals = new Dictionary<int, Terminal>();
         // var extent = new Vector3(2,1,2);
         // var extent = new Vector3(3,1,3);
@@ -125,8 +128,7 @@ public class XWFCAnimator : MonoBehaviour
         Debug.Log("Initialized XWFC");
         
         // Grid for keeping track of drawn atoms.
-        _drawnGrid = new Grid<Drawing>(
-            _xwfc.GridExtent, new Drawing(_xwfc.GridManager.Grid.DefaultFillValue, null));
+        _drawnGrid = InitDrawGrid();
         
         // Console.WriteLine("Time taken init: {0:f2} seconds", w.ElapsedMilliseconds * 0.001);
         foreach (var o in _xwfc.Offsets)
@@ -164,14 +166,25 @@ public class XWFCAnimator : MonoBehaviour
         
         
         
-        ToggleState(StateFlag.Collapsing);
+        // ToggleState(StateFlag.Collapsing);
 
         Debug.Log($"Size of object: {_unitSize}");
+    }
+
+    private Grid<Drawing> InitDrawGrid()
+    {
+        return new Grid<Drawing>(
+            _xwfc.GridExtent, new Drawing(_xwfc.GridManager.Grid.DefaultFillValue, null));
     }
 
     public Vector3 GetUnitSize()
     {
         return _unitSize;
+    }
+
+    public void ToggleCollapseMode()
+    {
+        ToggleState(StateFlag.Collapsing);
     }
 
     private void ToggleState(StateFlag flag)
@@ -185,34 +198,96 @@ public class XWFCAnimator : MonoBehaviour
         Debug.Log(s);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void UpdateIterationsPerSecond(float value)
     {
-        if ((_activeStateFlag & StateFlag.Collapsing) != 0 )
-        {
-            _iterationsDone = 0;
-            var affectedCells = new HashSet<Occupation>();
-            // If the number of iteration is negative, assume to go keep going until the xwfc is done.
-            // Otherwise, limit the number of iterations per frame.
+        iterationsPerSecond = value;
+        _iterationsPerSecondInv = 1 / value;
+    }
+
+    private int CalcIterations()
+    {
+        if (_iterationsPerSecondInv < 0) return -1;
+        if (_iterationDeltaTime < _iterationsPerSecondInv) return 0;
             
-            _timer.Start();
-            while (!_xwfc.IsDone() && (_iterationsDone < iterationsPerCycle || iterationsPerCycle < 0))
+        int nIterations = (int)Math.Floor(_iterationDeltaTime / _iterationsPerSecondInv);
+        return nIterations;
+    }
+
+    // Update is called once per frame
+    private void Update()
+    {
+        if (!MayCollapse()) return;
+        
+        if ((_activeStateFlag & StateFlag.Collapsing) != 0)
+        {
+            _iterationDeltaTime += Time.deltaTime;
+            int nIterations = CalcIterations();
+            if (nIterations == 0) return;
+            _iterationDeltaTime -= nIterations * _iterationsPerSecondInv;
+            _iterationsDone = 0;
+            
+            var affectedCells = new HashSet<Occupation>();
+            while ((_iterationsDone < nIterations || nIterations < 0) && MayCollapse())
             {
-                affectedCells.UnionWith(_xwfc.CollapseOnce());
+                var cells = CollapseAndDrawOnce();
+                affectedCells.UnionWith(cells);
                 _iterationsDone++;
             }
-            _timer.Stop();
             
-            var s = affectedCells.Aggregate("", (current, occupation) => current + $"{occupation.Coord}, ");
-
-            s = $"{affectedCells.Count} cell(s) affected: " + s;
-            Debug.Log(s);
-
-            Draw(affectedCells);
+            /*
+             * Either
+             * (a): iterations per second <= max framerate
+             * Need to limit drawing and calling.
+             * Need no more than one call to collapse per frame.
+             * Calc delta time to achieve the speed. That is, floor(dt / iterPerFrame).
+             * (b): iterations per second > max framerate
+             * Need to compensate.
+             * Need more than one call to collapse per frame.
+             * Delta time is always larger than time window for one collapse. floor(dt/iterPerFrame)?
+             */
             
-            ToggleState(StateFlag.Collapsing);
+            // _timer.Stop();
+            
+            // var s = affectedCells.Aggregate("", (current, occupation) => current + $"{occupation.Coord}, ");
+
+            // s = $"{affectedCells.Count} cell(s) affected: " + s;
+            // Debug.Log(s);
         }
+    }
+
+    public HashSet<Occupation> CollapseOnce()
+    {
+        return !MayCollapse() ? new HashSet<Occupation>() : _xwfc.CollapseOnce();
+    }
+
+    public HashSet<Occupation> CollapseAndDrawOnce()
+    {
+        /*
+         * Performs a single collapse and draws the resulting atoms.
+         * Returns the set of affected cells.
+         */
+        var affectedCells = CollapseOnce();
+        Draw(affectedCells);
+        return affectedCells;
+    }
+
+    private bool MayCollapse()
+    {
+        /*
+         * Determines whether a single collapse may be done.
+         */
+        return !_xwfc.IsDone();
+    }
+
+    private bool MayIterate()
+    {
+        /*
+         * Determines whether a single collapse may still be done per cycle.
+         */
+        // If the number of iteration is negative, assume to go keep going until the xwfc is done.
+        // Otherwise, limit the number of iterations per frame.
         
+        return _iterationsDone < iterationsPerSecond || iterationsPerSecond < 0;
     }
 
     private void Draw(HashSet<Occupation> affectedCells)
@@ -220,6 +295,8 @@ public class XWFCAnimator : MonoBehaviour
         foreach (var occupation in affectedCells)
         {
             var coord = occupation.Coord;
+            var (x,y,z) = Vector3Util.CastInt(coord);
+            if (!_drawnGrid.WithinBounds(x,y,z)) continue;
             var grid = _xwfc.GridManager.Grid;
             var status = grid.Get(coord);
             var drawnStatus = _drawnGrid.Get(coord);
@@ -227,20 +304,23 @@ public class XWFCAnimator : MonoBehaviour
             // Only update if there is a change.
             if (status == drawnStatus.Id) continue;
             
-            // Only destroy if the something was drawn.
+            // Clear the cells content to be replaced with a new drawing.
             if (drawnStatus.Id != grid.DefaultFillValue) Destroy(drawnStatus.Atom);
             
+            // Empty cell should not show an object. Drawn grid restored to default.
             if (status == grid.DefaultFillValue)
             {
-                // Destroy loaded asset.
                 _drawnGrid.Set(coord, new Drawing(grid.DefaultFillValue, null));
             }
             else
             {
+                // Drawn atom should be updated to match the new atom's specification.
+                // TODO: reference the prefab corresponding to the atom, instead of assuming the same is used for all.
                 var atom = Instantiate(unitTilePrefab);
+                var drawing = new Drawing(status, atom);
                 atom.transform.position = CalcAtomPosition(coord);
                 atom.GetComponent<Renderer>().material.color = GetTerminalColor(status);
-                _drawnGrid.Set(coord, new Drawing(status, atom));
+                _drawnGrid.Set(coord, drawing);
             }
         }
     }
@@ -265,10 +345,20 @@ public class XWFCAnimator : MonoBehaviour
             Id = id;
             Atom = atom;
         }
+
+        public static void DestroyAtom(Drawing drawing)
+        {
+            if (drawing != null && drawing.Atom != null) Destroy(drawing.Atom);
+        }
     }
 
-    public void UpdateExtent()
+    public void UpdateExtent(Vector3 newExtent)
     {
+        if (extent.Equals(newExtent)) return;
+        extent = newExtent;
+        _xwfc.UpdateExtent(newExtent);
+        _drawnGrid.Map(Drawing.DestroyAtom);
+        InitDrawGrid();
         Debug.Log("UPDATED!!");
     }
 }
