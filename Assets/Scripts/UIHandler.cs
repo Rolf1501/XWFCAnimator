@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -14,9 +15,11 @@ public class UIHandler : MonoBehaviour
 
     [SerializeField] private Button updateExtent;
 
-    [SerializeField] private TMP_InputField iterationsPerSecond;
+    [SerializeField] private TMP_InputField stepSize;
+    [SerializeField] private TMP_InputField delay;
     [SerializeField] private Button collapseOnceButton;
     [SerializeField] private Button runButton;
+    [SerializeField] private Button resetButton;
 
     private void Start()
     {
@@ -25,7 +28,7 @@ public class UIHandler : MonoBehaviour
         AddExtentListeners(hSlider, hInput);
         AddExtentListeners(dSlider, dInput);
         AddExtentUpdate(updateExtent);
-        iterationsPerSecond.text = XWFCAnimator.Instance.stepSize.ToString("0.0");
+        stepSize.text = XWFCAnimator.Instance.stepSize.ToString("0.0");
         AddCollapseListeners();
 
     }
@@ -33,8 +36,22 @@ public class UIHandler : MonoBehaviour
     private void AddCollapseListeners()
     {
         collapseOnceButton.onClick.AddListener(delegate { XWFCAnimator.Instance.CollapseAndDrawOnce(); });
-        runButton.onClick.AddListener(delegate { XWFCAnimator.Instance.ToggleCollapseMode(); });
-        iterationsPerSecond.onValueChanged.AddListener(delegate { XWFCAnimator.Instance.UpdateIterationsPerSecond(float.Parse(iterationsPerSecond.text)); });
+        runButton.onClick.AddListener(delegate
+        {
+            var textComponent = runButton.GetComponentInChildren<TMP_Text>();
+            textComponent.text = XWFCAnimator.Instance.ToggleCollapseMode() ? "Pause" : "Run";
+        });
+        stepSize.onValueChanged.AddListener(delegate
+        {
+            try { XWFCAnimator.Instance.UpdateStepSize(float.Parse(stepSize.text)); }
+            catch {}
+        });
+        delay.onValueChanged.AddListener(delegate
+        {
+            try { XWFCAnimator.Instance.UpdateDelay(float.Parse(delay.text)); }
+            catch {}
+        });
+        resetButton.onClick.AddListener(delegate { XWFCAnimator.Instance.Reset(); });
     }
 
     private void InitGridValues()
@@ -77,5 +94,21 @@ public class UIHandler : MonoBehaviour
     {
         Debug.Log("Tried updating width.");
         XWFCAnimator.Instance.UpdateExtent(new Vector3(wSlider.value, hSlider.value, dSlider.value));
+    }
+
+    private void Update()
+    {
+        if (XWFCAnimator.Instance.IsDone() && runButton.enabled)
+        {
+            runButton.enabled = false;
+            runButton.interactable = false;
+            runButton.GetComponentInChildren<TMP_Text>().text = "";
+        }
+        else if (!XWFCAnimator.Instance.IsDone() && !runButton.enabled)
+        {
+            runButton.enabled = true;
+            runButton.interactable = true;
+            runButton.GetComponentInChildren<TMP_Text>().text = "Run";
+        }
     }
 }

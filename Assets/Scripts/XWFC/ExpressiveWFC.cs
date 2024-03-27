@@ -373,8 +373,12 @@ namespace XWFC
 
         public void UpdateExtent(Vector3 extent)
         {
-            if (GridExtent.Equals(extent)) return;
             GridExtent = extent;
+            Reset();
+        }
+
+        public void Reset()
+        {
             CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
             CleanState();
         }

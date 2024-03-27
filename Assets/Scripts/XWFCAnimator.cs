@@ -1,33 +1,23 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Net;
 using UnityEngine;
-using UnityEngine.Serialization;
-using UnityEngine.UI;
 using Debug = UnityEngine.Debug;
 using XWFC;
 
 public class XWFCAnimator : MonoBehaviour
 {
     [SerializeField] private GameObject unitTilePrefab;
-    [SerializeField] public Vector3 extent;
-    public float stepSize = 10;
+    public Vector3 extent;
+    public float stepSize;
 
     public float delay;
 
-    private float updateDeltaTime = 0;
-    // public float iterationsPerSecond = 1;
-    private float _iterationsPerSecondInv;
+    private float _updateDeltaTime;
     private float _iterationDeltaTime;
 
     private Vector3 _unitSize;
     public static XWFCAnimator Instance { get; private set; }
-
-    private Timer _timer = new Timer();
-
+    
     private int _iterationsDone;
 
     private StateFlag _activeStateFlag = 0;
@@ -42,24 +32,18 @@ public class XWFCAnimator : MonoBehaviour
 
     private Grid<Drawing> _drawnGrid;
     
-    // Start is called before the first frame update
+    // Singleton assurance.
     private void Awake()
     {
         if (Instance != null && Instance != this) Destroy(this); 
         else Instance = this;
     }
 
+    // Start is called before the first frame update
     void Start()
     {
-        _iterationsPerSecondInv = 1.0f / stepSize;
-        _iterationDeltaTime = _iterationsPerSecondInv;
         var terminals = new Dictionary<int, Terminal>();
-        // var extent = new Vector3(2,1,2);
-        // var extent = new Vector3(3,1,3);
-        // var extent = new Vector3(10,1,10);
-        // var extent = new Vector3(10,10,10);
-        // extent = new Vector3(20,20,20);
-        // var extent = new Vector3(50, 50, 50);
+
         var defaultWeights = new Dictionary<int, float>();
         
         var t0 = new Terminal(
@@ -136,11 +120,9 @@ public class XWFCAnimator : MonoBehaviour
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
         
-        // Console.WriteLine("Time taken init: {0:f2} seconds", w.ElapsedMilliseconds * 0.001);
         foreach (var o in _xwfc.Offsets)
         {
             var x = _xwfc.AdjMatrix.AtomAdjacencyMatrix[o];
-            // Debug.Log(o);
             var s = "" + o + "\n";
             for (var i = 0; i < x.GetLength(0);i++)
             {
@@ -160,21 +142,7 @@ public class XWFCAnimator : MonoBehaviour
             Debug.Log(k.ToString() +  v.ToString());
         }
         
-        // var watch = Stopwatch.StartNew();
-        // wfc.AdjMatrix.AtomMapping.Dict.ToString());
-        // xwfc.CollapseAutomatic();
-        // watch.Stop();
-        // Debug.Log($"Time taken {watch.ElapsedMilliseconds * 0.001} seconds");
-        
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
-        
-        // Debug.Log(xwfc.GridManager.Grid.GridToString());
-        
-        
-        
-        // ToggleState(StateFlag.Collapsing);
-
-        Debug.Log($"Size of object: {_unitSize}");
     }
 
     private Grid<Drawing> InitDrawGrid()
@@ -188,12 +156,17 @@ public class XWFCAnimator : MonoBehaviour
         return _unitSize;
     }
 
-    public void ToggleCollapseMode()
+    public bool IsDone()
     {
-        ToggleState(StateFlag.Collapsing);
+        return _xwfc.IsDone();
     }
 
-    private void ToggleState(StateFlag flag)
+    public bool ToggleCollapseMode()
+    {
+        return ToggleState(StateFlag.Collapsing);
+    }
+
+    private bool ToggleState(StateFlag flag)
     {
         // If the flag is not raised, raise it. Otherwise, lower is.
         if ((_activeStateFlag & flag) == 0)
@@ -201,67 +174,25 @@ public class XWFCAnimator : MonoBehaviour
         else
             _activeStateFlag &= ~flag;
         string s = $"Toggled active states of {flag.ToString()} to {_activeStateFlag.HasFlag(flag)}";
-        Debug.Log(s);
+        return _activeStateFlag.HasFlag(flag);
     }
 
-    public void UpdateIterationsPerSecond(float value)
+    public void UpdateStepSize(float value)
     {
         stepSize = value;
-        _iterationsPerSecondInv = 1 / value;
     }
-
-    private int CalcIterations()
-    {
-        if (_iterationsPerSecondInv < 0) return -1;
-        if (_iterationDeltaTime < _iterationsPerSecondInv) return 0;
-            
-        int nIterations = (int)Math.Floor(_iterationDeltaTime / _iterationsPerSecondInv);
-        return nIterations;
-    }
-
-    // private IEnumerator Iterate()
-    // {
-    //     if (!MayCollapse()) yield return null;
-    //     float interval = 0.0f;
-    //
-    //     if ((_activeStateFlag & StateFlag.Collapsing) != 0)
-    //     {
-    //         _iterationDeltaTime += Time.deltaTime;
-    //         int nIterations = CalcIterations();
-    //         // if (_iterationDeltaTime < interval) return;
-    //         if (nIterations == 0) yield return null;
-    //         _iterationDeltaTime -= nIterations * _iterationsPerSecondInv;
-    //         _iterationsDone = 0;
-    //
-    //         var affectedCells = new HashSet<Occupation>();
-    //         // while (MayIterate() && MayCollapse())
-    //         while ((_iterationsDone < stepSize || nIterations < 0) && MayCollapse())
-    //         {
-    //             // var cells = CollapseAndDrawOnce();
-    //             var cells = CollapseOnce();
-    //             affectedCells.UnionWith(cells);
-    //             _iterationsDone++;
-    //         }
-    //         Draw(affectedCells);
-    //     }
-    // }
+    
     private void Iterate()
     {
         if (!MayCollapse()) return;
-        float interval = 0.0f;
         
         if ((_activeStateFlag & StateFlag.Collapsing) != 0)
         {
-            // _iterationDeltaTime += Time.deltaTime;
-            // int nIterations = CalcIterations();
-            // // if (_iterationDeltaTime < interval) return;
-            // if (nIterations == 0) return;
-            // _iterationDeltaTime -= nIterations * _iterationsPerSecondInv;
             _iterationsDone = 0;
         
             var affectedCells = new HashSet<Occupation>();
             // while (MayIterate() && MayCollapse())
-            while ((_iterationsDone < stepSize || stepSize < 0) && MayCollapse())
+            while (MayIterate() && MayCollapse())
             {
                 // var cells = CollapseAndDrawOnce();
                 var cells = CollapseOnce();
@@ -270,68 +201,49 @@ public class XWFCAnimator : MonoBehaviour
             }
             Draw(affectedCells);
         }
+        
+        if (!MayCollapse())
+        {
+            string s = DrawnGridIdsToString();
+            Debug.Log("DRAWN GRID:\n" + s);
+            Debug.Log("XWFC GRID:\n" + _xwfc.GridManager.Grid.GridToString());
+        }
+    }
+
+    private string DrawnGridIdsToString()
+    {
+        var grid = _drawnGrid.GetGrid();
+        string s = "";
+        for (int y = 0; y < grid.GetLength(0); y++)
+        {
+            s += "[\n";
+            for (int x = 0; x < grid.GetLength(1); x++)
+            {
+                s += "[";
+                for (int z = 0; z < grid.GetLength(2); z++)
+                {
+                    s += grid[y, x, z].Id + ", ";
+                }
+                s += "]\n";
+            }
+            s += "\n]\n";
+        }
+
+        return s;
     }
 
     private void Update()
     {
-        if (updateDeltaTime >= delay)
+        if (_updateDeltaTime >= delay)
         {
             Iterate();
-            updateDeltaTime = 0;
+            _updateDeltaTime = 0;
         }
         else
         {
-            updateDeltaTime += Time.deltaTime;
+            _updateDeltaTime += Time.deltaTime;
         }
     }
-
-    // Update is called once per frame
-    // private void Update()
-    // {
-    //     
-    //         
-    //         /*
-    //          * Either
-    //          * (a): iterations per second <= max framerate
-    //          * Need to limit drawing and calling.
-    //          * Need no more than one call to collapse per frame.
-    //          * Calc delta time to achieve the speed. That is, floor(dt / iterPerFrame).
-    //          * (b): iterations per second > max framerate
-    //          * Need to compensate.
-    //          * Need more than one call to collapse per frame.
-    //          * Delta time is always larger than time window for one collapse. floor(dt/iterPerFrame)?
-    //          */
-    //         
-    //         // _timer.Stop();
-    //         
-    //         // var s = affectedCells.Aggregate("", (current, occupation) => current + $"{occupation.Coord}, ");
-    //
-    //         // s = $"{affectedCells.Count} cell(s) affected: " + s;
-    //         // Debug.Log(s);
-    //     }
-    //
-    //     if (!MayCollapse())
-    //     {
-    //         var grid = _drawnGrid.GetGrid();
-    //         string s = "";
-    //         for (int y = 0; y < grid.GetLength(0); y++)
-    //         {
-    //             s += "[\n";
-    //             for (int x = 0; x < grid.GetLength(1); x++)
-    //             {
-    //                 s += "[";
-    //                 for (int z = 0; z < grid.GetLength(2); z++)
-    //                 {
-    //                     s += grid[y, x, z].Id + ", ";
-    //                 }
-    //                 s += "]\n";
-    //             }
-    //             s += "\n]\n";
-    //         }
-    //         Debug.Log("DRAWN GRID:\n" + s);
-    //         Debug.Log("XWFC GRID:\n" + _xwfc.GridManager.Grid.GridToString());
-    //     }
-    // }
 
     public HashSet<Occupation> CollapseOnce()
     {
@@ -430,15 +342,24 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
 
-    public void UpdateExtent(Vector3 newExtent)
+    public void Reset()
     {
-        if (extent.Equals(newExtent)) return;
-        extent = newExtent;
-        _xwfc.UpdateExtent(newExtent);
+        _xwfc.UpdateExtent(extent);
         _drawnGrid.Map(Drawing.DestroyAtom);
         _drawnGrid = InitDrawGrid();
         InitDrawGrid();
         _activeStateFlag = 0;
-        Debug.Log("UPDATED!!");
+    }
+
+    public void UpdateExtent(Vector3 newExtent)
+    {
+        if (extent.Equals(newExtent)) return;
+        extent = newExtent;
+        Reset();
+    }
+
+    public void UpdateDelay(float value)
+    {
+        delay = value;
     }
 }
