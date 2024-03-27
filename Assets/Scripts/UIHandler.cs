@@ -25,6 +25,7 @@ public class UIHandler : MonoBehaviour
         AddExtentListeners(hSlider, hInput);
         AddExtentListeners(dSlider, dInput);
         AddExtentUpdate(updateExtent);
+        iterationsPerSecond.text = XWFCAnimator.Instance.stepSize.ToString("0.0");
         AddCollapseListeners();
 
     }
@@ -54,7 +55,7 @@ public class UIHandler : MonoBehaviour
     private void AddExtentListeners(Slider slider, TMP_InputField field)
     {
         slider.onValueChanged.AddListener(delegate { UpdateInputValue(field, slider.value); });
-        field.onValueChanged.AddListener(delegate { UpdateSliderValue(slider, float.Parse(field.text)); });
+        field.onValueChanged.AddListener(delegate { if(field.text != "") UpdateSliderValue(slider, float.Parse(field.text)); });
     }
 
     private void UpdateSliderValue(Slider slider, float value)

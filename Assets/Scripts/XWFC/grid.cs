@@ -50,6 +50,25 @@ namespace XWFC
             }
         }
 
+        public T[,,] GetGrid()
+        {
+            return _grid;
+        }
+
+        public IEnumerable<T1> MapYield<T1>(Func<T, T1> func)
+        {
+            for (int i = 0; i < Height; i++)
+            {
+                for (int j = 0; j < Width; j++)
+                {
+                    for (int k = 0; k < Depth; k++)
+                    {
+                        yield return func(_grid[i, j, k]);
+                    }
+                }
+            }
+        }
+
         public bool WithinBounds(int x, int y, int z)
         {
             return x < Width && y < Height && z < Depth && x >= 0 && y >= 0 && z >= 0;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -13,7 +14,12 @@ public class XWFCAnimator : MonoBehaviour
 {
     [SerializeField] private GameObject unitTilePrefab;
     [SerializeField] public Vector3 extent;
-    [SerializeField] private float iterationsPerSecond = 1;
+    public float stepSize = 10;
+
+    public float delay;
+
+    private float updateDeltaTime = 0;
+    // public float iterationsPerSecond = 1;
     private float _iterationsPerSecondInv;
     private float _iterationDeltaTime;
 
@@ -45,7 +51,7 @@ public class XWFCAnimator : MonoBehaviour
 
     void Start()
     {
-        _iterationsPerSecondInv = 1.0f / iterationsPerSecond;
+        _iterationsPerSecondInv = 1.0f / stepSize;
         _iterationDeltaTime = _iterationsPerSecondInv;
         var terminals = new Dictionary<int, Terminal>();
         // var extent = new Vector3(2,1,2);
@@ -200,7 +206,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public void UpdateIterationsPerSecond(float value)
     {
-        iterationsPerSecond = value;
+        stepSize = value;
         _iterationsPerSecondInv = 1 / value;
     }
 
@@ -213,47 +219,119 @@ public class XWFCAnimator : MonoBehaviour
         return nIterations;
     }
 
-    // Update is called once per frame
-    private void Update()
+    // private IEnumerator Iterate()
+    // {
+    //     if (!MayCollapse()) yield return null;
+    //     float interval = 0.0f;
+    //
+    //     if ((_activeStateFlag & StateFlag.Collapsing) != 0)
+    //     {
+    //         _iterationDeltaTime += Time.deltaTime;
+    //         int nIterations = CalcIterations();
+    //         // if (_iterationDeltaTime < interval) return;
+    //         if (nIterations == 0) yield return null;
+    //         _iterationDeltaTime -= nIterations * _iterationsPerSecondInv;
+    //         _iterationsDone = 0;
+    //
+    //         var affectedCells = new HashSet<Occupation>();
+    //         // while (MayIterate() && MayCollapse())
+    //         while ((_iterationsDone < stepSize || nIterations < 0) && MayCollapse())
+    //         {
+    //             // var cells = CollapseAndDrawOnce();
+    //             var cells = CollapseOnce();
+    //             affectedCells.UnionWith(cells);
+    //             _iterationsDone++;
+    //         }
+    //         Draw(affectedCells);
+    //     }
+    // }
+    private void Iterate()
     {
         if (!MayCollapse()) return;
+        float interval = 0.0f;
         
         if ((_activeStateFlag & StateFlag.Collapsing) != 0)
         {
-            _iterationDeltaTime += Time.deltaTime;
-            int nIterations = CalcIterations();
-            if (nIterations == 0) return;
-            _iterationDeltaTime -= nIterations * _iterationsPerSecondInv;
+            // _iterationDeltaTime += Time.deltaTime;
+            // int nIterations = CalcIterations();
+            // // if (_iterationDeltaTime < interval) return;
+            // if (nIterations == 0) return;
+            // _iterationDeltaTime -= nIterations * _iterationsPerSecondInv;
             _iterationsDone = 0;
-            
+        
             var affectedCells = new HashSet<Occupation>();
-            while ((_iterationsDone < nIterations || nIterations < 0) && MayCollapse())
+            // while (MayIterate() && MayCollapse())
+            while ((_iterationsDone < stepSize || stepSize < 0) && MayCollapse())
             {
-                var cells = CollapseAndDrawOnce();
+                // var cells = CollapseAndDrawOnce();
+                var cells = CollapseOnce();
                 affectedCells.UnionWith(cells);
                 _iterationsDone++;
             }
-            
-            /*
-             * Either
-             * (a): iterations per second <= max framerate
-             * Need to limit drawing and calling.
-             * Need no more than one call to collapse per frame.
-             * Calc delta time to achieve the speed. That is, floor(dt / iterPerFrame).
-             * (b): iterations per second > max framerate
-             * Need to compensate.
-             * Need more than one call to collapse per frame.
-             * Delta time is always larger than time window for one collapse. floor(dt/iterPerFrame)?
-             */
-            
-            // _timer.Stop();
-            
-            // var s = affectedCells.Aggregate("", (current, occupation) => current + $"{occupation.Coord}, ");
-
-            // s = $"{affectedCells.Count} cell(s) affected: " + s;
-            // Debug.Log(s);
+            Draw(affectedCells);
         }
     }
+
+    private void Update()
+    {
+        if (updateDeltaTime >= delay)
+        {
+            Iterate();
+            updateDeltaTime = 0;
+        }
+        else
+        {
+            updateDeltaTime += Time.deltaTime;
+        }
+    }
+
+    // Update is called once per frame
+    // private void Update()
+    // {
+    //     
+    //         
+    //         /*
+    //          * Either
+    //          * (a): iterations per second <= max framerate
+    //          * Need to limit drawing and calling.
+    //          * Need no more than one call to collapse per frame.
+    //          * Calc delta time to achieve the speed. That is, floor(dt / iterPerFrame).
+    //          * (b): iterations per second > max framerate
+    //          * Need to compensate.
+    //          * Need more than one call to collapse per frame.
+    //          * Delta time is always larger than time window for one collapse. floor(dt/iterPerFrame)?
+    //          */
+    //         
+    //         // _timer.Stop();
+    //         
+    //         // var s = affectedCells.Aggregate("", (current, occupation) => current + $"{occupation.Coord}, ");
+    //
+    //         // s = $"{affectedCells.Count} cell(s) affected: " + s;
+    //         // Debug.Log(s);
+    //     }
+    //
+    //     if (!MayCollapse())
+    //     {
+    //         var grid = _drawnGrid.GetGrid();
+    //         string s = "";
+    //         for (int y = 0; y < grid.GetLength(0); y++)
+    //         {
+    //             s += "[\n";
+    //             for (int x = 0; x < grid.GetLength(1); x++)
+    //             {
+    //                 s += "[";
+    //                 for (int z = 0; z < grid.GetLength(2); z++)
+    //                 {
+    //                     s += grid[y, x, z].Id + ", ";
+    //                 }
+    //                 s += "]\n";
+    //             }
+    //             s += "\n]\n";
+    //         }
+    //         Debug.Log("DRAWN GRID:\n" + s);
+    //         Debug.Log("XWFC GRID:\n" + _xwfc.GridManager.Grid.GridToString());
+    //     }
+    // }
 
     public HashSet<Occupation> CollapseOnce()
     {
@@ -287,7 +365,7 @@ public class XWFCAnimator : MonoBehaviour
         // If the number of iteration is negative, assume to go keep going until the xwfc is done.
         // Otherwise, limit the number of iterations per frame.
         
-        return _iterationsDone < iterationsPerSecond || iterationsPerSecond < 0;
+        return _iterationsDone < stepSize || stepSize < 0;
     }
 
     private void Draw(HashSet<Occupation> affectedCells)
@@ -358,7 +436,9 @@ public class XWFCAnimator : MonoBehaviour
         extent = newExtent;
         _xwfc.UpdateExtent(newExtent);
         _drawnGrid.Map(Drawing.DestroyAtom);
+        _drawnGrid = InitDrawGrid();
         InitDrawGrid();
+        _activeStateFlag = 0;
         Debug.Log("UPDATED!!");
     }
 }

@@ -264,13 +264,13 @@ namespace XWFC
             // {
             //     // Remove existing entry.
             // }
-            if (_list.Count == 0)
-            {
-                _list.Add(collapse);
-                return;
-            }
+            // if (_list.Count == 0)
+            // {
+            //     _list.Add(collapse);
+            //     return;
+            // }
             int i = 0;
-            while (i < _list.Count && _list[i].Entropy > collapse.Entropy)
+            while (i < _list.Count && _list[i].Entropy >= collapse.Entropy)
             {
                 i++;
             }
