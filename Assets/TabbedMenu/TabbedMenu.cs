@@ -60,8 +60,6 @@ public class TabbedMenu : MonoBehaviour
         _delay = _root.Q<TextField>("delayInput");
         _stepSize = _root.Q<TextField>("stepSizeInput");
         _updateExtent = _root.Q<Button>("updateExtentButton");
-        Debug.Log("HERE!");
-        InitAdjacencyGrid();
     }
 
     private void AddListeners()
@@ -75,6 +73,7 @@ public class TabbedMenu : MonoBehaviour
 
     private void Start()
     {
+        InitAdjacencyGrid();
         InitGridValues();
         AddExtentListeners(_wSlider, _wInput);
         AddExtentListeners(_hSlider, _hInput);
@@ -123,7 +122,6 @@ public class TabbedMenu : MonoBehaviour
 
     private void AddExtentListeners(SliderInt slider, TextField field)
     {
-        // slider.
         slider.RegisterValueChangedCallback(delegate { UpdateInputValue(field, slider.value); });
         field.RegisterValueChangedCallback(delegate { if(field.value != "") UpdateSliderValue(slider, float.Parse(field.value)); });
     }
@@ -149,30 +147,48 @@ public class TabbedMenu : MonoBehaviour
     private void InitAdjacencyGrid()
     {
         _adjGrid = _root.Q<VisualElement>(_adjacencyGridName);
-        _adjacencyGridController = new AdjacencyGridController(new List<int> {1,2,3});
-        var grid = _adjacencyGridController.Generate();
-        _adjGrid.Add(grid);
+        _adjacencyGridController = new AdjacencyGridController(new List<int> {1,2,3}, XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
+        var grids = _adjacencyGridController.Grids;
+        _adjGrid.Add(grids[Vector3.left]);
     }
 
     private void UpdateToggleListeners()
     {
     }
 
+    private void ClassSwitch(VisualElement element, string classRemove, string classAdd)
+    {
+        element.RemoveFromClassList(classRemove);
+        element.AddToClassList(classAdd);
+    }
+
+    private void ToggleDisabled(VisualElement element)
+    {
+        element.SetEnabled(false);
+        ClassSwitch(element, "enabled-button", "disabled-button");
+    }
+
+    private void ToggleEnabled(VisualElement element)
+    {
+        element.SetEnabled(true);
+        ClassSwitch(element,  "disabled-button","enabled-button");
+    }
+
     private void Update()
     {
         if (XWFCAnimator.Instance.IsDone() && _runButton.enabledInHierarchy)
         {
-            _runButton.SetEnabled(false);
+            ToggleDisabled(_runButton);
             _runButton.text = "All done";
-            _runButton.RemoveFromClassList("enabled-button");
-            _runButton.AddToClassList("disabled-button");
+            
+            ToggleDisabled(_collapseOnceButton);
         }
         else if (!XWFCAnimator.Instance.IsDone() && !_runButton.enabledInHierarchy)
         {
-            _runButton.SetEnabled(true);
+            ToggleEnabled(_runButton);
             _runButton.text = "Run";
-            _runButton.RemoveFromClassList("disabled-button");
-            _runButton.AddToClassList("enabled-button");
+            
+            ToggleEnabled(_collapseOnceButton);
         }
     }
 }

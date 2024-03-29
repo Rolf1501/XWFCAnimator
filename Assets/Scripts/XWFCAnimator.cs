@@ -22,15 +22,15 @@ public class XWFCAnimator : MonoBehaviour
 
     private StateFlag _activeStateFlag = 0;
     
+    private ExpressiveWFC _xwfc;
+
+    private Grid<Drawing> _drawnGrid;
+    
     [Flags]
     private enum StateFlag
     {
         Collapsing = 1 << 0
     }
-
-    private ExpressiveWFC _xwfc;
-
-    private Grid<Drawing> _drawnGrid;
     
     // Singleton assurance.
     private void Awake()
@@ -154,6 +154,16 @@ public class XWFCAnimator : MonoBehaviour
     public Vector3 GetUnitSize()
     {
         return _unitSize;
+    }
+
+    public Vector3[] GetOffsets()
+    {
+        return _xwfc.Offsets;
+    }
+
+    public HashSetAdjacency GetTileAdjacencyConstraints()
+    {
+        return _xwfc.AdjMatrix.TileAdjacencyConstraints;
     }
 
     public bool IsDone()
