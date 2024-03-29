@@ -1,5 +1,6 @@
 ﻿// This script attaches the tabbed menu logic to the game.
 
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -27,6 +28,10 @@ public class TabbedMenu : MonoBehaviour
     private Button _collapseOnceButton;
     private Button _runButton;
     private Button _resetButton;
+
+    private string _adjacencyGridName = "adjacencyGrid";
+    private VisualElement _adjGrid;
+    private AdjacencyGridController _adjacencyGridController;
 
     private void OnEnable()
     {
@@ -56,6 +61,7 @@ public class TabbedMenu : MonoBehaviour
         _stepSize = _root.Q<TextField>("stepSizeInput");
         _updateExtent = _root.Q<Button>("updateExtentButton");
         Debug.Log("HERE!");
+        InitAdjacencyGrid();
     }
 
     private void AddListeners()
@@ -138,6 +144,18 @@ public class TabbedMenu : MonoBehaviour
     {
         Debug.Log("Tried updating width.");
         XWFCAnimator.Instance.UpdateExtent(new Vector3(_wSlider.value, _hSlider.value, _dSlider.value));
+    }
+
+    private void InitAdjacencyGrid()
+    {
+        _adjGrid = _root.Q<VisualElement>(_adjacencyGridName);
+        _adjacencyGridController = new AdjacencyGridController(new List<int> {1,2,3});
+        var grid = _adjacencyGridController.Generate();
+        _adjGrid.Add(grid);
+    }
+
+    private void UpdateToggleListeners()
+    {
     }
 
     private void Update()

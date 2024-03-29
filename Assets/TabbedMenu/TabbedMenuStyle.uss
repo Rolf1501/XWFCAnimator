@@ -22,7 +22,7 @@
 }
 
 .container {
-    /*max-width: 30%;*/
+    max-width: 300px;
     /*min-width: 200px;*/
     width: 30%;
     max-height: 95%;
@@ -62,6 +62,7 @@ SliderInt {
 .text-field {
     width: 20%;
     height: 30px;
+    padding: 0;
 }
 
 .grid-container {
@@ -72,7 +73,6 @@ SliderInt {
     justify-content: flex-end;
     padding: 5px;
     -unity-text-align: middle-center;
-    /*margin: 5px 0;*/
 }
 
 .grid-container Label, .grid-container .text-field {
@@ -82,8 +82,9 @@ SliderInt {
 .collapse-config-container {
     display: flex;
     flex-direction: row;
-    justify-content: flex-end;
-    padding: 5px;
+    justify-content: center;
+    padding: 0;
+    margin: 5px 0;
 }
 
 .collapse-config-container Label {
@@ -94,25 +95,31 @@ SliderInt {
 .collapse-button-container {
     flex-direction: row;
     flex-wrap: wrap;
+    
     width: 100%;
-    justify-content: flex-start;
+    justify-content: center;
 }
 
+.collapse-button-container .one-col {
+    margin-top: 5px;
+}
+
+/*.collapse-button-container Button {*/
+/*    margin-top: 5px;*/
+/*}*/
+
 .two-cols {
-    width: 45%;
+    width: 48%;
 }
 
 .one-col {
-    width: 95%;
+    width: 100%;
 }
 
 Button {
     height: 30px;
     background-color: rgb(229, 223, 223);
-    /*padding: 5px;*/
-}
-
-Button:hover {
+    margin: 0;
 }
 
 Button:active {
@@ -127,6 +134,12 @@ Button:active {
     background-color: rgb(229, 223, 223);
 }
 
-/*.collapse-config-container .text-field {*/
-/*    width: 20%;*/
-/*}*/
+.adj-grid-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.adj-grid-container .row {
+    display: flex;
+    flex-direction: row;
+}

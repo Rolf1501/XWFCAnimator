@@ -9,35 +9,36 @@
         <ui:VisualElement name="tabContent">
             <ui:VisualElement name="GridControlContent">
                 <ui:VisualElement name="Width" class="grid-container">
-                    <ui:Label text="Width"/>
-                    <ui:SliderInt name="widthSlider" low-value="1" high-value="90"/>
-                    <ui:TextField name="widthInput" class="text-field"/>
+                    <ui:Label text="Width" />
+                    <ui:SliderInt name="widthSlider" low-value="1" high-value="90" />
+                    <ui:TextField name="widthInput" class="text-field" />
                 </ui:VisualElement>
                 <ui:VisualElement name="Height" class="grid-container">
-                    <ui:Label text="Height"/>
-                    <ui:SliderInt name="heightSlider" low-value="1" high-value="90"/>
-                    <ui:TextField name="heightInput" class="text-field"/>
+                    <ui:Label text="Height" />
+                    <ui:SliderInt name="heightSlider" low-value="1" high-value="90" />
+                    <ui:TextField name="heightInput" class="text-field" />
                 </ui:VisualElement>
                 <ui:VisualElement name="Depth" class="grid-container">
-                    <ui:Label text="Depth"/>
-                    <ui:SliderInt name="depthSlider" low-value="1" high-value="90"/>
-                    <ui:TextField name="depthInput" class="text-field"/>
+                    <ui:Label text="Depth" />
+                    <ui:SliderInt name="depthSlider" low-value="1" high-value="90" />
+                    <ui:TextField name="depthInput" class="text-field" />
                 </ui:VisualElement>
                 <ui:Button name="updateExtentButton" text="Update Grid" />
                 <ui:VisualElement class="collapse-config-container">
-                    <ui:Label text="Delay"/>
-                    <ui:TextField name="delayInput" class="text-field"/>
-                    <ui:Label text="Step Size"/>
-                    <ui:TextField name="stepSizeInput" class="text-field"/>
+                    <ui:Label text="Delay" />
+                    <ui:TextField name="delayInput" class="text-field" />
+                    <ui:Label text="Step Size" />
+                    <ui:TextField name="stepSizeInput" class="text-field" />
                 </ui:VisualElement>
-                <ui:VisualElement name="Buttons" class="collapse-button-container">
-                    <ui:Button name="runButton" text="Run" class="two-cols"/>
-                    <ui:Button name="collapseOnceButton" text="Collapse Once" class="two-cols" />
-                    <ui:Button name="resetButton" text="Reset" class="one-col"/>
+                <ui:VisualElement name="Buttons" class="collapse-button-container" style="justify-content: space-between;">
+                    <ui:Button name="runButton" text="Run" class="two-cols" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
+                    <ui:Button name="collapseOnceButton" text="Collapse Once" class="two-cols" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
+                    <ui:Button name="resetButton" text="Reset" class="one-col" style="flex-direction: column; align-items: stretch; max-width: none; width: 100%;" />
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="AdjacencyViewContent" class="unselectedContent" style="flex-grow: 1;">
                 <ui:Label name="Tab2" text="TAB2" />
+                <ui:VisualElement name="adjacencyGrid" class="adj-grid-container" />
             </ui:VisualElement>
             <ui:VisualElement name="TilesetContent" class="unselectedContent" style="flex-grow: 1;" />
         </ui:VisualElement>

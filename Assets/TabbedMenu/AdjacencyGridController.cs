@@ -1,16 +1,19 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
 using UnityEngine.UIElements;
 using XWFC;
 
-public class GridGenerator
+public class AdjacencyGridController
 {
     private List<int> _tiles;
     public Bidict<int, int> TileToIndexMapping { get; }
 
     public string RowClass;
     public string CellClass;
+    private const string cellPrefix = "cell";
     
-    public GridGenerator(List<int> tiles, string rowClass = "row", string cellClass = "cell")
+    public AdjacencyGridController(List<int> tiles, string rowClass = "row", string cellClass = "cell")
     {
         _tiles = tiles;
         RowClass = rowClass;
@@ -53,10 +56,18 @@ public class GridGenerator
     {
         var cell = new VisualElement();
         var toggle = new Toggle();
-        cell.name = $"{x}{y}";
+        cell.name = cellPrefix + $"{x}{y}";
         cell.AddToClassList(CellClass);
         cell.Add(toggle);
         return cell;
+    }
+    
+    public static Vector2Int GetTileIdPair(VisualElement cell)
+    {
+        var nameArr = cell.name.ToArray();
+        int x = nameArr[^2];
+        int y = nameArr[^1];
+        return new Vector2Int(x, y);
     }
     
 }

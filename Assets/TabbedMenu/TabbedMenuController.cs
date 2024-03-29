@@ -46,7 +46,7 @@ public class TabbedMenuController
         ).ForEach(UnselectTab);
         SelectTab(clickedTab);
     }
-    //Method that returns a Boolean indicating whether a tab is currently selected
+    // Method that returns a Boolean indicating whether a tab is currently selected
     private static bool TabIsCurrentlySelected(Label tab)
     {
         return tab.ClassListContains(CurrentlySelectedTabClassName);
@@ -59,7 +59,7 @@ public class TabbedMenuController
 
     /* Method for the selected tab: 
        -  Takes a tab as a parameter and adds the currentlySelectedTab class
-       -  Then finds the tab content and removes the unselectedContent class */
+       -  Then finds the tab content and removes the unselectedContent class*/
     private void SelectTab(Label tab)
     {
         tab.AddToClassList(CurrentlySelectedTabClassName);
