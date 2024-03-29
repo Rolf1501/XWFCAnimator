@@ -23,6 +23,15 @@ namespace XWFC
         {
             return _inverse[value];
         }
+        public TKey GetKey(TValue value)
+        {
+            return _inverse[value];
+        }
+        
+        public TValue GetValue(TKey key)
+        {
+            return Dict[key];
+        }
 
         public TValue Get(TKey key)
         {

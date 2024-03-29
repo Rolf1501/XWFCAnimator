@@ -28,7 +28,8 @@ public class UIHandler : MonoBehaviour
         AddExtentListeners(hSlider, hInput);
         AddExtentListeners(dSlider, dInput);
         AddExtentUpdate(updateExtent);
-        stepSize.text = XWFCAnimator.Instance.stepSize.ToString("0.0");
+        stepSize.text = XWFCAnimator.Instance.stepSize.ToString("0");
+        delay.text = XWFCAnimator.Instance.delay.ToString("0.0");
         AddCollapseListeners();
 
     }
@@ -51,7 +52,7 @@ public class UIHandler : MonoBehaviour
             try { XWFCAnimator.Instance.UpdateDelay(float.Parse(delay.text)); }
             catch {}
         });
-        resetButton.onClick.AddListener(delegate { XWFCAnimator.Instance.Reset(); });
+        resetButton.onClick.AddListener(delegate { Debug.Log("RESET!!"); XWFCAnimator.Instance.Reset(); });
     }
 
     private void InitGridValues()
@@ -77,16 +78,12 @@ public class UIHandler : MonoBehaviour
 
     private void UpdateSliderValue(Slider slider, float value)
     {
-        if (value > slider.maxValue)
-        {
-            value = slider.maxValue;
-        }
+        if (value > slider.maxValue) value = slider.maxValue;
         slider.value = value;
     }
 
     private void UpdateInputValue(TMP_InputField field, float value)
     {
-        
         field.text = value.ToString("0");
     }
 

@@ -49,13 +49,16 @@
     <Compile Include="Assets\Scripts\XWFC\grid.cs" />
     <Compile Include="Assets\Scripts\CameraMovement.cs" />
     <Compile Include="Assets\Scripts\XWFC\util.cs" />
+    <Compile Include="Assets\TabbedMenu\TabbedMenu.cs" />
     <Compile Include="Assets\Scripts\XWFC\collapseQueue.cs" />
+    <Compile Include="Assets\TabbedMenu\GridGenerator.cs" />
     <Compile Include="Assets\Scripts\XWFCAnimator.cs" />
     <Compile Include="Assets\Scripts\XWFC\adjacency.cs" />
     <Compile Include="Assets\Scripts\XWFC\savePoint.cs" />
     <Compile Include="Assets\Scripts\UIHandler.cs" />
     <Compile Include="Assets\Scripts\XWFC\customExceptions.cs" />
     <Compile Include="Assets\Scripts\XWFC\voidMaskAdjacencyData.cs" />
+    <Compile Include="Assets\TabbedMenu\TabbedMenuController.cs" />
     <Compile Include="Assets\Scripts\XWFC\terminal.cs" />
     <Compile Include="Assets\Scripts\XWFCRunner.cs" />
     <Compile Include="Assets\Scripts\XWFC\ExpressiveWFC.cs" />
@@ -71,6 +74,7 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Mobile.cginc" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF SSD.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
+    <None Include="Assets\TabbedMenu\TabbedMenuStyle.uss" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface.shader" />
     <None Include="Assets\TextMesh Pro\Sprites\EmojiOne Attribution.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Custom-Atlas.shader" />
@@ -81,6 +85,7 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Surface.cginc" />
     <None Include="Assets\Resources\BillingMode.json" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
+    <None Include="Assets\TabbedMenu\TabbedMenu.uxml" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Mobile.shader" />
