@@ -3,12 +3,11 @@ using UnityEngine;
 
 public class CameraMovement : MonoBehaviour
 {
-    [SerializeField] private GameObject Camera;
+    [SerializeField] private Camera Camera;
     [SerializeField] private float PanSpeed;
     [SerializeField] private float Tolerance = 0.001f;
     private bool _mouseLocked;
     private Vector3 PrevPos;
-    
 
     private void Update()
     {
@@ -89,5 +88,10 @@ public class CameraMovement : MonoBehaviour
     {
         if (!_mouseLocked) return;
         _mouseLocked = false;
+    }
+
+    public void SetCamera(Camera cam)
+    {
+        Camera = cam;
     }
 }

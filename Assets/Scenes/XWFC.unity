@@ -321,7 +321,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 46e3ce1e32b349cc9fd4df7f12084a11, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Camera: {fileID: 1453727936}
+  Camera: {fileID: 1453727938}
   PanSpeed: 0.1
   Tolerance: 0.001
 --- !u!4 &891183410
@@ -393,9 +393,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0
+    y: 0.2
     width: 1
-    height: 1
+    height: 0.8
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
