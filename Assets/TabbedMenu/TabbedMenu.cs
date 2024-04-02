@@ -1,9 +1,14 @@
 ﻿// This script attaches the tabbed menu logic to the game.
 
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
+using XWFC;
+using Button = UnityEngine.UIElements.Button;
 
 /*
  * Tab handling obtained from: https://docs.unity3d.com/Manual/UIE-create-tabbed-menu-for-runtime.html
@@ -21,7 +26,7 @@ public class TabbedMenu : MonoBehaviour
     private SliderInt _dSlider;
     private TextField _dInput;
 
-    private Button _updateExtent;
+    private Button _updateExtentButton;
 
     private TextField _stepSize;
     private TextField _delay;
@@ -32,6 +37,8 @@ public class TabbedMenu : MonoBehaviour
     private string _adjacencyGridName = "adjacencyGrid";
     private VisualElement _adjGrid;
     private AdjacencyGridController _adjacencyGridController;
+    private Button _updateAdjacencyButton;
+    private Button _updateTilesetButton;
 
     private void OnEnable()
     {
@@ -59,15 +66,23 @@ public class TabbedMenu : MonoBehaviour
         _dInput = _root.Q<TextField>("depthInput");
         _delay = _root.Q<TextField>("delayInput");
         _stepSize = _root.Q<TextField>("stepSizeInput");
-        _updateExtent = _root.Q<Button>("updateExtentButton");
+        _updateExtentButton = _root.Q<Button>("updateExtentButton");
+        _updateAdjacencyButton = _root.Q<Button>("updateAdjacencyButton");
+        _updateTilesetButton = _root.Q<Button>("updateTilesetButton");
     }
 
     private void AddListeners()
     {
         _resetButton.clicked += delegate
         {
-            Debug.Log("Clicked it!");
+            Debug.Log("Reset!");
             XWFCAnimator.Instance.Reset();
+        };
+
+        _updateAdjacencyButton.clicked += delegate
+        {
+            Debug.Log("Updated Adjacency Constraints!");
+            XWFCAnimator.Instance.UpdateAdjacencyConstraints(_adjacencyGridController.ToAdjacencySet());
         };
     }
 
@@ -78,7 +93,7 @@ public class TabbedMenu : MonoBehaviour
         AddExtentListeners(_wSlider, _wInput);
         AddExtentListeners(_hSlider, _hInput);
         AddExtentListeners(_dSlider, _dInput);
-        AddExtentUpdate(_updateExtent);
+        AddExtentUpdate(_updateExtentButton);
         _stepSize.value = XWFCAnimator.Instance.stepSize.ToString("0");
         _delay.value = XWFCAnimator.Instance.delay.ToString("0.0");
         AddCollapseListeners();
@@ -147,31 +162,69 @@ public class TabbedMenu : MonoBehaviour
     private void InitAdjacencyGrid()
     {
         _adjGrid = _root.Q<VisualElement>(_adjacencyGridName);
-        _adjacencyGridController = new AdjacencyGridController(new List<int> {1,2,3}, XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
+        _adjacencyGridController = new AdjacencyGridController(XWFCAnimator.Instance.GetTiles().Keys.ToList(), XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
         var grids = _adjacencyGridController.Grids;
-        _adjGrid.Add(grids[Vector3.left]);
-    }
+        var dropDown = new DropdownField();
+        _adjGrid.Add(dropDown);
 
-    private void UpdateToggleListeners()
-    {
-    }
+        var directionNames = new Bidict<string, Vector3>();
+        directionNames.AddPair("North", Vector3.forward);
+        directionNames.AddPair("East", Vector3.right);
+        directionNames.AddPair("South", Vector3.back);
+        directionNames.AddPair("West", Vector3.left);
+        directionNames.AddPair("Up", Vector3.up);
+        directionNames.AddPair("Down", Vector3.down);
 
-    private void ClassSwitch(VisualElement element, string classRemove, string classAdd)
+
+        var offsets = XWFCAnimator.Instance.GetOffsets();
+        foreach (var offset in offsets)
+        {
+            var directionName = directionNames.GetKey(offset);
+            dropDown.choices.Add(directionName);
+            var gridContainer = new VisualElement();
+            gridContainer.name = directionName;
+            gridContainer.AddToClassList("hidden");
+            gridContainer.Add(grids[offset]);
+            _adjGrid.Add(gridContainer);
+        }
+
+        var hiddenClass = "hidden";
+        var selectedClass = "selected";
+        
+        var defaultDirection = Vector3.right;
+        var defaultDirectionName = directionNames.GetKey(defaultDirection);
+        var defaultChoice =  _adjGrid.Q<VisualElement>(defaultDirectionName);
+        
+        dropDown.value = defaultDirectionName;
+        SwitchClass(defaultChoice, hiddenClass, selectedClass);
+        dropDown.RegisterValueChangedCallback(delegate
+        {
+            var element = _adjGrid.Q<VisualElement>(className: selectedClass);
+            SwitchClass(element, selectedClass, hiddenClass);
+
+            var showGrid = _adjGrid.Q<VisualElement>(dropDown.value);
+            SwitchClass(showGrid, hiddenClass, selectedClass);
+            
+            Debug.Log($"VALUE CHANGED TO {dropDown.value}");
+        });
+    }
+    
+    private static void SwitchClass(VisualElement element, string classRemove, string classAdd)
     {
         element.RemoveFromClassList(classRemove);
         element.AddToClassList(classAdd);
     }
 
-    private void ToggleDisabled(VisualElement element)
+    private static void ToggleDisabled(VisualElement element)
     {
         element.SetEnabled(false);
-        ClassSwitch(element, "enabled-button", "disabled-button");
+        SwitchClass(element, "enabled-button", "disabled-button");
     }
 
-    private void ToggleEnabled(VisualElement element)
+    private static void ToggleEnabled(VisualElement element)
     {
         element.SetEnabled(true);
-        ClassSwitch(element,  "disabled-button","enabled-button");
+        SwitchClass(element,  "disabled-button","enabled-button");
     }
 
     private void Update()

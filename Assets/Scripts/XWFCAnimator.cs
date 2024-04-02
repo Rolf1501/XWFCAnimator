@@ -9,6 +9,7 @@ public class XWFCAnimator : MonoBehaviour
     [SerializeField] private GameObject unitTilePrefab;
     public Vector3 extent;
     public float stepSize;
+    public Dictionary<int, Terminal> terminals;
 
     public float delay;
 
@@ -25,6 +26,7 @@ public class XWFCAnimator : MonoBehaviour
     private ExpressiveWFC _xwfc;
 
     private Grid<Drawing> _drawnGrid;
+    private HashSetAdjacency _adjacency;
     
     [Flags]
     private enum StateFlag
@@ -42,7 +44,7 @@ public class XWFCAnimator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        var terminals = new Dictionary<int, Terminal>();
+        terminals = new Dictionary<int, Terminal>();
 
         var defaultWeights = new Dictionary<int, float>();
         
@@ -69,7 +71,7 @@ public class XWFCAnimator : MonoBehaviour
         var TOP = new Vector3(0, 1, 0);
         var BOTTOM = new Vector3(0, -1, 0);
         
-        var adj = new HashSetAdjacency(){
+        _adjacency = new HashSetAdjacency(){
             // 0-0
             new(0, new List<Relation>() { new(0, null) }, NORTH),
             new(0, new List<Relation>() { new(0, null) }, EAST),
@@ -114,8 +116,7 @@ public class XWFCAnimator : MonoBehaviour
             new(2, new List<Relation>() { new(2, null) }, BOTTOM),
         };
         
-        _xwfc = new ExpressiveWFC(terminals, adj, extent);
-        Debug.Log("Initialized XWFC");
+        InitXWFC();
         
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
@@ -145,6 +146,45 @@ public class XWFCAnimator : MonoBehaviour
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
     }
 
+    private void InitXWFC()
+    {
+        _xwfc = new ExpressiveWFC(terminals, _adjacency, extent);
+        Debug.Log("Initialized XWFC");
+    }
+
+    public void UpdateAdjacencyConstraints(HashSetAdjacency adjacency)
+    {
+        var tempXWFC = _xwfc;
+        try
+        {
+            _adjacency = adjacency;
+            Reset();
+            InitXWFC();
+        }
+        catch
+        {
+            Debug.Log("Failed to update adjacency constraints.");
+            _xwfc = tempXWFC;
+        }
+    }
+
+    public void UpdateTerminals(Dictionary<int, Terminal> newTerminals)
+    {
+        var tempXWFC = _xwfc;
+        try
+        {
+            terminals = newTerminals;
+            _adjacency = new HashSetAdjacency();
+            Reset();
+            InitXWFC();
+        }
+        catch
+        {
+            Debug.Log("Failed to update terminals.");
+            _xwfc = tempXWFC;
+        }
+    }
+
     private Grid<Drawing> InitDrawGrid()
     {
         return new Grid<Drawing>(
@@ -159,6 +199,11 @@ public class XWFCAnimator : MonoBehaviour
     public Vector3[] GetOffsets()
     {
         return _xwfc.Offsets;
+    }
+
+    public Dictionary<int, Terminal> GetTiles()
+    {
+        return terminals;
     }
 
     public HashSetAdjacency GetTileAdjacencyConstraints()
@@ -335,6 +380,26 @@ public class XWFCAnimator : MonoBehaviour
         return Vector3Util.Mult(coord, _unitSize);
     }
 
+    public void Reset()
+    {
+        _xwfc.UpdateExtent(extent);
+        _drawnGrid.Map(Drawing.DestroyAtom);
+        _drawnGrid = InitDrawGrid();
+        _activeStateFlag = 0;
+    }
+
+    public void UpdateExtent(Vector3 newExtent)
+    {
+        if (extent.Equals(newExtent)) return;
+        extent = newExtent;
+        Reset();
+    }
+
+    public void UpdateDelay(float value)
+    {
+        delay = value;
+    }
+    
     private record Drawing
     {
         public int Id;
@@ -350,26 +415,5 @@ public class XWFCAnimator : MonoBehaviour
         {
             if (drawing != null && drawing.Atom != null) Destroy(drawing.Atom);
         }
-    }
-
-    public void Reset()
-    {
-        _xwfc.UpdateExtent(extent);
-        _drawnGrid.Map(Drawing.DestroyAtom);
-        _drawnGrid = InitDrawGrid();
-        InitDrawGrid();
-        _activeStateFlag = 0;
-    }
-
-    public void UpdateExtent(Vector3 newExtent)
-    {
-        if (extent.Equals(newExtent)) return;
-        extent = newExtent;
-        Reset();
-    }
-
-    public void UpdateDelay(float value)
-    {
-        delay = value;
     }
 }
