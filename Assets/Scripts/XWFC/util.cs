@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 namespace XWFC
@@ -13,6 +14,7 @@ namespace XWFC
         {
             return ((int)vec.x, (int)vec.y, (int)vec.z);
         }
+        
         public static Vector3 Mult(Vector3 v0, Vector3 v1) => new(v0.x * v1.x, v0.y * v1.y, v0.z * v1.z);
     }
     

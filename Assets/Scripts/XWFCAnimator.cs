@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 using XWFC;
+using Canvas = UnityEngine.Canvas;
+using Vector3 = UnityEngine.Vector3;
 
 public class XWFCAnimator : MonoBehaviour
 {
     [SerializeField] private GameObject unitTilePrefab;
+    [SerializeField] private Canvas tileLabelPrefab;
     public Vector3 extent;
     public float stepSize;
     public Dictionary<int, Terminal> terminals;
@@ -28,6 +31,8 @@ public class XWFCAnimator : MonoBehaviour
 
     private Grid<Drawing> _drawnGrid;
     private HashSetAdjacency _adjacency;
+
+    private HashSet<GameObject> _drawnTerminals;
     
     [Flags]
     private enum StateFlag
@@ -53,8 +58,6 @@ public class XWFCAnimator : MonoBehaviour
             new Vector3(2,1, 2), 
             new Color(.8f, 0, .2f) ,
             null,
-            // new bool[,,]{ { {true, false}, {true, true} } }, 
-            // new bool[,,]{ { {true}, {false}}, {{true}, {true} } }, 
             null
             );
         var t1 = new Terminal(new Vector3(2, 1, 2), new Color(.2f, 0, .8f), new bool[,,]{ { {true, true}, {true, false} } }, null);
@@ -87,13 +90,6 @@ public class XWFCAnimator : MonoBehaviour
             new(1, new List<Relation>() { new(0, null) }, WEST),
             new(1, new List<Relation>() { new(0, null) }, TOP),
             new(1, new List<Relation>() { new(0, null) }, BOTTOM),
-            // 1-1
-            // new(1, new List<Relation>() { new(1, null) }, NORTH),
-            // new(1, new List<Relation>() { new(1, null) }, EAST),
-            // new(1, new List<Relation>() { new(1, null) }, SOUTH),
-            // new(1, new List<Relation>() { new(1, null) }, WEST),
-            // new(1, new List<Relation>() { new(1, null) }, TOP),
-            // new(1, new List<Relation>() { new(1, null) }, BOTTOM),
             // 2-0
             new(2, new List<Relation>() { new(0, null) }, NORTH),
             new(2, new List<Relation>() { new(0, null) }, EAST),
@@ -145,6 +141,14 @@ public class XWFCAnimator : MonoBehaviour
         }
         
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
+        
+        // Set for keeping track of drawn terminals.
+        _drawnTerminals = new HashSet<GameObject>();
+
+        
+        
+        DrawTerminals();
+        
     }
 
     private void InitXWFC()
@@ -184,6 +188,53 @@ public class XWFCAnimator : MonoBehaviour
             Debug.Log("Failed to update terminals.");
             _xwfc = tempXWFC;
         }
+    }
+
+    public void DrawTerminals()
+    {
+        // Draw in z-axis.
+        var start = new Vector3(0,0,-5);
+        var gap = new Vector3(2, 0, 0);
+        foreach (var (key, value) in terminals)
+        {
+            var maxIndex = new Vector3();
+            bool labeled = false;
+            foreach (var (index, _) in value.AtomIndexToIdMapping)
+            {
+                if (maxIndex.x < index.x) maxIndex.x = index.x;
+                var drawnAtom = Instantiate(unitTilePrefab);
+                drawnAtom.transform.position = CalcAtomPosition(start + index);
+                
+                UpdateColorFromTerminal(drawnAtom, key);
+                _drawnTerminals.Add(drawnAtom);
+
+                if (labeled) continue;
+                LabelTerminals(drawnAtom, key.ToString());
+                labeled = true;
+            }
+
+            start += maxIndex;
+            start += gap;
+        }
+        
+    }
+
+    private void LabelTerminals(GameObject parent, string terminalName)
+    {
+        var label = Instantiate(tileLabelPrefab, parent.transform, false);
+        label.GetComponent<RectTransform>().localPosition = new Vector3(0, -2, 2);
+        // offset the position by half the parent size.
+        
+        // TODO: find out how to position dynamically.
+
+        
+        var textComp = label.GetComponentInChildren<TMP_Text>();
+        textComp.text = "Tile: " + terminalName;
+        var rect = textComp.GetComponent<RectTransform>();
+        rect.localPosition = new Vector3();
+        rect.eulerAngles = new Vector3(0, 0, 0);
+        
+        // textComp.transform.position = new Vector3(0, 0, 0);
     }
 
     private Grid<Drawing> InitDrawGrid()
@@ -365,13 +416,24 @@ public class XWFCAnimator : MonoBehaviour
                 var atom = Instantiate(unitTilePrefab);
                 var drawing = new Drawing(status, atom);
                 atom.transform.position = CalcAtomPosition(coord);
-                atom.GetComponent<Renderer>().material.color = GetTerminalColor(status);
+                UpdateColorFromAtom(atom, status);
+                // atom.GetComponent<Renderer>().material.color = GetTerminalColor(status);
                 _drawnGrid.Set(coord, drawing);
             }
         }
     }
 
-    private Color GetTerminalColor(int atomId)
+    private void UpdateColorFromAtom(GameObject obj, int atomId)
+    {
+        obj.GetComponent<Renderer>().material.color = GetTerminalColorFromAtom(atomId);
+    }
+
+    private void UpdateColorFromTerminal(GameObject obj, int tileId)
+    {
+        obj.GetComponent<Renderer>().material.color = terminals[tileId].Color;
+    }
+
+    private Color GetTerminalColorFromAtom(int atomId)
     {
         return _xwfc.AdjMatrix.GetTerminalFromAtomId(atomId).Color;
     }
@@ -394,6 +456,11 @@ public class XWFCAnimator : MonoBehaviour
         if (extent.Equals(newExtent)) return;
         extent = newExtent;
         Reset();
+    }
+
+    public Vector3 GetGridCenter()
+    {
+        return 0.5f * Vector3Util.Mult(_unitSize, extent);
     }
 
     public void UpdateDelay(float value)

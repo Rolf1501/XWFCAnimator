@@ -7,7 +7,7 @@ namespace XWFC
         // public int Id { get; }
         public string Path { get; }
 
-        public Atom(string path = "parts/1x1x1.glb")
+        public Atom(string path = "Assets/Prefabs/SampleTile.prefab")
         {
             // Id = id;
             Path = path;

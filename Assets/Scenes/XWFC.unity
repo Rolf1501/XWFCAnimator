@@ -302,6 +302,7 @@ GameObject:
   m_Component:
   - component: {fileID: 891183410}
   - component: {fileID: 891183409}
+  - component: {fileID: 891183411}
   m_Layer: 0
   m_Name: CameraControl
   m_TagString: Untagged
@@ -316,7 +317,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 891183408}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 46e3ce1e32b349cc9fd4df7f12084a11, type: 3}
   m_Name: 
@@ -339,6 +340,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &891183411
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 891183408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45cadfd670fb404e88bfe8fd208c8a5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Camera: {fileID: 1453727938}
+  PanSpeed: 0
+  Tolerance: 0.001
+  orbitSpeed: 10
 --- !u!1 &1453727936
 GameObject:
   m_ObjectHideFlags: 0
@@ -461,6 +478,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitTilePrefab: {fileID: 8410042719729564467, guid: 3613ece26b5228a4a9482bacca203304, type: 3}
+  tileLabelPrefab: {fileID: 3078947573050405680, guid: f3cbec5e06abcc5409468549833779dd, type: 3}
   extent: {x: 10, y: 1, z: 10}
   stepSize: 20
   delay: 0
