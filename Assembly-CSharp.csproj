@@ -50,6 +50,7 @@
     <Compile Include="Assets\Scripts\CameraMovement.cs" />
     <Compile Include="Assets\Scripts\XWFC\util.cs" />
     <Compile Include="Assets\TabbedMenu\TabbedMenu.cs" />
+    <Compile Include="Assets\Scripts\Auxiliary.cs" />
     <Compile Include="Assets\Scripts\XWFC\collapseQueue.cs" />
     <Compile Include="Assets\Scripts\XWFCAnimator.cs" />
     <Compile Include="Assets\Scripts\XWFC\adjacency.cs" />
@@ -66,6 +67,7 @@
     <Compile Include="Assets\Scripts\XWFC\offset.cs" />
     <Compile Include="Assets\Scripts\XWFC\bidict.cs" />
     <Compile Include="Assets\Scripts\XWFC\color.cs" />
+    <Compile Include="Assets\Scripts\CameraMovementOrbit.cs" />
     <Compile Include="Assets\Scripts\XWFC\timer.cs" />
     <Compile Include="Assets\TabbedMenu\AdjacencyGridController.cs" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />

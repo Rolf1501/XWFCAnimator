@@ -9,6 +9,7 @@ using UnityEngine.UI;
 using UnityEngine.UIElements;
 using XWFC;
 using Button = UnityEngine.UIElements.Button;
+using Toggle = UnityEngine.UIElements.Toggle;
 
 /*
  * Tab handling obtained from: https://docs.unity3d.com/Manual/UIE-create-tabbed-menu-for-runtime.html
@@ -38,7 +39,10 @@ public class TabbedMenu : MonoBehaviour
     private VisualElement _adjGrid;
     private AdjacencyGridController _adjacencyGridController;
     private Button _updateAdjacencyButton;
+
+    private string _tilesetListName = "tilesetListContainer";
     private Button _updateTilesetButton;
+    private HashSet<int> _activeTiles = new();
 
     private void OnEnable()
     {
@@ -90,6 +94,7 @@ public class TabbedMenu : MonoBehaviour
     {
         InitAdjacencyGrid();
         InitGridValues();
+        InitTilesetList();
         AddExtentListeners(_wSlider, _wInput);
         AddExtentListeners(_hSlider, _hInput);
         AddExtentListeners(_dSlider, _dInput);
@@ -213,6 +218,61 @@ public class TabbedMenu : MonoBehaviour
     {
         element.RemoveFromClassList(classRemove);
         element.AddToClassList(classAdd);
+    }
+
+    private void InitTilesetList()
+    {
+        /*
+         * TODO: get collection of all tiles.
+         */
+        var tiles = XWFCAnimator.Instance.completeTerminalSet;
+        var tilesetListContainer = _root.Q<VisualElement>(_tilesetListName);
+        
+        foreach (var tileId in tiles.Keys)
+        {
+            var value = XWFCAnimator.Instance.terminals.Keys.Contains(tileId);
+            var entry = TileEntry(tileId, value);
+            tilesetListContainer.Add(entry);
+            if (value) _activeTiles.Add(tileId);
+        }
+        /*
+         * Upon changing tile set:
+         * Update tileset used in xwfc.
+         * Update visual elements of adjacency. 
+         */
+        var tileDict = _activeTiles.ToDictionary(tileId => tileId, tileId => tiles[tileId]);
+        _updateTilesetButton.clicked += delegate
+        {
+            Debug.Log("Tried updating tileset...");
+            XWFCAnimator.Instance.UpdateTerminals(tileDict);
+            InitAdjacencyGrid();
+        };
+    }
+
+    private VisualElement TileEntry(int tileId, bool toggleValue)
+    {
+        var entry = new VisualElement();
+        entry.name = $"tilesetEntry{tileId}";
+        var toggle = new Toggle();
+        toggle.RegisterValueChangedCallback(delegate { TileToggle(tileId); });
+        toggle.name = $"tilesetEntryToggle{tileId}";
+        toggle.value = toggleValue;
+        entry.Add(toggle);
+        var text = new Label();
+        text.text = $"{tileId}";
+        entry.Add(text);
+        return entry;
+    }
+
+    private void TileToggle(int tileId)
+    {
+        if (_activeTiles.Contains(tileId))
+        {
+            _activeTiles.Remove(tileId);
+            return;
+        }
+
+        _activeTiles.Add(tileId);
     }
 
     private static void ToggleDisabled(VisualElement element)

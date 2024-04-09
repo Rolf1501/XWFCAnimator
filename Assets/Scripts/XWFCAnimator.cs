@@ -14,6 +14,7 @@ public class XWFCAnimator : MonoBehaviour
     public Vector3 extent;
     public float stepSize;
     public Dictionary<int, Terminal> terminals;
+    public Dictionary<int, Terminal> completeTerminalSet = new();
 
     public float delay;
 
@@ -67,6 +68,10 @@ public class XWFCAnimator : MonoBehaviour
         terminals.Add(0, t0);
         terminals.Add(1, t1);
         terminals.Add(2, t2);
+        
+        completeTerminalSet.Add(0, t0);
+        completeTerminalSet.Add(1, t1);
+        completeTerminalSet.Add(2, t2);
         
         var NORTH = new Vector3(0, 0, 1);
         var SOUTH = new Vector3(0, 0, -1);
@@ -450,7 +455,7 @@ public class XWFCAnimator : MonoBehaviour
         _drawnGrid = InitDrawGrid();
         _activeStateFlag = 0;
     }
-
+    
     public void UpdateExtent(Vector3 newExtent)
     {
         if (extent.Equals(newExtent)) return;

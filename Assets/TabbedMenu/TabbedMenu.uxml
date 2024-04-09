@@ -37,11 +37,11 @@
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="AdjacencyViewContent" class="unselectedContent" style="flex-grow: 1;">
-                <!-- <ui:Label name="Tab2" text="TAB2" /> -->
                 <ui:VisualElement name="adjacencyGrid" class="adj-grid-container" />
                 <ui:Button name="updateAdjacencyButton" text="Apply"/>
             </ui:VisualElement>
             <ui:VisualElement name="TilesetContent" class="unselectedContent" style="flex-grow: 1;">
+                <ui:VisualElement name="tilesetListContainer" class="tilesetListContainer" />
                 <ui:Button name="updateTilesetButton" text="Apply"/>
             </ui:VisualElement>
         </ui:VisualElement>
