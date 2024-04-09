@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEngine;
 
 using System.Collections.Generic;
+using System.Text;
 
 namespace XWFC
 {
@@ -488,6 +489,20 @@ namespace XWFC
         public Terminal GetTerminalFromAtomId(int atomId)
         {
             return Terminals[AtomMapping.Get(atomId).Item1];
+        }
+
+        public string AtomAdjacencyMatrixToString(bool flatten = false)
+        {
+            var stringBuilder = new StringBuilder();
+            foreach (var key in AtomAdjacencyMatrix.Keys)
+            {
+                var matrix = AtomAdjacencyMatrix[key];
+                bool[] array = new bool[matrix.GetLength(0) * matrix.GetLength(1)];
+                matrix.CopyTo(array, 0);
+                var s = array.ToString();
+                stringBuilder.Append(string.Join(",", s));
+            }
+            return "";
         }
     }
 

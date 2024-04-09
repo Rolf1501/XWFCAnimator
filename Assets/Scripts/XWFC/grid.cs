@@ -11,7 +11,7 @@ namespace XWFC
         protected int Height { get; }
         protected int Depth { get; }
         public T DefaultFillValue { get; }
-        private T[,,] _grid;
+        protected T[,,] _grid;
         
         protected AbstractGrid(int width, int height, int depth, T defaultFillValue)
         {
@@ -200,10 +200,20 @@ namespace XWFC
         {
             var copy = new Grid<T>(Width, Height, Depth, DefaultFillValue);
             for (int y = 0; y < Height; y++)
-            for (int x = 0; x < Width; x++)
-            for (int z = 0; z < Depth; z++)
-                copy.Set(x, y, z, Get(x, y, z));
+                for (int x = 0; x < Width; x++)
+                    for (int z = 0; z < Depth; z++)
+                        copy.Set(x, y, z, Get(x, y, z));
             return copy;
+        }
+        
+        public T[] Flatten()
+        {
+            var output = new List<T>();
+            for (int y = 0; y < Height; y++)
+                for (int x = 0; x < Width; x++)
+                    for (int z = 0; z < Depth; z++)
+                        output.Add(_grid[y, x, z]);
+            return output.ToArray();
         }
     }
 

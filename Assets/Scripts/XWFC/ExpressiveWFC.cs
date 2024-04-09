@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
-using System.Runtime.CompilerServices;
+using Output;
 using Random = System.Random;
 
 namespace XWFC
@@ -24,13 +25,22 @@ namespace XWFC
         private SavePointManager _savePointManager;
         private int _counter;
         public Stack<Occupation> OccupationLog = new();
-        
+        public bool WriteResults;
+        private OutputParser _outputParser;
+        private readonly Random _random;
+        private int _seed;
+
+
         #nullable enable
         public ExpressiveWFC(Dictionary<int, Terminal> terminals, HashSetAdjacency adjacencyConstraints,
-            Vector3 gridExtent, Dictionary<int, float>? defaultWeights = null)
+            Vector3 gridExtent, Dictionary<int, float>? defaultWeights = null, bool writeResults = false)
         {
             _terminals = terminals;
             GridExtent = gridExtent;
+            
+            _seed = new Random().Next();
+            _random = new Random(_seed);
+            
 
             int[] keys = _terminals.Keys.ToArray();
             AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _terminals);
@@ -42,6 +52,16 @@ namespace XWFC
             
             CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
             CleanState();
+            
+            WriteResults = writeResults;
+            if (!WriteResults) return;
+            var dir = Directory.GetCurrentDirectory();
+            var outPath = Path.Join(dir, "/Assets/Scripts/Output");
+            Debug.Log($"outpath: {outPath}");
+            if (!Directory.Exists(outPath)) Directory.CreateDirectory(outPath);
+            
+            _outputParser = new OutputParser(outPath,"output.csv");
+            _outputParser.WriteConfig(GridExtent, _seed.ToString(), AdjMatrix);
         }
 
         private Vector3 CenterCoord()
@@ -145,6 +165,13 @@ namespace XWFC
             {
                 (tCoord, tId, _) = Collapse(x, y, z);
                 _propQueue.Enqueue(new Propagation(new int[] { tId }, tCoord));
+
+                if (WriteResults)
+                {
+                    var action = new int[AdjMatrix.GetNAtoms()];
+                    action[tId] = 1;
+                    _outputParser.WriteStateAction(GridManager, action);
+                }
             }
             catch (NoMoreChoicesException)
             {
@@ -207,6 +234,9 @@ namespace XWFC
             var choiceWeights = GridManager.ChoiceWeights.Get(x, y, z);
 
             int chosenIndex = RandomChoice(choiceBooleans, choiceWeights);
+            var updatedBool = new bool[AdjMatrix.GetNAtoms()];
+            updatedBool[chosenIndex] = true;
+            GridManager.ChoiceBooleans.Set(x,y,z,updatedBool);
 
             // TODO: move this to propagation instead for early conflict detection.
             if (chosenIndex < 0) throw new NoMoreChoicesException($"No more choice remain for cell {x}, {y}, {z}.");

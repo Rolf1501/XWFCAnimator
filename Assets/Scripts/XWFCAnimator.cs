@@ -149,8 +149,6 @@ public class XWFCAnimator : MonoBehaviour
         
         // Set for keeping track of drawn terminals.
         _drawnTerminals = new HashSet<GameObject>();
-
-        
         
         DrawTerminals();
         
@@ -158,7 +156,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFC()
     {
-        _xwfc = new ExpressiveWFC(terminals, _adjacency, extent);
+        _xwfc = new ExpressiveWFC(terminals, _adjacency, extent, writeResults: true);
         Debug.Log("Initialized XWFC");
     }
 
