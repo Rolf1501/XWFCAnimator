@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.Tilemaps;
 using UnityEngine;
 using Random = System.Random;
 
@@ -246,36 +245,53 @@ namespace XWFC
     public class CollapsePriorityQueue
     {
         private List<Collapse> _list;
-        private HashSet<Vector3> _enqueuedCells;
+        private Bidict<Vector3, Collapse> _enqueuedCells;
 
         public CollapsePriorityQueue()
         {
             _list = new List<Collapse>();
+            _enqueuedCells = new Bidict<Vector3, Collapse>();
         }
         private CollapsePriorityQueue(List<Collapse> list)
         {
             _list = list;
+            _enqueuedCells = new Bidict<Vector3, Collapse>();
+            foreach (var t in list)
+            {
+                _enqueuedCells.AddPair(t.Coord, t);
+            }
+
         }
         
         public void Insert(Vector3 coord, float entropy) { Insert(new Collapse(coord, entropy));}
         public void Insert(Collapse collapse)
         {
-            // if (_enqueuedCells.Contains(collapse.Coord))
-            // {
-            //     // Remove existing entry.
-            // }
-            // if (_list.Count == 0)
-            // {
-            //     _list.Add(collapse);
-            //     return;
-            // }
+            var enqueued = _enqueuedCells.Dict.Keys.Contains(collapse.Coord);
+            if (enqueued)
+            {
+                var enqueuedCollapse = _enqueuedCells.GetValue(collapse.Coord);
+                
+                // No need to update if the to be inserted item is worse.
+                if (collapse.Entropy > enqueuedCollapse.Entropy) return;
+                _list.Remove(enqueuedCollapse);
+            }
+            
             int i = 0;
-            while (i < _list.Count && _list[i].Entropy >= collapse.Entropy)
+            while (i < _list.Count && _list[i].Entropy <= collapse.Entropy)
             {
                 i++;
             }
-            if (i == _list.Count) _list.Add(collapse);
-            else _list.Insert(i, collapse);
+
+            if (i == _list.Count)
+            {
+                _list.Add(collapse);
+            }
+            else
+            {
+                _list.Insert(i, collapse);
+            }
+            
+            _enqueuedCells.AddPair(collapse.Coord, new Collapse(collapse.Coord, collapse.Entropy));
         }
 
         private int FindIndex(Collapse collapse, bool findInsertion=false)
@@ -324,7 +340,7 @@ namespace XWFC
         public Collapse DeleteHead()
         {
             var output = _list[0];
-            _list.Remove(_list[0]);
+            _list.RemoveAt(0);
             return output;
         }
 

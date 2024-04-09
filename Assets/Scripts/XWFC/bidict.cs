@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace XWFC
 {
@@ -15,8 +16,23 @@ namespace XWFC
 
         public void AddPair(TKey key, TValue value)
         {
-            Dict.Add(key, value);
-            _inverse.Add(value, key);
+            if (Dict.Keys.Contains(key))
+            {
+                Dict[key] = value;
+            }
+            else
+            {
+                Dict.Add(key, value);
+            }
+
+            if (_inverse.Keys.Contains(value))
+            {
+                _inverse[value] = key;
+            }
+            else
+            {
+                _inverse.Add(value, key);
+            }
         }
 
         public TKey Get(TValue value)
