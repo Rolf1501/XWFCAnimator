@@ -479,6 +479,7 @@ MonoBehaviour:
   tileLabelPrefab: {fileID: 3078947573050405680, guid: f3cbec5e06abcc5409468549833779dd, type: 3}
   extent: {x: 6, y: 6, z: 6}
   stepSize: 20
+  seed: 10
   delay: 0
 --- !u!4 &1830932354
 Transform:
