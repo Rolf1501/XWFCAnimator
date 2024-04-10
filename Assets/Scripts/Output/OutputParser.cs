@@ -138,7 +138,7 @@ namespace Output
             {
                 builder.Append(collapse + ",");
             }
-            File.WriteAllText(file, builder.ToString());
+            File.AppendAllText(file, builder.ToString());
         }
         
         public string FilePath(string fileName)
