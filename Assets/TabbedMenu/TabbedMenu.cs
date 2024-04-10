@@ -36,6 +36,7 @@ public class TabbedMenu : MonoBehaviour
     private Button _resetButton;
 
     private string _adjacencyGridName = "adjacencyGrid";
+    private string _adjacencyToggleContainer = "adjacencyToggleContainer";
     private VisualElement _adjGrid;
     private AdjacencyGridController _adjacencyGridController;
     private Button _updateAdjacencyButton;
@@ -43,6 +44,11 @@ public class TabbedMenu : MonoBehaviour
     private string _tilesetListName = "tilesetListContainer";
     private Button _updateTilesetButton;
     private HashSet<int> _activeTiles = new();
+
+    private const string HiddenClassName = "hidden";
+    private const string SelectedClassName = "selected";
+    private readonly Vector3 _defaultDirection = Vector3.right;
+    
 
     private void OnEnable()
     {
@@ -164,14 +170,8 @@ public class TabbedMenu : MonoBehaviour
         XWFCAnimator.Instance.UpdateExtent(new Vector3(_wSlider.value, _hSlider.value, _dSlider.value));
     }
 
-    private void InitAdjacencyGrid()
+    private Bidict<string, Vector3> GetOffsetNamesMapping()
     {
-        _adjGrid = _root.Q<VisualElement>(_adjacencyGridName);
-        _adjacencyGridController = new AdjacencyGridController(XWFCAnimator.Instance.GetTiles().Keys.ToList(), XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
-        var grids = _adjacencyGridController.Grids;
-        var dropDown = new DropdownField();
-        _adjGrid.Add(dropDown);
-
         var directionNames = new Bidict<string, Vector3>();
         directionNames.AddPair("North", Vector3.forward);
         directionNames.AddPair("East", Vector3.right);
@@ -179,39 +179,74 @@ public class TabbedMenu : MonoBehaviour
         directionNames.AddPair("West", Vector3.left);
         directionNames.AddPair("Up", Vector3.up);
         directionNames.AddPair("Down", Vector3.down);
+        return directionNames;
+    }
 
+    private void InitAdjacencyDropDown()
+    {
+        var dropDown = new DropdownField();
+        _adjGrid.Add(dropDown);
 
+        var directionNames = GetOffsetNamesMapping();
+        
         var offsets = XWFCAnimator.Instance.GetOffsets();
         foreach (var offset in offsets)
         {
             var directionName = directionNames.GetKey(offset);
             dropDown.choices.Add(directionName);
+        }
+        
+        dropDown.value = directionNames.GetKey(_defaultDirection);
+        
+        dropDown.RegisterValueChangedCallback(delegate
+        {
+            var element = _adjGrid.Q<VisualElement>(className: SelectedClassName);
+            SwitchClass(element, SelectedClassName, HiddenClassName);
+
+            var showGrid = _adjGrid.Q<VisualElement>(dropDown.value);
+            SwitchClass(showGrid, HiddenClassName, SelectedClassName);
+            
+            Debug.Log($"VALUE CHANGED TO {dropDown.value}");
+        });
+    }
+
+    private void InitAdjacencyToggles()
+    {
+        var toggles = _adjGrid.Q<VisualElement>(_adjacencyToggleContainer);
+        if (toggles != null)
+        {
+            toggles.Clear();
+        }
+        else
+        {
+            toggles = new VisualElement();
+            toggles.name = _adjacencyToggleContainer;
+        }
+
+        _adjacencyGridController = new AdjacencyGridController(XWFCAnimator.Instance.GetTiles().Keys.ToList(), XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
+        var directionNames = GetOffsetNamesMapping();
+        var offsets = XWFCAnimator.Instance.GetOffsets();
+        var grids = _adjacencyGridController.Grids;
+
+        foreach (var offset in offsets)
+        {
+            var directionName = directionNames.GetKey(offset);
             var gridContainer = new VisualElement();
             gridContainer.name = directionName;
             gridContainer.AddToClassList("hidden");
             gridContainer.Add(grids[offset]);
-            _adjGrid.Add(gridContainer);
+            toggles.Add(gridContainer);
         }
+        _adjGrid.Add(toggles);
+        var defaultChoice =  _adjGrid.Q<VisualElement>(directionNames.GetKey(_defaultDirection));
+        SwitchClass(defaultChoice, HiddenClassName, SelectedClassName);
+    }
 
-        var hiddenClass = "hidden";
-        var selectedClass = "selected";
-        
-        var defaultDirection = Vector3.right;
-        var defaultDirectionName = directionNames.GetKey(defaultDirection);
-        var defaultChoice =  _adjGrid.Q<VisualElement>(defaultDirectionName);
-        
-        dropDown.value = defaultDirectionName;
-        SwitchClass(defaultChoice, hiddenClass, selectedClass);
-        dropDown.RegisterValueChangedCallback(delegate
-        {
-            var element = _adjGrid.Q<VisualElement>(className: selectedClass);
-            SwitchClass(element, selectedClass, hiddenClass);
-
-            var showGrid = _adjGrid.Q<VisualElement>(dropDown.value);
-            SwitchClass(showGrid, hiddenClass, selectedClass);
-            
-            Debug.Log($"VALUE CHANGED TO {dropDown.value}");
-        });
+    private void InitAdjacencyGrid()
+    {
+        _adjGrid = _root.Q<VisualElement>(_adjacencyGridName);
+        InitAdjacencyDropDown();
+        InitAdjacencyToggles();
     }
     
     private static void SwitchClass(VisualElement element, string classRemove, string classAdd)
@@ -240,12 +275,13 @@ public class TabbedMenu : MonoBehaviour
          * Update tileset used in xwfc.
          * Update visual elements of adjacency. 
          */
-        var tileDict = _activeTiles.ToDictionary(tileId => tileId, tileId => tiles[tileId]);
         _updateTilesetButton.clicked += delegate
         {
+            var tileDict = _activeTiles.ToDictionary(tileId => tileId, tileId => tiles[tileId]);
             Debug.Log("Tried updating tileset...");
             XWFCAnimator.Instance.UpdateTerminals(tileDict);
-            InitAdjacencyGrid();
+            
+            InitAdjacencyToggles();
         };
     }
 
