@@ -15,6 +15,7 @@ public class XWFCAnimator : MonoBehaviour
     public float stepSize;
     public Dictionary<int, Terminal> terminals;
     public Dictionary<int, Terminal> completeTerminalSet = new();
+    [SerializeField] private int seed = -1;
 
     public float delay;
 
@@ -156,7 +157,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFC()
     {
-        _xwfc = new ExpressiveWFC(terminals, _adjacency, extent, writeResults: true);
+        _xwfc = new ExpressiveWFC(terminals, _adjacency, extent, writeResults: true, seed: seed);
         Debug.Log("Initialized XWFC");
     }
 

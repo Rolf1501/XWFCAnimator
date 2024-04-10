@@ -27,19 +27,20 @@ namespace XWFC
         public Stack<Occupation> OccupationLog = new();
         public bool WriteResults;
         private OutputParser _outputParser;
-        private readonly Random _random;
+        private static Random _seededRandom;
         private int _seed;
 
 
         #nullable enable
         public ExpressiveWFC(Dictionary<int, Terminal> terminals, HashSetAdjacency adjacencyConstraints,
-            Vector3 gridExtent, Dictionary<int, float>? defaultWeights = null, bool writeResults = false)
+            Vector3 gridExtent, Dictionary<int, float>? defaultWeights = null, bool writeResults = false, int? seed = null)
         {
             _terminals = terminals;
             GridExtent = gridExtent;
             
-            _seed = new Random().Next();
-            _random = new Random(_seed);
+            _seed = seed ?? new Random().Next();
+            _seededRandom = new Random(_seed);
+            Debug.Log($"Seed:{_seed}");
             
             int[] keys = _terminals.Keys.ToArray();
             AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _terminals);
@@ -271,7 +272,7 @@ namespace XWFC
 
             if (total <= 0) return -1;
 
-            double random = new Random().NextDouble() * total;
+            double random = _seededRandom.NextDouble() * total;
             float acc = 0;
             for (int i = 0; i < choiceWeights.Length; i++)
             {
