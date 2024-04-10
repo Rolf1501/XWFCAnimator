@@ -244,17 +244,18 @@ namespace XWFC
     
     public class CollapsePriorityQueue
     {
-        private List<Collapse> _list;
+        public List<Collapse> List { get; private set; }
         private Bidict<Vector3, Collapse> _enqueuedCells;
 
         public CollapsePriorityQueue()
         {
-            _list = new List<Collapse>();
+            List = new List<Collapse>();
             _enqueuedCells = new Bidict<Vector3, Collapse>();
         }
+        
         private CollapsePriorityQueue(List<Collapse> list)
         {
-            _list = list;
+            List = list;
             _enqueuedCells = new Bidict<Vector3, Collapse>();
             foreach (var t in list)
             {
@@ -273,22 +274,22 @@ namespace XWFC
                 
                 // No need to update if the to be inserted item is worse.
                 if (collapse.Entropy > enqueuedCollapse.Entropy) return;
-                _list.Remove(enqueuedCollapse);
+                List.Remove(enqueuedCollapse);
             }
             
             int i = 0;
-            while (i < _list.Count && _list[i].Entropy <= collapse.Entropy)
+            while (i < List.Count && List[i].Entropy <= collapse.Entropy)
             {
                 i++;
             }
 
-            if (i == _list.Count)
+            if (i == List.Count)
             {
-                _list.Add(collapse);
+                List.Add(collapse);
             }
             else
             {
-                _list.Insert(i, collapse);
+                List.Insert(i, collapse);
             }
             
             _enqueuedCells.AddPair(collapse.Coord, new Collapse(collapse.Coord, collapse.Entropy));
@@ -297,11 +298,11 @@ namespace XWFC
         private int FindIndex(Collapse collapse, bool findInsertion=false)
         {
             // Divide and Conquer Log_2(n)
-            var (start, end) = (0, _list.Count);
+            var (start, end) = (0, List.Count);
             while (true)
             {
                 int center = (int)(end - start * 0.5);
-                var current = _list[center];
+                var current = List[center];
                 if (Math.Abs(current.Entropy - collapse.Entropy) < 0.0001)
                 {
                     // found location.
@@ -329,25 +330,25 @@ namespace XWFC
 
         public Collapse PeekHead()
         {
-            return _list[0];
+            return List[0];
         }
 
         public bool IsDone()
         {
-            return _list.Count == 0;
+            return List.Count == 0;
         }
 
         public Collapse DeleteHead()
         {
-            var output = _list[0];
-            _list.RemoveAt(0);
+            var output = List[0];
+            List.RemoveAt(0);
             return output;
         }
 
         public CollapsePriorityQueue Copy()
         {
             var copy = new List<Collapse>();
-            foreach (var c in _list) 
+            foreach (var c in List) 
                 copy.Add(new Collapse(new Vector3(c.Coord.x, c.Coord.y, c.Coord.z), c.Entropy));
             var output = new CollapsePriorityQueue(copy);
             return output;
@@ -694,6 +695,11 @@ public record Collapse
     public Collapse Copy()
     {
         return new Collapse(new Vector3(Coord.x, Coord.y, Coord.z), Entropy);
+    }
+
+    public override string ToString()
+    {
+        return $"{Coord},{Entropy}";
     }
 }
 

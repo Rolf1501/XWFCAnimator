@@ -41,7 +41,6 @@ namespace XWFC
             _seed = new Random().Next();
             _random = new Random(_seed);
             
-
             int[] keys = _terminals.Keys.ToArray();
             AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _terminals);
 
@@ -171,6 +170,7 @@ namespace XWFC
                     var action = new int[AdjMatrix.GetNAtoms()];
                     action[tId] = 1;
                     _outputParser.WriteStateAction(GridManager, action);
+                    _outputParser.WriteStateActionQueue(GridManager, action, _collapseQueue);
                 }
             }
             catch (NoMoreChoicesException)
@@ -254,8 +254,7 @@ namespace XWFC
             GridManager = savePoint.GridManager.Deepcopy();
             _collapseQueue = savePoint.CollapseQueue.Copy();
             _counter = savePoint.Counter;
-
-        
+            
             // Important: clean the propagation queue.
             _propQueue.Clear();
             return undoneCells;

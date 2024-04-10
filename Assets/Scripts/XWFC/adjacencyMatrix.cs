@@ -491,18 +491,27 @@ namespace XWFC
             return Terminals[AtomMapping.Get(atomId).Item1];
         }
 
-        public string AtomAdjacencyMatrixToString(bool flatten = false)
+        public string AtomAdjacencyMatrixToFlattenedString()
         {
+            /*
+             * Structure:
+             * offset: 1 cell.
+             * atom adjacency constraints: nAtoms * nAtoms cells.
+             */
             var stringBuilder = new StringBuilder();
             foreach (var key in AtomAdjacencyMatrix.Keys)
             {
+                stringBuilder.Append(key + ",");
                 var matrix = AtomAdjacencyMatrix[key];
-                bool[] array = new bool[matrix.GetLength(0) * matrix.GetLength(1)];
-                matrix.CopyTo(array, 0);
-                var s = array.ToString();
-                stringBuilder.Append(string.Join(",", s));
+                for (int i = 0; i < matrix.GetLength(0); i++)
+                {
+                    for (int j = 0; j < matrix.GetLength(1); j++)
+                    {
+                        stringBuilder.Append(matrix[i,j] + ",");
+                    }
+                }
             }
-            return "";
+            return stringBuilder.ToString();
         }
     }
 
