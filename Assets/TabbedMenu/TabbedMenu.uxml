@@ -2,9 +2,9 @@
     <Style src="project://database/Assets/TabbedMenu/TabbedMenuStyle.uss?fileID=7433441132597879392&amp;guid=f7856d187769aae4bb4bd640bca80d66&amp;type=3#TabbedMenuStyle" />
     <ui:VisualElement name="container" class="container">
         <ui:VisualElement name="tabs" style="flex-grow: 1;">
-            <ui:Label text="Grid" name="GridControlTab" class="tab currentlySelectedTab" />
-            <ui:Label text="Adjacency View" name="AdjacencyViewTab" class="tab" />
-            <ui:Label text="Tileset" name="TilesetTab" class="tab" />
+            <ui:Label text="Grid" name="GridControlTab" class="tab currentlySelectedTab small" />
+            <ui:Label text="Adjacency View" name="AdjacencyViewTab" class="tab large" action="container, width, 100%, max-width, 100%"/>
+            <ui:Label text="Tileset" name="TilesetTab" class="tab large" action="container, width, 100%, max-width, 100%"/>
         </ui:VisualElement>
         <ui:VisualElement name="tabContent">
             <ui:VisualElement name="GridControlContent">
