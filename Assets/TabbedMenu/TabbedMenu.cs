@@ -166,7 +166,6 @@ public class TabbedMenu : MonoBehaviour
 
     private void UpdateExtent()
     {
-        Debug.Log("Tried updating width.");
         XWFCAnimator.Instance.UpdateExtent(new Vector3(_wSlider.value, _hSlider.value, _dSlider.value));
     }
 
@@ -257,9 +256,6 @@ public class TabbedMenu : MonoBehaviour
 
     private void InitTilesetList()
     {
-        /*
-         * TODO: get collection of all tiles.
-         */
         var tiles = XWFCAnimator.Instance.completeTerminalSet;
         var tilesetListContainer = _root.Q<VisualElement>(_tilesetListName);
         
@@ -289,6 +285,7 @@ public class TabbedMenu : MonoBehaviour
     {
         var entry = new VisualElement();
         entry.name = $"tilesetEntry{tileId}";
+        entry.AddToClassList("tile-entry");
         var toggle = new Toggle();
         toggle.RegisterValueChangedCallback(delegate { TileToggle(tileId); });
         toggle.name = $"tilesetEntryToggle{tileId}";

@@ -41,7 +41,7 @@
                 <ui:Button name="updateAdjacencyButton" text="Apply"/>
             </ui:VisualElement>
             <ui:VisualElement name="TilesetContent" class="unselectedContent" style="flex-grow: 1;">
-                <ui:VisualElement name="tilesetListContainer" class="tilesetListContainer" />
+                <ui:VisualElement name="tilesetListContainer" class="tileset-list-container" />
                 <ui:Button name="updateTilesetButton" text="Apply"/>
             </ui:VisualElement>
         </ui:VisualElement>

@@ -167,8 +167,20 @@ Button:active {
 .adj-grid-container .row {
     display: flex;
     flex-direction: row;
+    justify-content: space-around;
+}
+
+.tile-entry {
+    display: flex;
+    flex-direction: row;
 }
 
 .hidden {
     display: none;
+}
+
+.tileset-list-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
 }

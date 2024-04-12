@@ -224,7 +224,7 @@ public class AdjacencyGridController
         _backendGrid[offset][sourceIndex, otherIndex] = val;
         if (symmetric) _backendGrid[Vector3Util.Negate(offset)][otherIndex, sourceIndex] = val;
 
-        Debug.Log($"CHANGES CELL: {source} {other}.\nUPDATED GRID: {offset} and {Vector3Util.Negate(offset)}");
+        Debug.Log($"CHANGED CELL: {source} {other}.\nUPDATED GRID: {offset} and {Vector3Util.Negate(offset)}");
         
     }
 

@@ -100,43 +100,4 @@ public class TabbedMenuController
     {
         return _root.Q(GenerateContentName(tab));
     }
-
-    public void ParseAction(string action)
-    {
-        var splitAction = action.Split(",");
-        if (splitAction.Length <= 0) return;
-        
-        var className = splitAction[0];
-        var element = _root.Q<VisualElement>(className);
-            
-        for (int i = 1; i < splitAction.Length - 1; i++)
-        {
-            var property = splitAction[i];
-            var value = splitAction[i + 1];
-            StyleLength? length = ValueToLength(value, "%") ?? ValueToLength(value, "px");
-            i++;
-            if (length == null) continue;
-                
-            switch (property)
-            {
-                case "width":
-                    element.style.width = (StyleLength)length;
-                    break;
-                case "max-width":
-                    element.style.maxWidth = (StyleLength)length;
-                    break;
-            }
-        }
-    }
-
-    private static StyleLength? ValueToLength(string value, string unit)
-    {
-        var valueSplit = value.Split(unit);
-        if (value.EndsWith(unit))
-        {
-            return new StyleLength(float.Parse(valueSplit[0])); 
-        }
-
-        return null;
-    }
 }
