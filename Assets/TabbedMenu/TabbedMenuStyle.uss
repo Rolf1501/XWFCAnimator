@@ -1,3 +1,11 @@
+:root {
+    --color-white-transparent: rgba(255,255,255,0.4);
+    --color-grey-light: rgb(173, 166, 166);
+    --color-grey-light2: rgb(229, 223, 223);
+    --transparent: rgba(0,0,0,0);
+    --offset: 5px;
+}
+
 #tabs {
     flex-direction: row;
     font-size: 12px;
@@ -5,10 +13,13 @@
     min-height: 30px;
     max-height: 30px;
     width: 100%;
-    background-color: rgba(255,255,255,0.4);
+    max-width: 300px;
+    background-color: var(--color-white-transparent);
     padding: 0;
     margin-bottom: 5px;
     border-radius: 3px;
+    right: 0;
+    align-self: flex-end;
 }
 
 .tab {
@@ -16,37 +27,34 @@
     border-radius: 3px;
 }
 
-/* Adds background color for the selected tab */
 .currentlySelectedTab {
-    background-color: rgb(173, 166, 166);
+    background-color: var(--color-grey-light);
 }
 
 .container {
     max-width: 300px;
     width: 30%;
     max-height: 95%;
-    margin: 5px;
+    margin: var(--offset);
     position: absolute;
     right: 0;
     top: 0;
     border-radius: 3px;
-    background-color: rgba(255,255,255,0.4);
-    padding: 5px;
+    background-color: var(--color-white-transparent);
+    padding: var(--offset);
+    justify-content: space-between;
 }
 
-/* Style for tabContent */
 #tabContent {
-    /*background-color: rgb(255, 255, 255);*/
     font-size: 12px;
 }
 
-/* Hides the unselected tab content */
 .unselectedContent {
     display: none;
 }
 
 .unity-base-text-field__input {
-    background-color: rgba(0,0,0,0);
+    background-color: var(--transparent);
     height: 30px;
     padding: 0 3px;
     margin: 0;
@@ -68,7 +76,7 @@ SliderInt {
     flex-direction: row;
     flex-grow: 1;
     justify-content: flex-end;
-    padding: 5px;
+    padding: var(--offset);
     -unity-text-align: middle-center;
 }
 
@@ -86,11 +94,10 @@ SliderInt {
     display: flex;
     flex-direction: row;
     justify-content: flex-start;
-    /*-unity-text-align: lower-right;*/
 }
 
 .adj-grid-container .row:hover {
-    background-color: rgba(255,255,255,0.4);
+    background-color: var(--color-white-transparent);
 }
 
 .adj-grid-container .header:hover {
@@ -126,10 +133,6 @@ SliderInt {
     margin-top: 5px;
 }
 
-/*.collapse-button-container Button {*/
-/*    margin-top: 5px;*/
-/*}*/
-
 .two-cols {
     width: 48%;
 }
@@ -140,20 +143,20 @@ SliderInt {
 
 Button {
     height: 30px;
-    background-color: rgb(229, 223, 223);
+    background-color: var(--color-grey-light2);
     margin: 0;
 }
 
 Button:active {
-    background-color: darkgray;
+    background-color: var(--color-grey-light);
 }
 
 .disabled-button {
-    background-color: darkgray;
+    background-color: var(--color-grey-light);
 }
 
 .enabled-button {
-    background-color: rgb(229, 223, 223);
+    background-color: var(--color-grey-light2);
 }
 
 .adj-grid-container {
