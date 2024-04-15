@@ -353,9 +353,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Camera: {fileID: 1453727938}
-  PanSpeed: 0
-  Tolerance: 0.001
-  orbitSpeed: 10
+  orbitOrigin: {x: 0, y: 0, z: 0}
 --- !u!1 &1453727936
 GameObject:
   m_ObjectHideFlags: 0
@@ -410,9 +408,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0.2
+    y: 0
     width: 1
-    height: 0.8
+    height: 1
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
