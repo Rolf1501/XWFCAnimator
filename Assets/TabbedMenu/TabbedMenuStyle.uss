@@ -137,9 +137,13 @@ Button:active {
 }
 
 .tile-entry {
-    display: flex;
     flex-direction: row;
 }
+/*.tile-entry-container {*/
+/*    flex-direction: row;*/
+/*    background-color: red;*/
+/*    justify-content: center;*/
+/*}*/
 
 .hidden {
     display: none;
@@ -147,8 +151,9 @@ Button:active {
 
 .tileset-list-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     justify-content: space-around;
+    margin-bottom: var(--offset);
 }
 
 /*

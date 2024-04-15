@@ -9,7 +9,7 @@ namespace XWFC
 {
     public class ExpressiveWFC
     {
-        private readonly Dictionary<int, Terminal> _terminals;
+        private readonly TileSet _tileSet;
         public Vector3 GridExtent;
         private Vector3 _startCoord;
         private readonly Dictionary<int, float> _defaultWeights;
@@ -26,14 +26,14 @@ namespace XWFC
         public Stack<Occupation> OccupationLog = new();
         
         #nullable enable
-        public ExpressiveWFC(Dictionary<int, Terminal> terminals, HashSetAdjacency adjacencyConstraints,
+        public ExpressiveWFC(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
             Vector3 gridExtent, Dictionary<int, float>? defaultWeights = null)
         {
-            _terminals = terminals;
+            _tileSet = tileSet;
             GridExtent = gridExtent;
 
-            int[] keys = _terminals.Keys.ToArray();
-            AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _terminals);
+            int[] keys = _tileSet.Keys.ToArray();
+            AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _tileSet);
 
             _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
             _defaultWeights = ExpandDefaultWeights(defaultWeights);
@@ -77,7 +77,7 @@ namespace XWFC
              */
 
             // If the number of weights is neither equal to the number of atoms or the number of terminals, set all weights of all atoms to 1.
-            if (defaultWeights == null || defaultWeights.Count != _terminals.Count)
+            if (defaultWeights == null || defaultWeights.Count != _tileSet.Count)
             {
                 return Enumerable.Range(0, AdjMatrix.GetNAtoms()).ToDictionary(k => k, v => 1f);
             }

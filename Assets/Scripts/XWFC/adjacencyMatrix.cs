@@ -12,7 +12,7 @@ namespace XWFC
     {
         private int[] TileIds { get; }
         public HashSetAdjacency TileAdjacencyConstraints { get; } // Set of tile adjacency constraints.
-        private Dictionary<int, Terminal> Terminals { get; }
+        private TileSet TileSet { get; }
         private int OffsetsDimensions { get; } // Set the number of dimensions to operate in.
         public HashSetAdjacency AtomAdjacencies { get; private set; } // Set of atom adjacency constraints.
         private Vector3[] Offsets { get; }
@@ -25,11 +25,11 @@ namespace XWFC
         public Dictionary<int, (int, int)> TileAtomRangeMapping { get; } // Reserves an index range for the atoms of the tile.
         public Dictionary<int, HashSetAdjacency> TileAdjacencyMapping { get; private set; }
 
-        public AdjacencyMatrix(int[] tileIds, HashSetAdjacency tileAdjacencyConstraints, Dictionary<int, Terminal> terminals, int offsetsDimensions = 3)
+        public AdjacencyMatrix(int[] tileIds, HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, int offsetsDimensions = 3)
         {
             TileIds = tileIds;
             TileAdjacencyConstraints = tileAdjacencyConstraints;
-            Terminals = terminals;
+            TileSet = tileSet;
             OffsetsDimensions = offsetsDimensions;
             AtomAdjacencies = new HashSetAdjacency();
             AtomMapping = new Bidict<(int, Vector3, int), int>();
@@ -80,7 +80,7 @@ namespace XWFC
             // Map each terminal to a range in the mapping list.
             foreach (int p in TileIds)
             {
-                Terminal t = Terminals[p];
+                Terminal t = TileSet[p];
                 int tAtoms = CalcAtomRange(t);
                 TileAtomRangeMapping[p] = (nAtoms, nAtoms + tAtoms);
                 nAtoms += tAtoms;
@@ -104,7 +104,7 @@ namespace XWFC
              */
             foreach (int p in TileIds)
             {
-                Terminal t = Terminals[p];
+                Terminal t = TileSet[p];
                 CreatePartToIndexEntry(p, t);
 
                 foreach (int d in t.DistinctOrientations)
@@ -168,8 +168,8 @@ namespace XWFC
              */
             var (ox, oy, oz) = Vector3Util.CastInt(offset);
             int offsetDirectionIndex = Array.FindIndex(new int[] { ox, oy, oz }, e => e != 0);
-            Terminal thisT = Terminals[thisId];
-            Terminal thatT = Terminals[thatId];
+            Terminal thisT = TileSet[thisId];
+            Terminal thatT = TileSet[thatId];
             var thisVmAdj = new VoidMaskAdjacencyData(
                 thisT,
                 thisId,
@@ -487,7 +487,7 @@ namespace XWFC
 
         public Terminal GetTerminalFromAtomId(int atomId)
         {
-            return Terminals[AtomMapping.Get(atomId).Item1];
+            return TileSet[AtomMapping.Get(atomId).Item1];
         }
     }
 
