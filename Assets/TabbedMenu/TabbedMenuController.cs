@@ -1,4 +1,6 @@
 // This script defines the tab selection logic.
+
+using System.Linq;
 using UnityEngine.UIElements;
 
 /*
@@ -16,6 +18,7 @@ public class TabbedMenuController
     private const string TabNameSuffix = "Tab";
     // Define the suffix of the tab content name
     private const string ContentNameSuffix = "Content";
+    private const string ContainerName = "container";
 
     private readonly VisualElement _root;
 
@@ -65,6 +68,17 @@ public class TabbedMenuController
         tab.AddToClassList(CurrentlySelectedTabClassName);
         VisualElement content = FindContent(tab);
         content.RemoveFromClassList(UnselectedContentClassName);
+        var container = _root.Q<VisualElement>(ContainerName);
+        if (tab.GetClasses().Contains("small"))
+        {
+            container.style.width = new StyleLength(Length.Percent(30));
+            container.style.maxWidth = new StyleLength(300);
+        }
+        else if (tab.GetClasses().Contains("large"))
+        {
+            container.style.width = new StyleLength(Length.Percent(95));
+            container.style.maxWidth = new StyleLength(Length.Percent(95));
+        }
     }
 
     /* Method for the unselected tab: 
