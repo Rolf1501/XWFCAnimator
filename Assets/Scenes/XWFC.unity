@@ -480,7 +480,9 @@ MonoBehaviour:
   extent: {x: 3, y: 3, z: 3}
   stepSize: 20
   seed: -1
+  WriteResults: 1
   delay: 0
+  AllowBacktracking: 0
 --- !u!4 &1830932354
 Transform:
   m_ObjectHideFlags: 0

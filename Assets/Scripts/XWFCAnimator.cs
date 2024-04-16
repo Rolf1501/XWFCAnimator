@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 using XWFC;
 using Canvas = UnityEngine.Canvas;
@@ -39,6 +37,7 @@ public class XWFCAnimator : MonoBehaviour
     private HashSetAdjacency _adjacency;
 
     private HashSet<GameObject> _drawnTiles;
+    public bool AllowBacktracking = true;
     
     [Flags]
     private enum StateFlag
@@ -160,7 +159,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFC()
     {
-        _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent, writeResults:WriteResults);
+        _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent, writeResults:WriteResults, allowBacktracking:AllowBacktracking);
         Debug.Log("Initialized XWFC");
     }
 
@@ -449,7 +448,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public void Reset()
     {
-        _xwfc.UpdateExtent(extent);
+        _xwfc.Reset();
         _drawnGrid.Map(Drawing.DestroyAtom);
         _drawnGrid = InitDrawGrid();
         _activeStateFlag = 0;
@@ -459,6 +458,7 @@ public class XWFCAnimator : MonoBehaviour
     {
         if (extent.Equals(newExtent)) return;
         extent = newExtent;
+        _xwfc.UpdateExtent(extent);
         Reset();
     }
 

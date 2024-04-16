@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 using System.Linq;
+using System.Net;
 
 namespace XWFC
 {
@@ -11,20 +12,28 @@ namespace XWFC
     {
         private string _directoryPath;
         private readonly string _fileName;
-        private readonly string _timeStamp;
+        private string _timeStamp;
         private const string StateActionPrefix = "state-action";
         private const string ConfigPrefix = "config";
         private const string StateActionQueuePrefix = "state-action-queue";
+        private string _configPath;
+        private string _stateActionPath;
+        private string _stateActionQueuePath;
 
         public TrainingDataFormatter(string directory, string fileName)
         {
             _directoryPath = directory;
             _fileName = fileName;
             // Time stamp used to uniquely identify data files.
-            _timeStamp = FormatTimeStamp(DateTime.Now.ToString(CultureInfo.InvariantCulture));
+            InitTimeStamp();
             InitConfig();
             InitStateAction();
             InitStateActionQueue();
+        }
+
+        private void InitTimeStamp()
+        {
+            _timeStamp = FormatTimeStamp(DateTime.Now.ToString(CultureInfo.InvariantCulture));
         }
 
         private static string FormatTimeStamp(string timeStamp)
@@ -48,6 +57,7 @@ namespace XWFC
             var file = CreateFile(ConfigPrefix);
             string header = "gridSizeX,gridSizeY,gridSizeZ,randomSeed,adjacencyMatrix";
             builder.Append(header + "\n");
+            _configPath = file;
             File.WriteAllText(file, builder.ToString());
         }
         
@@ -72,6 +82,7 @@ namespace XWFC
             var file = CreateFile(StateActionPrefix);
             builder.Append("state,action");
             builder.Append("\n");
+            _stateActionPath = file;
             File.WriteAllText(file, builder.ToString());
         }
         
@@ -141,6 +152,7 @@ namespace XWFC
             var file = CreateFile(StateActionQueuePrefix);
             builder.Append("state,action,queue");
             builder.Append("\n");
+            _stateActionQueuePath = file;
             File.WriteAllText(file, builder.ToString());
         }
 
@@ -167,6 +179,17 @@ namespace XWFC
         public string FilePath(string fileName)
         {
             return Path.Join(_directoryPath, fileName);
+        }
+
+        public void Reset()
+        {
+            File.Delete(_configPath);
+            File.Delete(_stateActionPath);
+            File.Delete(_stateActionQueuePath);
+            // InitTimeStamp();
+            InitConfig();
+            InitStateAction();
+            InitStateActionQueue();
         }
     }
 }

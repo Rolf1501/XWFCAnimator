@@ -28,11 +28,12 @@ namespace XWFC
         private TrainingDataFormatter _trainingDataFormatter;
         private static Random _seededRandom;
         private int _seed;
+        private bool _allowBacktracking;
 
 
-        #nullable enable
+#nullable enable
         public ExpressiveWFC(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
-            Vector3Int gridExtent, Dictionary<int, float>? defaultWeights = null, bool writeResults = false, int? seed = null)
+            Vector3Int gridExtent, Dictionary<int, float>? defaultWeights = null, bool writeResults = false, int? seed = null, bool allowBacktracking = true)
         {
             _tileSet = tileSet;
             GridExtent = gridExtent;
@@ -40,7 +41,8 @@ namespace XWFC
             _seed = seed ?? new Random().Next();
             _seededRandom = new Random(_seed);
             Debug.Log($"Seed:{_seed}");
-            
+
+            _allowBacktracking = allowBacktracking;
 
             int[] keys = _tileSet.Keys.ToArray();
             AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _tileSet);
@@ -182,6 +184,13 @@ namespace XWFC
             }
             catch (NoMoreChoicesException)
             {
+                if (!_allowBacktracking)
+                {
+                    // Reset and start over.
+                    _trainingDataFormatter.Reset();
+                    Reset();
+                    return affectedCells;
+                }
                 int undoneCells = RestoreSavePoint();
                 Debug.Log($"Restoring to earlier state... At progress {_progress}");
                 
@@ -419,8 +428,10 @@ namespace XWFC
         {
             CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
             CleanState();
+            InitTrainingDataFormatter();
         }
     }
+    
 
     public record Propagation
     {
