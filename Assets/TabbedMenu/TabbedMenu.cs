@@ -248,7 +248,7 @@ public class TabbedMenu : MonoBehaviour
         InitAdjacencyToggles();
     }
     
-    private static void SwitchClass(VisualElement element, string classRemove, string classAdd)
+    public static void SwitchClass(VisualElement element, string classRemove, string classAdd)
     {
         element.RemoveFromClassList(classRemove);
         element.AddToClassList(classAdd);

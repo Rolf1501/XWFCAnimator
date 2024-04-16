@@ -3,8 +3,8 @@
     <ui:VisualElement name="container" class="container">
         <ui:VisualElement name="tabs" style="flex-grow: 1;">
             <ui:Label text="Grid" name="GridControlTab" class="tab currentlySelectedTab small" />
-            <ui:Label text="Adjacency View" name="AdjacencyViewTab" class="tab large" action="container, width, 100%, max-width, 100%"/>
-            <ui:Label text="Tileset" name="TilesetTab" class="tab large" action="container, width, 100%, max-width, 100%"/>
+            <ui:Label text="Adjacency View" name="AdjacencyViewTab" class="tab large" />
+            <ui:Label text="Tileset" name="TilesetTab" class="tab large" />
         </ui:VisualElement>
         <ui:VisualElement name="tabContent">
             <ui:VisualElement name="GridControlContent">
@@ -36,11 +36,11 @@
                     <ui:Button name="resetButton" text="Reset" class="one-col" style="flex-direction: column; align-items: stretch; max-width: none; width: 100%;" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement name="AdjacencyViewContent" class="unselectedContent" style="flex-grow: 1;">
+            <ui:VisualElement name="AdjacencyViewContent" class="unselectedContent">
                 <ui:VisualElement name="adjacencyGrid" class="adj-grid-container" />
                 <ui:Button name="updateAdjacencyButton" text="Apply"/>
             </ui:VisualElement>
-            <ui:VisualElement name="TilesetContent" class="unselectedContent" style="flex-grow: 1;">
+            <ui:VisualElement name="TilesetContent" class="unselectedContent">
                 <ui:VisualElement name="tilesetListContainer" class="tileset-list-container" />
                 <ui:Button name="updateTilesetButton" text="Apply"/>
             </ui:VisualElement>

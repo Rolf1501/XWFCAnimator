@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 using XWFC;
@@ -21,7 +22,8 @@ public class AdjacencyGridController
 
     public Dictionary<Vector3, VisualElement> Grids { get; }
 
-    public AdjacencyGridController(List<int> tiles, HashSetAdjacency adjacencySet, Vector3[] offsets, string rowClass = "row", string cellClass = "cell")
+    public AdjacencyGridController(List<int> tiles, HashSetAdjacency adjacencySet,
+        Vector3[] offsets, string rowClass = "row", string cellClass = "cell")
     {
         _tiles = tiles;
         _offsets = offsets;
@@ -109,8 +111,18 @@ public class AdjacencyGridController
          */
         var gridContainer = new VisualElement();
         var cellSize = Length.Percent(100.0f / (_tiles.Count + 1));
-        var header = GenerateHeader(cellSize);
+        var header = GenerateHeader();
+        var empty = GenerateEmptyCell(cellSize);
+        header.Add(empty);
         gridContainer.Add(header);
+        
+        var tooltip = new Label();
+        empty.Add(tooltip);
+        
+        tooltip.name = "tooltip";
+        tooltip.text = "Click to invert row.";
+        tooltip.AddToClassList("hidden");
+        tooltip.AddToClassList("tooltip");
         
         for (int j = 0; j < _tiles.Count; j++)
         {
@@ -129,21 +141,39 @@ public class AdjacencyGridController
                 row.Add(cell);
                 UpdateCellSize(cell, new StyleLength(cellSize));
             }
+            rowLabel.RegisterCallback<ClickEvent>(delegate
+            {
+                var toggles = row.Query<Toggle>();
+                toggles.ForEach(t => t.value = !t.value);
+                Debug.Log($"Clicked on row");
+            });
+            
+            rowLabel.RegisterCallback<MouseOverEvent>(delegate
+            {
+                tooltip.RemoveFromClassList("hidden");
+                
+                Debug.Log(tooltip.text);
+            });
+            rowLabel.RegisterCallback<MouseLeaveEvent>(delegate { tooltip.AddToClassList("hidden");});
+            
             gridContainer.Add(row);
         }
 
         return gridContainer;
     }
 
-    private VisualElement GenerateHeader(Length cellSize)
+    private VisualElement GenerateEmptyCell(Length cellSize)
     {
-        var header = GenerateRow();
-        header.AddToClassList(GridHeaderClass);
         var empty = GenerateLabel("", new List<string>{CellClass});
         empty.style.width = new StyleLength(cellSize);
         empty.style.height = new StyleLength(cellSize);
-        
-        header.Add(empty);
+        return empty;
+    }
+
+    private VisualElement GenerateHeader()
+    {
+        var header = GenerateRow();
+        header.AddToClassList(GridHeaderClass);
         return header;
     }
 
@@ -156,8 +186,9 @@ public class AdjacencyGridController
     private VisualElement GenerateLabel(string text, List<string> classNames)
     {
         var container = new VisualElement();
-        var label = new TextElement();
+        var label = new Label();
         label.text = text;
+        container.AddToClassList("row-label-container");
         foreach (string name in classNames) container.AddToClassList(name);
         container.Add(label);
         return container;
@@ -179,6 +210,7 @@ public class AdjacencyGridController
         var cell = new VisualElement();
         var toggle = new Toggle();
         toggle.name = GenerateToggleName(source, other);
+        toggle.AddToClassList("toggle-cell");
         cell.AddToClassList(CellClass);
         cell.Add(toggle);
         toggle.RegisterValueChangedCallback(delegate { UpdateToggleValues(source, other, offset, toggle.value);});

@@ -4,6 +4,7 @@
     --color-grey-light2: rgb(229, 223, 223);
     --transparent: rgba(0,0,0,0);
     --offset: 5px;
+    --row-height: 25px;
 }
 
 #tabs {
@@ -80,30 +81,6 @@ SliderInt {
     -unity-text-align: middle-center;
 }
 
-.adj-grid-container {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-}
-
-.adj-grid-container .cell {
-    margin: 0;
-}
-
-.adj-grid-container .row {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
-}
-
-.adj-grid-container .row:hover {
-    background-color: var(--color-white-transparent);
-}
-
-.adj-grid-container .header:hover {
-    background-color: initial;
-}
-
 .grid-container Label, .grid-container .text-field {
     margin-top: -5px;
 }
@@ -159,17 +136,6 @@ Button:active {
     background-color: var(--color-grey-light2);
 }
 
-.adj-grid-container {
-    display: flex;
-    flex-direction: column;
-}
-
-.adj-grid-container .row {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-}
-
 .tile-entry {
     display: flex;
     flex-direction: row;
@@ -183,4 +149,79 @@ Button:active {
     display: flex;
     flex-direction: column;
     justify-content: space-around;
+}
+
+/*
+ * Adjacency grid styling.
+ */
+.adj-grid-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.adj-grid-container .cell {
+    margin: 0;
+    padding: 0;
+    align-items: flex-start;
+}
+
+.adj-grid-container .row {
+    flex-direction: row;
+    margin: 0;
+    padding: 5px 0;
+    flex-grow: 1;
+}
+
+.toggle-cell {
+    margin: 0;
+    padding: 0;
+    position: relative;
+    height: var(--row-height);
+}
+
+.adj-grid-container .row:hover {
+    background-color: var(--color-white-transparent);
+}
+
+.adj-grid-container .header:hover {
+    background-color: initial;
+}
+
+.adj-grid-container .row .row-label-container {
+    -unity-text-align: middle-right;
+    padding: 0;
+    margin: 0;
+    height: 100px;
+    align-items: flex-end;
+    position: relative;
+    flex-shrink: 0;
+    flex-grow: 1;
+}
+
+.adj-grid-container .header .row-label-container {
+    align-items: flex-start;
+    -unity-text-align: middle-left;
+}
+.adj-grid-container Label {
+    margin: 0;
+    margin-right: var(--offset);
+    height: var(--row-height);
+    width: 100%;
+}
+
+.tooltip {
+    position: absolute;
+    background-color: var(--color-white-transparent);
+    border-radius: 3px;
+    -unity-text-align: middle-center;
+    padding: 0 var(--offset);
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-grow: 0;
+    flex-shrink: 1;
+    margin: 0 var(--offset);
+    max-width: 90%;
+    flex-wrap: wrap;
+    align-self: center;
 }
