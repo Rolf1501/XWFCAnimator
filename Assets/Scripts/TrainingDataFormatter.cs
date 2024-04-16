@@ -55,7 +55,7 @@ namespace XWFC
         {
             var builder = new StringBuilder();
             var file = CreateFile(ConfigPrefix);
-            string header = "gridSizeX,gridSizeY,gridSizeZ,randomSeed,adjacencyMatrix";
+            string header = "gridSizeX,gridSizeY,gridSizeZ,randomSeed,adjacencyMatrix,atomMapping(atomId-atomCoord-tileId)";
             builder.Append(header + "\n");
             _configPath = file;
             File.WriteAllText(file, builder.ToString());
@@ -70,10 +70,13 @@ namespace XWFC
              */
             var builder = new StringBuilder();
             var file = CreateFile(ConfigPrefix);
-            builder.Append($"{gridSize.x},{gridSize.y},{gridSize.z},{randomSeed},{adjacencyMatrix.AtomAdjacencyMatrixToFlattenedString()}");
+            var adjMatrixString = adjacencyMatrix.AtomAdjacencyMatrixToFlattenedString();
+            builder.Append($"{gridSize.x},{gridSize.y},{gridSize.z},{randomSeed},");
+            builder.Append(adjMatrixString);
+            if (!adjMatrixString.EndsWith(",")) builder.Append(",");
+            builder.Append(adjacencyMatrix.AtomMappingToString());
             builder.Append("\n");
             File.AppendAllText(file, builder.ToString());
-            
         }
 
         public void InitStateAction()

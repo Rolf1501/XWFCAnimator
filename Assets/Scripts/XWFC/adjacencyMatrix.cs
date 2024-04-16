@@ -513,6 +513,17 @@ namespace XWFC
             }
             return stringBuilder.ToString();
         }
+
+        public string AtomMappingToString()
+        {
+            var stringBuilder = new StringBuilder();
+            foreach (var (key, value) in AtomMapping.Dict)
+            {
+                stringBuilder.Append($"{key.Item1},{key.Item2},{value},");
+            }
+
+            return stringBuilder.ToString();
+        }
     }
 
     public record Range
