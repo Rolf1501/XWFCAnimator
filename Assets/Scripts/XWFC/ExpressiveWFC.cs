@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
-using Output;
 using Random = System.Random;
 
 namespace XWFC
@@ -11,7 +10,7 @@ namespace XWFC
     public class ExpressiveWFC
     {
         private readonly TileSet _tileSet;
-        public Vector3 GridExtent;
+        public Vector3Int GridExtent;
         private Vector3 _startCoord;
         private readonly Dictionary<int, float> _defaultWeights;
         private float _progress = 0;
@@ -26,14 +25,14 @@ namespace XWFC
         private int _counter;
         public Stack<Occupation> OccupationLog = new();
         public bool WriteResults;
-        private OutputParser _outputParser;
+        private TrainingDataFormatter _trainingDataFormatter;
         private static Random _seededRandom;
         private int _seed;
 
 
         #nullable enable
         public ExpressiveWFC(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
-            Vector3 gridExtent, Dictionary<int, float>? defaultWeights = null, bool writeResults = false, int? seed = null)
+            Vector3Int gridExtent, Dictionary<int, float>? defaultWeights = null, bool writeResults = false, int? seed = null)
         {
             _tileSet = tileSet;
             GridExtent = gridExtent;
@@ -55,14 +54,20 @@ namespace XWFC
             CleanState();
             
             WriteResults = writeResults;
-            if (!WriteResults) return;
+            InitTrainingDataFormatter();
+        }
+
+        private void InitTrainingDataFormatter()
+        {
+            if (!WriteResults) return; 
             var dir = Directory.GetCurrentDirectory();
             var outPath = Path.Join(dir, "/Assets/Scripts/Output");
             Debug.Log($"outpath: {outPath}");
             if (!Directory.Exists(outPath)) Directory.CreateDirectory(outPath);
             
-            _outputParser = new OutputParser(outPath,"output.csv");
-            _outputParser.WriteConfig(GridExtent, _seed.ToString(), AdjMatrix);
+            _trainingDataFormatter = new TrainingDataFormatter(outPath,"output.csv");
+            
+            _trainingDataFormatter.WriteConfig(GridExtent, _seed.ToString(), AdjMatrix);
         }
 
         private Vector3 CenterCoord()
@@ -171,8 +176,8 @@ namespace XWFC
                 {
                     var action = new int[AdjMatrix.GetNAtoms()];
                     action[tId] = 1;
-                    _outputParser.WriteStateAction(GridManager, action);
-                    _outputParser.WriteStateActionQueue(GridManager, action, _collapseQueue);
+                    _trainingDataFormatter.WriteStateAction(GridManager, action, new Vector3Int(x,y,z), GridManager.ChoiceBooleans.GetExtent());
+                    _trainingDataFormatter.WriteStateActionQueue(GridManager, action, new Vector3Int(x,y,z), GridManager.ChoiceBooleans.GetExtent(), _collapseQueue);
                 }
             }
             catch (NoMoreChoicesException)
@@ -402,9 +407,11 @@ namespace XWFC
             return _progress >= 100;
         }
 
-        public void UpdateExtent(Vector3 extent)
+        public void UpdateExtent(Vector3Int extent)
         {
+            if (extent.Equals(GridExtent)) return;
             GridExtent = extent;
+            InitTrainingDataFormatter();
             Reset();
         }
 

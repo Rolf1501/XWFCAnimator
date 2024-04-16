@@ -408,9 +408,9 @@ Camera:
   m_NormalizedViewPortRect:
     serializedVersion: 2
     x: 0
-    y: 0
+    y: 0.2
     width: 1
-    height: 1
+    height: 0.8
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
@@ -477,9 +477,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unitTilePrefab: {fileID: 8410042719729564467, guid: 3613ece26b5228a4a9482bacca203304, type: 3}
   tileLabelPrefab: {fileID: 3078947573050405680, guid: f3cbec5e06abcc5409468549833779dd, type: 3}
-  extent: {x: 6, y: 6, z: 6}
+  extent: {x: 3, y: 3, z: 3}
   stepSize: 20
-  seed: 10
+  seed: -1
   delay: 0
 --- !u!4 &1830932354
 Transform:

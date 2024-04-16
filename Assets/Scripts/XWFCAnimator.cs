@@ -13,13 +13,14 @@ public class XWFCAnimator : MonoBehaviour
 {
     [SerializeField] private GameObject unitTilePrefab;
     [SerializeField] private Canvas tileLabelPrefab;
-    public Vector3 extent;
+    public Vector3Int extent;
     public float stepSize;
     [SerializeField] private int seed = -1;
     public TileSet TileSet;
     public TileSet CompleteTerminalSet = new();
     public Dictionary<int, Vector3> drawnTilePositions = new();
 
+    public bool WriteResults;
     public float delay;
 
     private float _updateDeltaTime;
@@ -159,7 +160,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFC()
     {
-        _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent);
+        _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent, writeResults:WriteResults);
         Debug.Log("Initialized XWFC");
     }
 
@@ -176,14 +177,6 @@ public class XWFCAnimator : MonoBehaviour
         {
             Debug.Log("Failed to update adjacency constraints.");
             _xwfc = tempXWFC;
-        }
-    }
-
-    public void UpdateAdjacencyConstraintsAllTrue()
-    {
-        foreach (var (k,v) in TileSet)
-        {
-            
         }
     }
 
@@ -462,7 +455,7 @@ public class XWFCAnimator : MonoBehaviour
         _activeStateFlag = 0;
     }
     
-    public void UpdateExtent(Vector3 newExtent)
+    public void UpdateExtent(Vector3Int newExtent)
     {
         if (extent.Equals(newExtent)) return;
         extent = newExtent;

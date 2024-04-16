@@ -166,7 +166,7 @@ public class TabbedMenu : MonoBehaviour
 
     private void UpdateExtent()
     {
-        XWFCAnimator.Instance.UpdateExtent(new Vector3(_wSlider.value, _hSlider.value, _dSlider.value));
+        XWFCAnimator.Instance.UpdateExtent(new Vector3Int(_wSlider.value, _hSlider.value, _dSlider.value));
     }
 
     private Bidict<string, Vector3> GetOffsetNamesMapping()

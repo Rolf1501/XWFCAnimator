@@ -28,16 +28,5 @@ public class TileTexture
         RenderTexture = new RenderTexture(128,128,16,RenderTextureFormat.ARGB32);
         RenderTexture.name = "RenderTexture1";
         _camera.targetTexture = RenderTexture;
-        
-        /*
-         * TODO: replace with to be drawn terminal.
-         */
-        var quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        quad.transform.position = new Vector3(0, 0, 4);
-        var component = quad.GetComponent<Renderer>();
-        component.material.color = new Color(255, 0, 0);
-        quad.transform.parent = obj.transform;
-        quad.name = "quad1";
-    
     }
 }

@@ -3,12 +3,11 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using UnityEngine;
-using XWFC;
 using System.Linq;
 
-namespace Output
+namespace XWFC
 {
-    public class OutputParser
+    public class TrainingDataFormatter
     {
         private string _directoryPath;
         private readonly string _fileName;
@@ -17,7 +16,7 @@ namespace Output
         private const string ConfigPrefix = "config";
         private const string StateActionQueuePrefix = "state-action-queue";
 
-        public OutputParser(string directory, string fileName)
+        public TrainingDataFormatter(string directory, string fileName)
         {
             _directoryPath = directory;
             _fileName = fileName;
@@ -39,6 +38,7 @@ namespace Output
             if (File.Exists(path)) return path;
             var file = File.Create(path);
             file.Close();
+            Debug.Log($"Created file {path}");
             return path;
         }
 
@@ -75,22 +75,21 @@ namespace Output
             File.WriteAllText(file, builder.ToString());
         }
         
-        public void WriteStateAction(GridManager gridManager, int[] action)
+        public void WriteStateAction(GridManager gridManager, int[] action, Vector3Int index, Vector3Int observationWindow)
         {
             /*
              * Structure:
              * - state: whd * nTiles cells.
              * - action: nTiles cells.
              */
-            var builder = StateActionEntry(gridManager, action);
+            var builder = StateActionEntry(gridManager, action, index, observationWindow);
             var file = CreateFile(StateActionPrefix);
-            
 
             builder.Append("\n");
             File.AppendAllText(file, builder.ToString());
         }
 
-        private StringBuilder StateActionEntry(GridManager gridManager, int[] action)
+        private StringBuilder StateActionEntry(GridManager gridManager, int[] action, Vector3Int index, Vector3Int observationWindow)
         {
             /*
              * Structure:
@@ -98,10 +97,32 @@ namespace Output
              * - action: nTiles cells.
              */
             var builder = new StringBuilder();
-            var flattened  = gridManager.ChoiceBooleans.Flatten();
-            var intFlattened = flattened.SelectMany(x => x.Select(x0 => x0 ? 1 : 0).ToArray()).ToArray();
+            var padded = new Grid<bool[]>(observationWindow, new bool[gridManager.GetNChoices()]);
+            var center = Vector3Util.Scale(observationWindow, 0.5f);
+            var posBoundDiff = observationWindow - center;
+            var negBoundDiff = -1 * center;
+
+            // Iterate sliding window.
+            for (int yw = negBoundDiff.y; yw < posBoundDiff.y; yw++)
+            {
+                for (int xw = negBoundDiff.x; xw < posBoundDiff.x; xw++)
+                {
+                    for (int zw = negBoundDiff.z; zw < posBoundDiff.z; zw++)
+                    {
+                        var windowOffset = new Vector3Int(xw, yw, zw);
+                        var gridIndex = index + windowOffset;
+                        if (!gridManager.WithinBounds(gridIndex)) continue;
+                        
+                        var sliderWindowIndex = center + windowOffset;
+                        padded.Set(sliderWindowIndex, gridManager.ChoiceBooleans.Get(gridIndex));
+                    }
+                }
+            }
             
-            foreach (var t in intFlattened)
+            // var intFlattened = flattened.SelectMany(x => x.Select(x0 => x0 ? 1 : 0).ToArray()).ToArray();
+            var paddedFlattened = Grid<bool[]>.Flatten(padded).SelectMany(x => x.Select(x0 => x0 ? 1 : 0).ToArray()).ToArray();
+            
+            foreach (var t in paddedFlattened)
             {
                 builder.Append(t + ",");
             }
@@ -123,7 +144,7 @@ namespace Output
             File.WriteAllText(file, builder.ToString());
         }
 
-        public void WriteStateActionQueue(GridManager gridManager, int[] action,
+        public void WriteStateActionQueue(GridManager gridManager, int[] action, Vector3Int index, Vector3Int observationWindow,
             CollapsePriorityQueue collapsePriorityQueue)
         {
             /*
@@ -132,12 +153,14 @@ namespace Output
              * - action: nTiles cells.
              * - collapse queue: remainder of cells.
              */
-            var builder = StateActionEntry(gridManager, action);
+            var builder = StateActionEntry(gridManager, action, index, observationWindow);
             var file = CreateFile(StateActionQueuePrefix);
             foreach (var collapse in collapsePriorityQueue.List)
             {
                 builder.Append(collapse + ",");
             }
+
+            builder.Append("\n");
             File.AppendAllText(file, builder.ToString());
         }
         

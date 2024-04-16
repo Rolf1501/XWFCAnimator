@@ -98,57 +98,12 @@ namespace XWFC
             var (x, y, z) = Vector3Util.CastInt(coord);
             Set(x, y, z, value);
         }
+
+        public Vector3Int GetExtent()
+        {
+            return new Vector3Int(Width, Height, Depth);
+        }
         
-        
-        //
-        // public void PrintXY()
-        // {
-        //     for (int z = 0; z < Depth; z++)
-        //     {
-        //         for (int y = 0; y < Height; y++)
-        //         {
-        //             for (int x = 0; x < Width; x++)
-        //             {
-        //                 Console.Write(_grid[y, x, z] + " ");
-        //             }
-        //             Console.WriteLine();
-        //         }
-        //         Console.WriteLine();
-        //     }
-        // }
-        //
-        // public void PrintXZ()
-        // {
-        //     for (int y = 0; y < Height; y++)
-        //     {
-        //         for (int x = 0; x < Width; x++)
-        //         {
-        //             for (int z = 0; z < Depth; z++)
-        //             {
-        //                 Console.Write(_grid[y, x, z] + " ");
-        //             }
-        //             Console.WriteLine();
-        //         }
-        //         Console.WriteLine();
-        //     }
-        // }
-        //
-        // public void PrintYZ()
-        // {
-        //     for (int x = 0; x < Width; x++)
-        //     {
-        //         for (int y = 0; y < Height; y++)
-        //         {
-        //             for (int z = 0; z < Depth; z++)
-        //             {
-        //                 Console.Write(_grid[y, x, z] + " ");
-        //             }
-        //             Console.WriteLine();
-        //         }
-        //         Console.WriteLine();
-        //     }
-        // }
-        //
         public string GridToString()
         {
             string s = "";
@@ -168,11 +123,21 @@ namespace XWFC
             }
             return s;
         }
+        
+        public static T[] Flatten(AbstractGrid<T> grid)
+        {
+            var output = new List<T>();
+            for (int y = 0; y < grid.Height; y++)
+            for (int x = 0; x < grid.Width; x++)
+            for (int z = 0; z < grid.Depth; z++)
+                output.Add(grid.Get(x,y,z));
+            return output.ToArray();
+        }
     }
 
     public class Grid<T> : AbstractGrid<T>
     {
-        public Grid(Vector3 extent, T defaultFillValue) : base((int)extent.x, (int)extent.y, (int)extent.z, defaultFillValue)
+        public Grid(Vector3Int extent, T defaultFillValue) : base(extent.x, extent.y, extent.z, defaultFillValue)
         {
             Populate(defaultFillValue);
         }
@@ -205,16 +170,7 @@ namespace XWFC
                         copy.Set(x, y, z, Get(x, y, z));
             return copy;
         }
-        
-        public T[] Flatten()
-        {
-            var output = new List<T>();
-            for (int y = 0; y < Height; y++)
-                for (int x = 0; x < Width; x++)
-                    for (int z = 0; z < Depth; z++)
-                        output.Add(_grid[y, x, z]);
-            return output.ToArray();
-        }
+
     }
 
     public class GridManager
@@ -291,6 +247,11 @@ namespace XWFC
         {
             var (x, y, z) = Vector3Util.CastInt(coord);
             return WithinBounds(x, y, z);
+        }
+
+        public int GetNChoices()
+        {
+            return ChoiceBooleans.Get(0, 0, 0).Length;
         }
     }
 }
