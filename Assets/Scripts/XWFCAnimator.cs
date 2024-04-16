@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 using XWFC;
 using Canvas = UnityEngine.Canvas;
@@ -13,9 +15,10 @@ public class XWFCAnimator : MonoBehaviour
     [SerializeField] private Canvas tileLabelPrefab;
     public Vector3 extent;
     public float stepSize;
-    public Dictionary<int, Terminal> terminals;
-    public Dictionary<int, Terminal> completeTerminalSet = new();
     [SerializeField] private int seed = -1;
+    public TileSet TileSet;
+    public TileSet CompleteTerminalSet = new();
+    public Dictionary<int, Vector3> drawnTilePositions = new();
 
     public float delay;
 
@@ -34,7 +37,7 @@ public class XWFCAnimator : MonoBehaviour
     private Grid<Drawing> _drawnGrid;
     private HashSetAdjacency _adjacency;
 
-    private HashSet<GameObject> _drawnTerminals;
+    private HashSet<GameObject> _drawnTiles;
     
     [Flags]
     private enum StateFlag
@@ -52,7 +55,7 @@ public class XWFCAnimator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        terminals = new Dictionary<int, Terminal>();
+        TileSet = new TileSet();
 
         var defaultWeights = new Dictionary<int, float>();
         
@@ -66,13 +69,13 @@ public class XWFCAnimator : MonoBehaviour
         var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, .4f, .3f), null, null);
         // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, 0, .8f), null, null);
         
-        terminals.Add(0, t0);
-        terminals.Add(1, t1);
-        terminals.Add(2, t2);
+        TileSet.Add(0, t0);
+        TileSet.Add(1, t1);
+        TileSet.Add(2, t2);
         
-        completeTerminalSet.Add(0, t0);
-        completeTerminalSet.Add(1, t1);
-        completeTerminalSet.Add(2, t2);
+        CompleteTerminalSet.Add(0, t0);
+        CompleteTerminalSet.Add(1, t1);
+        CompleteTerminalSet.Add(2, t2);
         
         var NORTH = new Vector3(0, 0, 1);
         var SOUTH = new Vector3(0, 0, -1);
@@ -149,15 +152,14 @@ public class XWFCAnimator : MonoBehaviour
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
         
         // Set for keeping track of drawn terminals.
-        _drawnTerminals = new HashSet<GameObject>();
-        
-        DrawTerminals();
+        _drawnTiles = new HashSet<GameObject>();
+        DrawTiles();
         
     }
 
     private void InitXWFC()
     {
-        _xwfc = new ExpressiveWFC(terminals, _adjacency, extent, writeResults: true, seed: seed);
+        _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent);
         Debug.Log("Initialized XWFC");
     }
 
@@ -177,12 +179,20 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
 
-    public void UpdateTerminals(Dictionary<int, Terminal> newTerminals)
+    public void UpdateAdjacencyConstraintsAllTrue()
+    {
+        foreach (var (k,v) in TileSet)
+        {
+            
+        }
+    }
+
+    public void UpdateTerminals(TileSet newTileSet)
     {
         var tempXWFC = _xwfc;
         try
         {
-            terminals = newTerminals;
+            TileSet = newTileSet;
             _adjacency = new HashSetAdjacency();
             Reset();
             InitXWFC();
@@ -194,12 +204,12 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
 
-    public void DrawTerminals()
+    public void DrawTiles()
     {
         // Draw in z-axis.
         var start = new Vector3(0,0,-5);
         var gap = new Vector3(2, 0, 0);
-        foreach (var (key, value) in terminals)
+        foreach (var (key, value) in TileSet)
         {
             var maxIndex = new Vector3();
             bool labeled = false;
@@ -210,11 +220,12 @@ public class XWFCAnimator : MonoBehaviour
                 drawnAtom.transform.position = CalcAtomPosition(start + index);
                 
                 UpdateColorFromTerminal(drawnAtom, key);
-                _drawnTerminals.Add(drawnAtom);
+                _drawnTiles.Add(drawnAtom);
 
                 if (labeled) continue;
-                LabelTerminals(drawnAtom, key.ToString());
+                LabelTiles(drawnAtom, key.ToString());
                 labeled = true;
+                drawnTilePositions[key] = drawnAtom.transform.position;
             }
 
             start += maxIndex;
@@ -223,22 +234,18 @@ public class XWFCAnimator : MonoBehaviour
         
     }
 
-    private void LabelTerminals(GameObject parent, string terminalName)
+    private void LabelTiles(GameObject parent, string terminalName)
     {
         var label = Instantiate(tileLabelPrefab, parent.transform, false);
         label.GetComponent<RectTransform>().localPosition = new Vector3(0, -2, 2);
         // offset the position by half the parent size.
         
         // TODO: find out how to position dynamically.
-
-        
         var textComp = label.GetComponentInChildren<TMP_Text>();
         textComp.text = "Tile: " + terminalName;
         var rect = textComp.GetComponent<RectTransform>();
         rect.localPosition = new Vector3();
-        rect.eulerAngles = new Vector3(0, 0, 0);
-        
-        // textComp.transform.position = new Vector3(0, 0, 0);
+        rect.eulerAngles = new Vector3(0, 0, 0); 
     }
 
     private Grid<Drawing> InitDrawGrid()
@@ -259,7 +266,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public Dictionary<int, Terminal> GetTiles()
     {
-        return terminals;
+        return TileSet;
     }
 
     public HashSetAdjacency GetTileAdjacencyConstraints()
@@ -434,7 +441,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void UpdateColorFromTerminal(GameObject obj, int tileId)
     {
-        obj.GetComponent<Renderer>().material.color = terminals[tileId].Color;
+        obj.GetComponent<Renderer>().material.color = TileSet[tileId].Color;
     }
 
     private Color GetTerminalColorFromAtom(int atomId)

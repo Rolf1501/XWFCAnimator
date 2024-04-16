@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 using XWFC;
@@ -19,15 +18,17 @@ public class AdjacencyGridController
     private readonly Vector3[] _offsets;
     private readonly HashSetAdjacency _activeAdjacency;
     private const int DefaultValue = -1;
+    private bool _allTrue;
 
     public Dictionary<Vector3, VisualElement> Grids { get; }
 
     public AdjacencyGridController(List<int> tiles, HashSetAdjacency adjacencySet,
-        Vector3[] offsets, string rowClass = "row", string cellClass = "cell")
+        Vector3[] offsets, string rowClass = "row", string cellClass = "cell", bool allTrue=false)
     {
         _tiles = tiles;
         _offsets = offsets;
         _activeAdjacency = adjacencySet;
+        _allTrue = allTrue;
         
         RowClass = rowClass;
         CellClass = cellClass;
@@ -151,8 +152,6 @@ public class AdjacencyGridController
             rowLabel.RegisterCallback<MouseOverEvent>(delegate
             {
                 tooltip.RemoveFromClassList("hidden");
-                
-                Debug.Log(tooltip.text);
             });
             rowLabel.RegisterCallback<MouseLeaveEvent>(delegate { tooltip.AddToClassList("hidden");});
             
@@ -283,5 +282,18 @@ public class AdjacencyGridController
 
         return set;
     }
-    
+
+    public void Populate(bool value)
+    {
+        for (int i = 0; i < _tiles.Count; i++)
+        {
+            for (int j = 0; j < _tiles.Count; j++)
+            {
+                foreach (var offset in _offsets)
+                {
+                    UpdateToggleValues(_tiles[i], _tiles[j], offset, value);
+                }
+            }
+        }
+    }
 }

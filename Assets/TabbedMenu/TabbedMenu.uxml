@@ -43,6 +43,7 @@
             <ui:VisualElement name="TilesetContent" class="unselectedContent">
                 <ui:VisualElement name="tilesetListContainer" class="tileset-list-container" />
                 <ui:Button name="updateTilesetButton" text="Apply"/>
+                
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

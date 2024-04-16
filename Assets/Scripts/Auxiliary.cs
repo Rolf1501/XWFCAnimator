@@ -9,7 +9,7 @@ public class Auxiliary : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        _tiles = XWFCAnimator.Instance.terminals.Keys.ToList();
+        _tiles = XWFCAnimator.Instance.TileSet.Keys.ToList();
         // var camWidth = 1.0f / _tiles.Count;
         var camWidth = 1.0f;
         var camHeight = 0.2f;

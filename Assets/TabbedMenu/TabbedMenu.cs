@@ -1,14 +1,14 @@
 ﻿// This script attaches the tabbed menu logic to the game.
-
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
 using XWFC;
 using Button = UnityEngine.UIElements.Button;
+using Image = UnityEngine.UIElements.Image;
 using Toggle = UnityEngine.UIElements.Toggle;
 
 /*
@@ -209,7 +209,7 @@ public class TabbedMenu : MonoBehaviour
         });
     }
 
-    private void InitAdjacencyToggles()
+    private void InitAdjacencyToggles(List<int> tiles, HashSetAdjacency hashSetAdjacency, Vector3[] offsets)
     {
         var toggles = _adjGrid.Q<VisualElement>(_adjacencyToggleContainer);
         if (toggles != null)
@@ -222,9 +222,9 @@ public class TabbedMenu : MonoBehaviour
             toggles.name = _adjacencyToggleContainer;
         }
 
-        _adjacencyGridController = new AdjacencyGridController(XWFCAnimator.Instance.GetTiles().Keys.ToList(), XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
+        _adjacencyGridController = new AdjacencyGridController(tiles, hashSetAdjacency, offsets);
+        // _adjacencyGridController = new AdjacencyGridController(XWFCAnimator.Instance.GetTiles().Keys.ToList(), XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
         var directionNames = GetOffsetNamesMapping();
-        var offsets = XWFCAnimator.Instance.GetOffsets();
         var grids = _adjacencyGridController.Grids;
 
         foreach (var offset in offsets)
@@ -245,7 +245,7 @@ public class TabbedMenu : MonoBehaviour
     {
         _adjGrid = _root.Q<VisualElement>(_adjacencyGridName);
         InitAdjacencyDropDown();
-        InitAdjacencyToggles();
+        InitAdjacencyToggles(XWFCAnimator.Instance.GetTiles().Keys.ToList(), XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
     }
     
     public static void SwitchClass(VisualElement element, string classRemove, string classAdd)
@@ -256,12 +256,13 @@ public class TabbedMenu : MonoBehaviour
 
     private void InitTilesetList()
     {
-        var tiles = XWFCAnimator.Instance.completeTerminalSet;
+        var tiles = XWFCAnimator.Instance.CompleteTerminalSet;
         var tilesetListContainer = _root.Q<VisualElement>(_tilesetListName);
+        tilesetListContainer.AddToClassList("tile-entry-container");
         
         foreach (var tileId in tiles.Keys)
         {
-            var value = XWFCAnimator.Instance.terminals.Keys.Contains(tileId);
+            var value = XWFCAnimator.Instance.TileSet.Keys.Contains(tileId);
             var entry = TileEntry(tileId, value);
             tilesetListContainer.Add(entry);
             if (value) _activeTiles.Add(tileId);
@@ -275,9 +276,10 @@ public class TabbedMenu : MonoBehaviour
         {
             var tileDict = _activeTiles.ToDictionary(tileId => tileId, tileId => tiles[tileId]);
             Debug.Log("Tried updating tileset...");
-            XWFCAnimator.Instance.UpdateTerminals(tileDict);
-            
-            InitAdjacencyToggles();
+            InitAdjacencyToggles(tileDict.Keys.ToList(), new HashSetAdjacency(), OffsetFactory.GetOffsets());
+            _adjacencyGridController.Populate(true);
+            XWFCAnimator.Instance.UpdateTerminals(TileSet.FromDict(tileDict));
+            XWFCAnimator.Instance.UpdateAdjacencyConstraints(_adjacencyGridController.ToAdjacencySet());
         };
     }
 
@@ -294,6 +296,12 @@ public class TabbedMenu : MonoBehaviour
         var text = new Label();
         text.text = $"{tileId}";
         entry.Add(text);
+        var img = new Image();
+        var tt = new TileTexture(XWFCAnimator.Instance.drawnTilePositions[tileId], 5, new Vector2(45,45));
+        
+        img.image = tt.RenderTexture;
+        entry.Add(img);
+        
         return entry;
     }
 
