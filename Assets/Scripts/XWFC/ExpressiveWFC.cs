@@ -147,6 +147,9 @@ namespace XWFC
 
         public HashSet<Occupation> CollapseOnce()
         {
+            Debug.Log("Requesting...");
+            var response = ServerInteraction.RequestAction();
+            Debug.Log("Request done.");
             /*
              * Performs a single collapse and outputs the affected cells' coordinates.
              * It is up to the caller to refer to the grid to find the cell's contents.
@@ -184,11 +187,16 @@ namespace XWFC
             }
             catch (NoMoreChoicesException)
             {
+                /*
+                 * Conflict block.
+                 */
+                
                 if (!_allowBacktracking)
                 {
                     // Reset and start over.
                     _trainingDataFormatter.Reset();
                     Reset();
+                    
                     return affectedCells;
                 }
                 int undoneCells = RestoreSavePoint();
