@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using Random = System.Random;
 
@@ -29,9 +31,10 @@ namespace XWFC
         private static Random _seededRandom;
         private int _seed;
         private bool _allowBacktracking;
+        public Grid<List<char>> state;
 
 
-#nullable enable
+        #nullable enable
         public ExpressiveWFC(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
             Vector3Int gridExtent, Dictionary<int, float>? defaultWeights = null, bool writeResults = false, int? seed = null, bool allowBacktracking = true)
         {
@@ -54,6 +57,8 @@ namespace XWFC
             
             CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
             CleanState();
+
+            state = new Grid<List<char>>(GridManager.Grid.GetExtent(), tileSet.Keys.Select(x => char.Parse($"{x}")).ToList());
             
             WriteResults = writeResults;
             InitTrainingDataFormatter();
@@ -173,14 +178,6 @@ namespace XWFC
             {
                 (tCoord, tId, _) = Collapse(x, y, z);
                 _propQueue.Enqueue(new Propagation(new int[] { tId }, tCoord));
-
-                if (WriteResults)
-                {
-                    var action = new int[AdjMatrix.GetNAtoms()];
-                    action[tId] = 1;
-                    _trainingDataFormatter.WriteStateAction(GridManager, action, new Vector3Int(x,y,z), GridManager.ChoiceBooleans.GetExtent());
-                    _trainingDataFormatter.WriteStateActionQueue(GridManager, action, new Vector3Int(x,y,z), GridManager.ChoiceBooleans.GetExtent(), _collapseQueue);
-                }
             }
             catch (NoMoreChoicesException)
             {
@@ -205,6 +202,18 @@ namespace XWFC
             }
 
             Propagate();
+            /*
+             * After a collapse and propagation are complete, the state has stabilized and can be updated.
+             */
+            UpdateState(tCoord);
+            
+            // if (WriteResults)
+            // {
+            //     var action = new int[AdjMatrix.GetNAtoms()];
+            //     action[tId] = 1;
+            //     _trainingDataFormatter.WriteStateAction(GridManager, action, new Vector3Int(x,y,z), GridManager.ChoiceBooleans.GetExtent());
+            //     // _trainingDataFormatter.WriteStateActionQueue(GridManager, action, new Vector3Int(x,y,z), GridManager.ChoiceBooleans.GetExtent(), _collapseQueue);
+            // }
             var occupation = new Occupation(tCoord, tId);
             affectedCells.Add(occupation);
             
@@ -225,11 +234,16 @@ namespace XWFC
             if (GridManager.Grid.IsChosen(x, y, z)) return (new Vector3(), -1, -1);
 
             var choiceId = Choose(x, y, z); // Throws exception; handled by CollapsedOnce.
-            var (_, _, tO) = AdjMatrix.AtomMapping.Get(choiceId);
+            var (tileId, _, tO) = AdjMatrix.AtomMapping.Get(choiceId);
 
             SetOccupied(coord, choiceId);
 
             return (coord, choiceId, tO);
+        }
+
+        private void SetState(Vector3 coord, List<char> allowedTileIds)
+        {
+            state.Set(coord, allowedTileIds);
         }
 
         private void SetOccupied(Vector3 coord, int id)
@@ -252,7 +266,8 @@ namespace XWFC
             int chosenIndex = RandomChoice(choiceBooleans, choiceWeights);
             var updatedBool = new bool[AdjMatrix.GetNAtoms()];
             updatedBool[chosenIndex] = true;
-            GridManager.ChoiceBooleans.Set(x,y,z,updatedBool);
+            UpdateRemainingChoices(new Vector3(x,y,z), updatedBool);
+            // GridManager.ChoiceBooleans.Set(x,y,z,updatedBool);
 
             // TODO: move this to propagation instead for early conflict detection.
             if (chosenIndex < 0) throw new NoMoreChoicesException($"No more choice remain for cell {x}, {y}, {z}.");
@@ -383,7 +398,7 @@ namespace XWFC
                     // If pre is not post, update.
                     if (!ArrayEquals(neighborBChoices, post))
                     {
-                        GridManager.ChoiceBooleans.Set(n, post);
+                        UpdateRemainingChoices(n, post);
 
                         // Calculate entropy and get indices of allowed neighbor terminals.
                         var neighborWChoicesI = new List<int>();
@@ -409,6 +424,47 @@ namespace XWFC
                         // _collapseQueue.Enqueue(n, GridManager.Entropy.Get(n));
                 }
             }
+        }
+
+        private void UpdateRemainingChoices(Vector3 coord, bool[] value)
+        {
+            /*
+             * Updates the choice booleans on atom level.
+             */
+            
+            GridManager.ChoiceBooleans.Set(coord, value);
+        }
+
+        private void UpdateState(Vector3 coord)
+        {
+            /*
+             * Stores the remaining tile id choices in state for PoD, inferred from choice booleans. 
+             */
+
+            for (int y = 0; y < GridExtent.y; y++)
+            {
+                for (int x = 0; x < GridExtent.x; x++)
+                {
+                    for (int z = 0; z < GridExtent.z; z++)
+                    {
+                        var value = GridManager.ChoiceBooleans.Get(x, y, z);
+                        
+                        var tileIds = new HashSet<int>();
+                        for (var i = 0; i < value.Length; i++)
+                        {
+                            if (!value[i]) continue;
+                            tileIds.Add(AdjMatrix.AtomMapping.GetKey(i).Item1);
+                        }
+                        var tileChars = tileIds.Select(t => char.Parse($"{t}")).ToList();
+                        SetState(new Vector3(x,y,z), tileChars);
+                    }
+                }
+            }
+            if (WriteResults)
+            {
+                _trainingDataFormatter.WriteState(coord, state);
+            }
+            
         }
 
         public bool IsDone()

@@ -99,6 +99,13 @@ public class XWFCAnimator : MonoBehaviour
             new(1, new List<Relation>() { new(0, null) }, WEST),
             new(1, new List<Relation>() { new(0, null) }, TOP),
             new(1, new List<Relation>() { new(0, null) }, BOTTOM),
+            // 1-1
+            new(1, new List<Relation>() { new(1, null) }, NORTH),
+            new(1, new List<Relation>() { new(1, null) }, EAST),
+            new(1, new List<Relation>() { new(1, null) }, SOUTH),
+            new(1, new List<Relation>() { new(1, null) }, WEST),
+            new(1, new List<Relation>() { new(1, null) }, TOP),
+            new(1, new List<Relation>() { new(1, null) }, BOTTOM),
             // 2-0
             new(2, new List<Relation>() { new(0, null) }, NORTH),
             new(2, new List<Relation>() { new(0, null) }, EAST),

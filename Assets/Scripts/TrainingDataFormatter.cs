@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -16,9 +17,14 @@ namespace XWFC
         private const string StateActionPrefix = "state-action";
         private const string ConfigPrefix = "config";
         private const string StateActionQueuePrefix = "state-action-queue";
+        private const string StatePrefix = "state";
         private string _configPath;
         private string _stateActionPath;
         private string _stateActionQueuePath;
+
+        private int _obs_size = 19;
+        private int pad = 32;
+        
 
         public TrainingDataFormatter(string directory, string fileName)
         {
@@ -29,6 +35,7 @@ namespace XWFC
             InitConfig();
             InitStateAction();
             InitStateActionQueue();
+            InitState();
         }
 
         private void InitTimeStamp()
@@ -178,6 +185,41 @@ namespace XWFC
             builder.Append("\n");
             File.AppendAllText(file, builder.ToString());
         }
+        private void InitState()
+        {
+            var builder = new StringBuilder();
+            builder.Append("coord,state");
+            var file = CreateFile(StatePrefix);
+            File.WriteAllText(file, builder.ToString());
+        }
+
+        public void WriteState(Vector3 coordinate, Grid<List<char>> state)
+        {
+            var builder = new StringBuilder();
+            builder.Append(coordinate + "\n");
+            var file = CreateFile(StatePrefix);
+            var extent = state.GetExtent();
+            
+            for (int y = 0; y < extent.y; y++)
+            {
+                for (int x = 0; x < extent.x; x++)
+                {
+                    for (int z = 0; z < extent.z; z++)
+                    {
+                        var elem = state.Get(x, y, z);
+                        foreach (var c in elem)
+                        {
+                            builder.Append(c + ",");
+                        }
+                        builder.Append("\n");
+                    }
+                    builder.Append("\n");
+                }
+                builder.Append("\n");
+            }
+            File.AppendAllText(file, builder.ToString() + "\n");
+
+        }
         
         public string FilePath(string fileName)
         {
@@ -193,6 +235,9 @@ namespace XWFC
             InitConfig();
             InitStateAction();
             InitStateActionQueue();
+            InitState();
         }
+        
     }
+    
 }

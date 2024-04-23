@@ -52,7 +52,9 @@
     <Compile Include="Assets\TabbedMenu\TabbedMenu.cs" />
     <Compile Include="Assets\Scripts\Auxiliary.cs" />
     <Compile Include="Assets\Scripts\XWFC\collapseQueue.cs" />
+    <Compile Include="Assets\Scripts\XWFC\TileSet.cs" />
     <Compile Include="Assets\Scripts\XWFCAnimator.cs" />
+    <Compile Include="Assets\Scripts\TileTexture.cs" />
     <Compile Include="Assets\Scripts\XWFC\adjacency.cs" />
     <Compile Include="Assets\Scripts\XWFC\savePoint.cs" />
     <Compile Include="Assets\Scripts\UIHandler.cs" />
@@ -60,16 +62,15 @@
     <Compile Include="Assets\Scripts\XWFC\voidMaskAdjacencyData.cs" />
     <Compile Include="Assets\TabbedMenu\TabbedMenuController.cs" />
     <Compile Include="Assets\Scripts\XWFC\terminal.cs" />
-    <Compile Include="Assets\Scripts\XWFCRunner.cs" />
     <Compile Include="Assets\Scripts\XWFC\ExpressiveWFC.cs" />
     <Compile Include="Assets\Scripts\XWFC\relation.cs" />
     <Compile Include="Assets\Scripts\XWFC\atom.cs" />
     <Compile Include="Assets\Scripts\XWFC\offset.cs" />
     <Compile Include="Assets\Scripts\XWFC\bidict.cs" />
-    <Compile Include="Assets\Scripts\XWFC\color.cs" />
     <Compile Include="Assets\Scripts\CameraMovementOrbit.cs" />
     <Compile Include="Assets\Scripts\XWFC\timer.cs" />
     <Compile Include="Assets\TabbedMenu\AdjacencyGridController.cs" />
+    <Compile Include="Assets\Scripts\TrainingDataFormatter.cs" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />
