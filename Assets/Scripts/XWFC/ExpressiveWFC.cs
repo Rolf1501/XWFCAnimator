@@ -241,9 +241,10 @@ namespace XWFC
             return (coord, choiceId, tO);
         }
 
-        private void SetState(Vector3 coord, List<char> allowedTileIds)
+        private void SetState(Vector3 coord, IEnumerable<int> tileIds)
         {
-            state.Set(coord, allowedTileIds);
+            var tileChars = tileIds.Select(t => char.Parse($"{t}")).ToList();
+            state.Set(coord, tileChars);
         }
 
         private void SetOccupied(Vector3 coord, int id)
@@ -450,21 +451,64 @@ namespace XWFC
                         var value = GridManager.ChoiceBooleans.Get(x, y, z);
                         
                         var tileIds = new HashSet<int>();
+                        var tileIdsArr = new int[_tileSet.Keys.Count];
                         for (var i = 0; i < value.Length; i++)
                         {
                             if (!value[i]) continue;
-                            tileIds.Add(AdjMatrix.AtomMapping.GetKey(i).Item1);
+                            var tileId = AdjMatrix.AtomMapping.GetKey(i).Item1;
+                            tileIds.Add(tileId);
+                            tileIdsArr[tileId] = 1;
                         }
-                        var tileChars = tileIds.Select(t => char.Parse($"{t}")).ToList();
-                        SetState(new Vector3(x,y,z), tileChars);
+                        
+                        SetState(new Vector3(x,y,z), tileIds);
                     }
                 }
             }
             if (WriteResults)
             {
+                // _trainingDataFormatter.WriteState(coord, GetObservation(coord, 9));
                 _trainingDataFormatter.WriteState(coord, state);
             }
+            // var obs = GetObservation(coord, 19);
+            // Debug.Log(obs.GridToString());
             
+        }
+
+        public Grid<int[]> GetObservation(Vector3 coord, int observationSize)
+        {
+            var observationWindow = new Vector3Int(observationSize, observationSize, observationSize);
+            var observation = new Grid<int[]>(observationWindow, new int[_tileSet.Keys.Count]);
+            var center = Vector3Util.Scale(observationWindow, 0.5f);
+            
+            var negBoundDiff = -1 * observationSize / 2;
+            var posBoundDiff = -1 * negBoundDiff + 1; //observationWindow - center;
+
+            // Iterate sliding window.
+            for (int yw = negBoundDiff; yw < posBoundDiff; yw++)
+            {
+                for (int xw = negBoundDiff; xw < posBoundDiff; xw++)
+                {
+                    for (int zw = negBoundDiff; zw < posBoundDiff; zw++)
+                    {
+                        var windowOffset = new Vector3Int(xw, yw, zw);
+                        var gridIndex = coord + windowOffset;
+                        if (!GridManager.WithinBounds(gridIndex)) continue;
+                        
+                        var sliderWindowIndex = center + windowOffset;
+                        var allowedTiles = state.Get(gridIndex);
+                        var allowedTilesInt = new int[_tileSet.Keys.Count];
+                        for (int i = 0; i < allowedTiles.Count; i++)
+                        {
+                            var c = allowedTiles[i];
+                            allowedTilesInt[int.Parse(c.ToString())] = 1;
+                        }
+                        observation.Set(sliderWindowIndex, allowedTilesInt);
+                    }
+                }
+            }
+
+            return observation;
+
         }
 
         public bool IsDone()

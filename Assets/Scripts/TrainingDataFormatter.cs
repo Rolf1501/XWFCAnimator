@@ -188,11 +188,12 @@ namespace XWFC
         private void InitState()
         {
             var builder = new StringBuilder();
-            builder.Append("coord,state");
+            builder.Append("coord,state\n");
             var file = CreateFile(StatePrefix);
             File.WriteAllText(file, builder.ToString());
         }
 
+        // public void WriteState(Vector3 coordinate, Grid<int[]> state)
         public void WriteState(Vector3 coordinate, Grid<List<char>> state)
         {
             var builder = new StringBuilder();
@@ -202,14 +203,16 @@ namespace XWFC
             
             for (int y = 0; y < extent.y; y++)
             {
+                builder.Append($"row {y}\n");
                 for (int x = 0; x < extent.x; x++)
                 {
+                    builder.Append($"col {x}\n");
                     for (int z = 0; z < extent.z; z++)
                     {
                         var elem = state.Get(x, y, z);
-                        foreach (var c in elem)
+                        foreach (var t in elem)
                         {
-                            builder.Append(c + ",");
+                            builder.Append(t + ",");
                         }
                         builder.Append("\n");
                     }
