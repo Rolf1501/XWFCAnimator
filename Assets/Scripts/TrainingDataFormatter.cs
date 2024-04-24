@@ -6,6 +6,7 @@ using System.Text;
 using UnityEngine;
 using System.Linq;
 using System.Net;
+using JetBrains.Annotations;
 
 namespace XWFC
 {
@@ -17,13 +18,12 @@ namespace XWFC
         private const string StateActionPrefix = "state-action";
         private const string ConfigPrefix = "config";
         private const string StateActionQueuePrefix = "state-action-queue";
-        private const string StatePrefix = "state";
+        private const string LevelPrefix = "level";
         private string _configPath;
         private string _stateActionPath;
         private string _stateActionQueuePath;
+        [CanBeNull] private Grid<string> _level = null;
 
-        private int _obs_size = 19;
-        private int pad = 32;
         
 
         public TrainingDataFormatter(string directory, string fileName)
@@ -35,7 +35,7 @@ namespace XWFC
             InitConfig();
             InitStateAction();
             InitStateActionQueue();
-            InitState();
+            InitLevel();
         }
 
         private void InitTimeStamp()
@@ -185,43 +185,59 @@ namespace XWFC
             builder.Append("\n");
             File.AppendAllText(file, builder.ToString());
         }
-        private void InitState()
+        private void InitLevel(int nCols=0)
         {
             var builder = new StringBuilder();
-            builder.Append("coord,state\n");
-            var file = CreateFile(StatePrefix);
+            var file = CreateFile(LevelPrefix);
+            for (int i = 1; i <= nCols; i++)
+            {
+                builder.Append($"col{i},");
+            }
+
+            builder.Append("x,y,z,target\n");
+            
             File.WriteAllText(file, builder.ToString());
         }
 
-        // public void WriteState(Vector3 coordinate, Grid<int[]> state)
-        public void WriteState(Vector3 coordinate, Grid<List<char>> state)
+        public void WriteLevel(Vector3 coordinate, Grid<string> level)
         {
-            var builder = new StringBuilder();
-            builder.Append(coordinate + "\n");
-            var file = CreateFile(StatePrefix);
-            var extent = state.GetExtent();
+            var extent = level.GetExtent();
+            if (_level == null || !_level.GetExtent().Equals(extent))
+            {
+                _level = level;
+                InitLevel((int)Vector3Util.Product(extent));
+            }
             
+            var builder = new StringBuilder();
+            var file = CreateFile(LevelPrefix);
+
+            /*
+             * State
+             */
             for (int y = 0; y < extent.y; y++)
             {
-                builder.Append($"row {y}\n");
                 for (int x = 0; x < extent.x; x++)
                 {
-                    builder.Append($"col {x}\n");
                     for (int z = 0; z < extent.z; z++)
                     {
-                        var elem = state.Get(x, y, z);
-                        foreach (var t in elem)
-                        {
-                            builder.Append(t + ",");
-                        }
-                        builder.Append("\n");
+                        var elem = level.Get(x, y, z);
+                        builder.Append($"'{elem}',");
                     }
-                    builder.Append("\n");
                 }
-                builder.Append("\n");
-            }
-            File.AppendAllText(file, builder.ToString() + "\n");
 
+            }
+            
+            /*
+             * Position
+             */
+            builder.Append($"{coordinate.x},{coordinate.y},{coordinate.z},");
+            
+            /*
+             * Action
+             */
+            builder.Append(level.Get(coordinate));
+            
+            File.AppendAllText(file, builder + "\n");
         }
         
         public string FilePath(string fileName)
@@ -238,7 +254,7 @@ namespace XWFC
             InitConfig();
             InitStateAction();
             InitStateActionQueue();
-            InitState();
+            InitLevel();
         }
         
     }

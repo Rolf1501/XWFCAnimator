@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Unity.VisualScripting;
 using UnityEngine;
 using Random = System.Random;
@@ -31,7 +32,7 @@ namespace XWFC
         private static Random _seededRandom;
         private int _seed;
         private bool _allowBacktracking;
-        public Grid<List<char>> state;
+        public Grid<string> Level;
 
 
         #nullable enable
@@ -58,10 +59,21 @@ namespace XWFC
             CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
             CleanState();
 
-            state = new Grid<List<char>>(GridManager.Grid.GetExtent(), tileSet.Keys.Select(x => char.Parse($"{x}")).ToList());
+            Level = new Grid<string>(GridManager.Grid.GetExtent(), ChoicesToString(_tileSet.Keys.ToList()));
             
             WriteResults = writeResults;
             InitTrainingDataFormatter();
+        }
+
+        private static string ChoicesToString(IEnumerable<int> choices)
+        {
+            var s = new StringBuilder();
+            foreach (var c in choices)
+            {
+                s.Append(c);
+            }
+
+            return s.ToString();
         }
 
         private void InitTrainingDataFormatter()
@@ -201,11 +213,12 @@ namespace XWFC
                 return affectedCells;
             }
 
+            UpdateState(tCoord);
+            
             Propagate();
             /*
              * After a collapse and propagation are complete, the state has stabilized and can be updated.
              */
-            UpdateState(tCoord);
             
             // if (WriteResults)
             // {
@@ -243,8 +256,8 @@ namespace XWFC
 
         private void SetState(Vector3 coord, IEnumerable<int> tileIds)
         {
-            var tileChars = tileIds.Select(t => char.Parse($"{t}")).ToList();
-            state.Set(coord, tileChars);
+            // var tileChars = tileIds.Select(t => char.Parse($"{t}")).ToList();
+            Level.Set(coord, ChoicesToString(tileIds));
         }
 
         private void SetOccupied(Vector3 coord, int id)
@@ -467,7 +480,7 @@ namespace XWFC
             if (WriteResults)
             {
                 // _trainingDataFormatter.WriteState(coord, GetObservation(coord, 9));
-                _trainingDataFormatter.WriteState(coord, state);
+                _trainingDataFormatter.WriteLevel(coord, Level);
             }
             // var obs = GetObservation(coord, 19);
             // Debug.Log(obs.GridToString());
@@ -495,9 +508,9 @@ namespace XWFC
                         if (!GridManager.WithinBounds(gridIndex)) continue;
                         
                         var sliderWindowIndex = center + windowOffset;
-                        var allowedTiles = state.Get(gridIndex);
+                        var allowedTiles = Level.Get(gridIndex);
                         var allowedTilesInt = new int[_tileSet.Keys.Count];
-                        for (int i = 0; i < allowedTiles.Count; i++)
+                        for (int i = 0; i < allowedTiles.Length; i++)
                         {
                             var c = allowedTiles[i];
                             allowedTilesInt[int.Parse(c.ToString())] = 1;
@@ -520,13 +533,13 @@ namespace XWFC
         {
             if (extent.Equals(GridExtent)) return;
             GridExtent = extent;
-            InitTrainingDataFormatter();
             Reset();
         }
 
         public void Reset()
         {
             CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
+            Level = new Grid<string>(GridExtent, Level.DefaultFillValue);
             CleanState();
             InitTrainingDataFormatter();
         }

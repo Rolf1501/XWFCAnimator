@@ -23,6 +23,11 @@ namespace XWFC
         {
             return v0.x < v1.x || v0.y < v1.y || v0.z < v1.z;
         }
+
+        public static float Product(Vector3 v)
+        {
+            return v.x * v.y * v.z;
+        }
     }
     
     public static class Util
