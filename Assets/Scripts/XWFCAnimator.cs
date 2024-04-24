@@ -129,7 +129,10 @@ public class XWFCAnimator : MonoBehaviour
             new(2, new List<Relation>() { new(2, null) }, BOTTOM),
         };
         
+        // extent = new Vector3Int(3, 3, 3);
         InitXWFC();
+
+        // _xwfc.Run((int)(500000 / Vector3Util.Product(extent)));
         
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();

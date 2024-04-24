@@ -536,12 +536,33 @@ namespace XWFC
             Reset();
         }
 
-        public void Reset()
+        public void Reset(bool resetWriter=true)
         {
             CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
             Level = new Grid<string>(GridExtent, Level.DefaultFillValue);
             CleanState();
-            InitTrainingDataFormatter();
+            if (resetWriter) InitTrainingDataFormatter();
+        }
+        
+        public void Run(int nRuns, bool write=true)
+        {
+            WriteResults = write;
+            int counter = 0;
+            float progress = 0;
+            while (counter < nRuns)
+            {
+                if (IsDone())
+                {
+                    if ((progress * 100) % 5 == 0) Debug.Log($"Done {counter} runs");
+                    counter++;
+                    Reset(false);
+                    progress = counter * 1.0f / nRuns;
+                }
+                else
+                {
+                    CollapseOnce();
+                }
+            }
         }
     }
     
@@ -575,4 +596,5 @@ namespace XWFC
             Addition = addition;
         }
     }
+    
 }
