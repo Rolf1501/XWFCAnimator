@@ -33,6 +33,7 @@ namespace XWFC
         private int _seed;
         private bool _allowBacktracking;
         public Grid<string> Level;
+        private ServerInteraction _serverInteraction;
 
 
         #nullable enable
@@ -44,6 +45,7 @@ namespace XWFC
             
             _seed = seed ?? new Random().Next();
             _seededRandom = new Random(_seed);
+            _serverInteraction = new();
             Debug.Log($"Seed:{_seed}");
 
             _allowBacktracking = allowBacktracking;
@@ -165,7 +167,7 @@ namespace XWFC
         public HashSet<Occupation> CollapseOnce()
         {
             Debug.Log("Requesting...");
-            var response = ServerInteraction.RequestAction();
+            var response = _serverInteraction.Request();
             Debug.Log("Request done.");
             /*
              * Performs a single collapse and outputs the affected cells' coordinates.
@@ -200,25 +202,31 @@ namespace XWFC
                  * Conflict block.
                  */
                 
-                if (!_allowBacktracking)
-                {
-                    // Reset and start over.
-                    _trainingDataFormatter.Reset();
-                    Reset();
-                    
-                    return affectedCells;
-                }
-                int undoneCells = RestoreSavePoint();
-                Debug.Log($"Restoring to earlier state... At progress {_progress}");
+                var correctAction = int.Parse(_serverInteraction.Request().ToString());
+                tId = correctAction;
+                tCoord = coll;
+                SetOccupied(coll, correctAction);
                 
-                // When rewinding, pass the coordinates of the cells that changed.
-                // The caller can then refer the grid manager to find what the values of the cells should be. 
-                while (undoneCells > 0 && OccupationLog.Count > 0)
-                {
-                    affectedCells.Add(OccupationLog.Pop());
-                    undoneCells--;
-                }
-                return affectedCells;
+                
+                // if (!_allowBacktracking)
+                // {
+                //     // Reset and start over.
+                //     _trainingDataFormatter.Reset();
+                //     Reset();
+                //     
+                //     return affectedCells;
+                // }
+                // int undoneCells = RestoreSavePoint();
+                // Debug.Log($"Restoring to earlier state... At progress {_progress}");
+                //
+                // // When rewinding, pass the coordinates of the cells that changed.
+                // // The caller can then refer the grid manager to find what the values of the cells should be. 
+                // while (undoneCells > 0 && OccupationLog.Count > 0)
+                // {
+                //     affectedCells.Add(OccupationLog.Pop());
+                //     undoneCells--;
+                // }
+                // return affectedCells;
             }
 
             UpdateState(tCoord);
