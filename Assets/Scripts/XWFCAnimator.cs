@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Networking;
 using Debug = UnityEngine.Debug;
 using XWFC;
 using Canvas = UnityEngine.Canvas;
@@ -167,6 +169,7 @@ public class XWFCAnimator : MonoBehaviour
         
     }
 
+    
     private void InitXWFC()
     {
         _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent, writeResults:WriteResults, allowBacktracking:AllowBacktracking);
