@@ -199,6 +199,32 @@ namespace XWFC
             File.WriteAllText(file, builder.ToString());
         }
 
+        public static string FormatState(Grid<string> state)
+        {
+            var extent = state.GetExtent();
+            var builder = new StringBuilder();
+            for (int y = 0; y < extent.y; y++)
+            {
+                for (int x = 0; x < extent.x; x++)
+                {
+                    for (int z = 0; z < extent.z; z++)
+                    {
+                        var elem = state.Get(x, y, z);
+                        builder.Append($"'{elem}',");
+                    }
+                }
+            }
+
+            // Trim trailing comma.
+            if (builder.Length > 0) builder.Length--;
+            return builder.ToString();
+        }
+
+        public static string FormatCoordinate(Vector3 coordinate)
+        {
+            return $"{coordinate.x},{coordinate.y},{coordinate.z}";
+        }
+
         public void WriteLevel(Vector3 coordinate, Grid<string> level)
         {
             var extent = level.GetExtent();
@@ -214,23 +240,12 @@ namespace XWFC
             /*
              * State
              */
-            for (int y = 0; y < extent.y; y++)
-            {
-                for (int x = 0; x < extent.x; x++)
-                {
-                    for (int z = 0; z < extent.z; z++)
-                    {
-                        var elem = level.Get(x, y, z);
-                        builder.Append($"'{elem}',");
-                    }
-                }
-
-            }
+            builder.Append(FormatState(level) + ",");
             
             /*
              * Position
              */
-            builder.Append($"{coordinate.x},{coordinate.y},{coordinate.z},");
+            builder.Append(FormatCoordinate(coordinate) + ",");
             
             /*
              * Action

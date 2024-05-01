@@ -166,9 +166,6 @@ namespace XWFC
 
         public HashSet<Occupation> CollapseOnce()
         {
-            Debug.Log("Requesting...");
-            var response = _serverInteraction.Request();
-            Debug.Log("Request done.");
             /*
              * Performs a single collapse and outputs the affected cells' coordinates.
              * It is up to the caller to refer to the grid to find the cell's contents.
@@ -189,6 +186,9 @@ namespace XWFC
 
             var (x, y, z) = Vector3Util.CastInt(coll);
 
+            Debug.Log("Requesting...");
+            var response = _serverInteraction.Request(Level, coll);
+            Debug.Log("Request done.");
             Vector3 tCoord;
             int tId;
             try
@@ -202,7 +202,7 @@ namespace XWFC
                  * Conflict block.
                  */
                 
-                var correctAction = int.Parse(_serverInteraction.Request().ToString());
+                var correctAction = int.Parse(_serverInteraction.Request(Level, coll).ToString());
                 tId = correctAction;
                 tCoord = coll;
                 SetOccupied(coll, correctAction);

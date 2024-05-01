@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -19,19 +20,23 @@ namespace XWFC
 
         }
 
-        public async Task Request()
+        public async Task Request(Grid<string> state, Vector3 coordinate)
         {
-            var x = await RequestAction(_client, "predict");
+            var x = await RequestAction(_client, "predict", state, coordinate);
             
         }
-        public static async Task<string> RequestAction(HttpClient client, string path)
+        public static async Task<string> RequestAction(HttpClient client, string path, Grid<string> state, Vector3 coordinate)
         {
             Debug.Log("Starting request....");
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Post;
             request.RequestUri = new Uri(client.BaseAddress + path);
+            var content = new StringBuilder();
+            content.Append(TrainingDataFormatter.FormatState(state) + ",");
+            content.Append(TrainingDataFormatter.FormatCoordinate(coordinate));
             
-            request.Content = new StringContent("{state: 123}", Encoding.UTF8, "application/json");
+            request.Content = new StringContent(content.ToString(), Encoding.UTF8, "text/csv");
+            // request.Content = new StringContent(content.ToString(), Encoding.UTF8, "application/json");
             
             using (var response = await client.SendAsync(request))
             {
