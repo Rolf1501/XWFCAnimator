@@ -186,9 +186,6 @@ namespace XWFC
 
             var (x, y, z) = Vector3Util.CastInt(coll);
 
-            Debug.Log("Requesting...");
-            var response = _serverInteraction.Request(Level, coll);
-            Debug.Log("Request done.");
             Vector3 tCoord;
             int tId;
             try
@@ -201,7 +198,6 @@ namespace XWFC
                 /*
                  * Conflict block.
                  */
-                
                 var correctAction = int.Parse(_serverInteraction.Request(Level, coll).ToString());
                 tId = correctAction;
                 tCoord = coll;
