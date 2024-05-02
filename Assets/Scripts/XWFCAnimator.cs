@@ -55,38 +55,40 @@ public class XWFCAnimator : MonoBehaviour
     }
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         TileSet = new TileSet();
 
         var defaultWeights = new Dictionary<int, float>();
-        
+
         var t0 = new Terminal(
-            new Vector3(2,1, 2), 
-            new Color(.8f, 0, .2f) ,
+            new Vector3(2, 1, 2),
+            new Color(.8f, 0, .2f),
             null,
             null
-            );
-        var t1 = new Terminal(new Vector3(2, 1, 2), new Color(.2f, 0, .8f), new bool[,,]{ { {true, true}, {true, false} } }, null);
-        var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, .4f, .3f), null, null);
+        );
+        var t1 = new Terminal(new Vector3(2, 1, 2), new Color(.2f, 0, .8f),
+            new bool[,,] { { { true, true }, { true, false } } }, null);
+        var t2 = new Terminal(new Vector3(2, 1, 1), new Color(.2f, .4f, .3f), null, null);
         // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, 0, .8f), null, null);
-        
+
         TileSet.Add(0, t0);
         TileSet.Add(1, t1);
         TileSet.Add(2, t2);
-        
+
         CompleteTerminalSet.Add(0, t0);
         CompleteTerminalSet.Add(1, t1);
         CompleteTerminalSet.Add(2, t2);
-        
+
         var NORTH = new Vector3(0, 0, 1);
         var SOUTH = new Vector3(0, 0, -1);
         var EAST = new Vector3(1, 0, 0);
         var WEST = new Vector3(-1, 0, 0);
         var TOP = new Vector3(0, 1, 0);
         var BOTTOM = new Vector3(0, -1, 0);
-        
-        _adjacency = new HashSetAdjacency(){
+
+        _adjacency = new HashSetAdjacency()
+        {
             // 0-0
             new(0, new List<Relation>() { new(0, null) }, NORTH),
             new(0, new List<Relation>() { new(0, null) }, EAST),
@@ -130,43 +132,57 @@ public class XWFCAnimator : MonoBehaviour
             new(2, new List<Relation>() { new(2, null) }, TOP),
             new(2, new List<Relation>() { new(2, null) }, BOTTOM),
         };
-        
-        // extent = new Vector3Int(3, 3, 3);
-        InitXWFC();
 
-        // _xwfc.Run((int)(500000 / Vector3Util.Product(extent)));
+        extent = new Vector3Int(3, 3, 3);
+        InitXWFC();
         
+        Debug.Log("Initialized XWFC");
+
+        const int lines = 10000;
+        const float runsPerIntervalFraction = 0.2f;
+        int nRuns = CalcNRuns(lines, extent);
+
+        _xwfc.Run(nRuns, runsPerIntervalFraction);
+
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
-        
+
         foreach (var o in _xwfc.Offsets)
         {
             var x = _xwfc.AdjMatrix.AtomAdjacencyMatrix[o];
             var s = "" + o + "\n";
-            for (var i = 0; i < x.GetLength(0);i++)
+            for (var i = 0; i < x.GetLength(0); i++)
             {
                 s += $"{i}\t";
                 for (var j = 0; j < x.GetLength(1); j++)
                 {
                     s += x[i, j] + "\t";
                 }
+
                 s += "\n";
             }
+
             Debug.Log(s);
-        
+
         }
-        
-        foreach (var (k,v) in _xwfc.AdjMatrix.AtomMapping.Dict)
+
+        foreach (var (k, v) in _xwfc.AdjMatrix.AtomMapping.Dict)
         {
-            Debug.Log(k.ToString() +  v.ToString());
+            Debug.Log(k.ToString() + v.ToString());
         }
-        
+
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
-        
+
         // Set for keeping track of drawn terminals.
         _drawnTiles = new HashSet<GameObject>();
         DrawTiles();
-        
+    }
+
+
+
+    private static int CalcNRuns(int lines, Vector3 extent)
+    {
+        return (int)(lines / Vector3Util.Product(extent));
     }
 
     

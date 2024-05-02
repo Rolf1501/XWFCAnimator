@@ -11,7 +11,7 @@ namespace XWFC
 
     public class AdjacencyMatrix
     {
-        private int[] TileIds { get; }
+        public int[] TileIds { get; }
         public HashSetAdjacency TileAdjacencyConstraints { get; } // Set of tile adjacency constraints.
         private TileSet TileSet { get; }
         private int OffsetsDimensions { get; } // Set the number of dimensions to operate in.

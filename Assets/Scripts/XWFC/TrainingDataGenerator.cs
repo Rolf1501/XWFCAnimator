@@ -78,10 +78,19 @@ namespace XWFC
 
             var extent = new Vector3Int(3, 3, 3);
             
-            var xwfc = new ExpressiveWFC(tileSet, adjacency, extent,  writeResults:true, allowBacktracking:true);
+            var xwfc = new ExpressiveWFC(tileSet, adjacency, extent,  writeResults:true, allowBacktracking:false);
             Debug.Log("Initialized XWFC");
 
-            xwfc.Run((int)(500000 / Vector3Util.Product(extent)));
+            const int lines = 10;
+            const float runsPerIntervalFraction = 0.2f;
+            int nRuns = CalcNRuns(lines, extent);
+            xwfc.Run(nRuns, runsPerIntervalFraction);
         }
+
+        private int CalcNRuns(int lines, Vector3 extent)
+        {
+            return (int)(lines / Vector3Util.Product(extent));
+        }
+
     }
 }

@@ -42,8 +42,8 @@ namespace XWFC
             _tileSet = tileSet;
             GridExtent = gridExtent;
             
-            _seed = seed ?? new Random().Next();
-            _seededRandom = new Random(_seed);
+            InitRandom(seed);
+            
             Debug.Log($"Seed:{_seed}");
 
             _allowBacktracking = allowBacktracking;
@@ -63,6 +63,12 @@ namespace XWFC
             
             WriteResults = writeResults;
             InitTrainingDataFormatter();
+        }
+
+        private void InitRandom(int? seed=null)
+        {
+            _seed = seed ?? new Random().Next();
+            _seededRandom = new Random(_seed);
         }
 
         private static string ChoicesToString(IEnumerable<int> choices)
@@ -85,8 +91,11 @@ namespace XWFC
             if (!Directory.Exists(outPath)) Directory.CreateDirectory(outPath);
             
             _trainingDataFormatter = new TrainingDataFormatter(outPath,"output.csv");
-            
-            _trainingDataFormatter.WriteConfig(GridExtent, _seed.ToString(), AdjMatrix);
+        }
+
+        private void WriteConfig(bool failure=false)
+        {
+            _trainingDataFormatter.WriteConfig(GridExtent, _seed.ToString(), AdjMatrix, failure);
         }
 
         private Vector3 CenterCoord()
@@ -164,9 +173,6 @@ namespace XWFC
 
         public HashSet<Occupation> CollapseOnce()
         {
-            Debug.Log("Requesting...");
-            var response = ServerInteraction.RequestAction();
-            Debug.Log("Request done.");
             /*
              * Performs a single collapse and outputs the affected cells' coordinates.
              * It is up to the caller to refer to the grid to find the cell's contents.
@@ -544,31 +550,63 @@ namespace XWFC
             Reset();
         }
 
-        public void Reset(bool resetWriter=true)
+        public void Reset(bool resetWriter=true, bool resetSeed=false)
         {
             CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
             Level = new Grid<string>(GridExtent, Level.DefaultFillValue);
             CleanState();
             if (resetWriter) InitTrainingDataFormatter();
+            if (resetSeed) InitRandom();
         }
         
-        public void Run(int nRuns, bool write=true)
+        public void Run(int nRuns, float? writeIntervalsPercentage, bool write=true)
         {
+            int writeIntervals = -1;
+            bool interval = false;
+            if (writeIntervalsPercentage != null)
+            {
+                writeIntervals = (int) (nRuns * writeIntervalsPercentage);
+                interval = true;
+            }
             WriteResults = write;
             int counter = 0;
+            int intervalCounter = 0;
             float progress = 0;
             while (counter < nRuns)
             {
                 if (IsDone())
                 {
+                    WriteConfig();
+                    _trainingDataFormatter.ConcatLevel();
                     if ((progress * 100) % 5 == 0) Debug.Log($"Done {counter} runs");
                     counter++;
-                    Reset(false);
+                    intervalCounter++;
+                    var resetWriter = false;
+                    if (interval)
+                    {
+                        resetWriter = writeIntervals == intervalCounter;
+                        if (resetWriter) intervalCounter = 0;
+                    }
+                    // Resets the writer once every n intervals. Splits the output to make it less prone to loss of output progress.
+                    Reset(resetWriter, true);
                     progress = counter * 1.0f / nRuns;
                 }
                 else
                 {
-                    CollapseOnce();
+                    var cells = CollapseOnce();
+                    
+                    // If run results in a conflict, handle discard.
+                    if (cells.Count != 0) continue;
+                    
+                    /*
+                     * Must reset random here too! Otherwise, the exact trace is not easily reproducible.
+                     * Since the seed does not seem to result in a successful solution, choose new seed.
+                     */
+                    WriteConfig(true);
+                    _trainingDataFormatter.ConcatLevel(true);
+                    InitRandom();
+                        
+                    _trainingDataFormatter.ResetLevel();
                 }
             }
         }
