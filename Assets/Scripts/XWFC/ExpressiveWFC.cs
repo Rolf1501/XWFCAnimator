@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Random = System.Random;
 
 namespace XWFC
@@ -34,7 +35,7 @@ namespace XWFC
 
             int[] keys = _tileSet.Keys.ToArray();
             AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _tileSet);
-
+            
             _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
             _defaultWeights = ExpandDefaultWeights(defaultWeights);
             

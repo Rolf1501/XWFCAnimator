@@ -7,6 +7,7 @@ using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 using XWFC;
 using Canvas = UnityEngine.Canvas;
+using Random = System.Random;
 using Vector3 = UnityEngine.Vector3;
 
 public class XWFCAnimator : MonoBehaviour
@@ -57,23 +58,84 @@ public class XWFCAnimator : MonoBehaviour
 
         var defaultWeights = new Dictionary<int, float>();
         
-        var t0 = new Terminal(
-            new Vector3(2,1, 2), 
-            new Color(.8f, 0, .2f) ,
-            null,
+        // var t0 = new Terminal(
+        //     new Vector3(2,1, 2), 
+        //     new Color(.8f, 0, .2f) ,
+        //     null,
+        //     null
+        //     );
+        // var t1 = new Terminal(new Vector3(2, 1, 2), new Color(.2f, 0, .8f), new bool[,,]{ { {true, true}, {true, false} } }, null);
+        // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, .4f, .3f), new bool[,,] { { {true}, {true} } }, null);
+
+        // var t2 = new Terminal(
+        var tileL = new Terminal(
+            new Vector3(2, 1, 3),
+            new Color(240 / 255.0f, 160 / 255.0f, 0),
+            new bool[,,] { { { true, true, true }, { true, false, false } } },
             null
-            );
-        var t1 = new Terminal(new Vector3(2, 1, 2), new Color(.2f, 0, .8f), new bool[,,]{ { {true, true}, {true, false} } }, null);
-        var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, .4f, .3f), null, null);
+        );
+        var tileT = new Terminal(
+            new Vector3(2, 1, 3),
+            new Color(160 / 255.0f, 0, 240/255.0f),
+            new bool[,,] { { { false, true, false }, { true, true, true }} },
+            null
+        );
+        
+        var tileJ = new Terminal(
+            new Vector3(3, 1, 2),
+            new Color(0, 0, 240 / 255.0f),
+            new bool[,,] { { { true, true }, { false, true }, { false, true } } },
+            null
+        );
+        
+        var tileI = new Terminal(
+            new Vector3(4, 1, 1),
+            new Color(0, 240 / 255.0f, 240 / 255.0f),
+            new bool[,,] { { { true }, { true }, { true }, { true } } },
+            null
+        );
+        
+        var tileS = new Terminal(
+            new Vector3(2, 1, 3),
+            new Color(0, 240 / 255.0f, 0),
+            new bool[,,] { { { true, true, false }, { false, true, true }} },
+            null
+        );
+        var tileZ = new Terminal(
+            new Vector3(2, 1, 3),
+            new Color(240 / 255.0f, 0, 0),
+            new bool[,,] { { { false, true, true }, { true, true, false }} },
+            null
+        );
+        var tileO = new Terminal(
+            new Vector3(2, 1, 2),
+            new Color(0, 240 / 255.0f, 240 / 255.0f),
+
+            // new Color(240 / 255.0f, 240 / 255.0f, 0),
+            new bool[,,] { { { true, true }, { true, true }} },
+            null
+        );
+
+        var tetrisTiles = new Terminal[] { tileO, tileL, tileJ };//, tileL, tileI, tileJ, tileO };
+        
         // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, 0, .8f), null, null);
         
-        TileSet.Add(0, t0);
-        TileSet.Add(1, t1);
-        TileSet.Add(2, t2);
+        for(int i = 0; i < tetrisTiles.Length; i++)
+        {
+            CompleteTerminalSet.Add(i, tetrisTiles[i]);
+        }
         
-        CompleteTerminalSet.Add(0, t0);
-        CompleteTerminalSet.Add(1, t1);
-        CompleteTerminalSet.Add(2, t2);
+        TileSet.Add(0, tetrisTiles[0]);
+        TileSet.Add(1, tetrisTiles[1]);
+        TileSet.Add(2, tetrisTiles[2]);
+        
+        // TileSet.Add(0, t0);
+        // TileSet.Add(1, t1);
+        // TileSet.Add(2, t2);
+        //
+        // CompleteTerminalSet.Add(0, t0);
+        // CompleteTerminalSet.Add(1, t1);
+        // CompleteTerminalSet.Add(2, t2);
         
         var NORTH = new Vector3(0, 0, 1);
         var SOUTH = new Vector3(0, 0, -1);
@@ -84,16 +146,23 @@ public class XWFCAnimator : MonoBehaviour
         
         _adjacency = new HashSetAdjacency(){
             // 0-0
-            new(0, new List<Relation>() { new(0, null) }, NORTH),
+            // new(0, new List<Relation>() { new(0, null) }, NORTH),
             new(0, new List<Relation>() { new(0, null) }, EAST),
-            new(0, new List<Relation>() { new(0, null) }, SOUTH),
+            // new(0, new List<Relation>() { new(0, null) }, SOUTH),
             new(0, new List<Relation>() { new(0, null) }, WEST),
             new(0, new List<Relation>() { new(0, null) }, TOP),
             new(0, new List<Relation>() { new(0, null) }, BOTTOM),
             // 1-0
             new(1, new List<Relation>() { new(0, null) }, NORTH),
-            new(1, new List<Relation>() { new(0, null) }, EAST),
+            // new(1, new List<Relation>() { new(0, null) }, EAST),
             new(1, new List<Relation>() { new(0, null) }, SOUTH),
+            // new(1, new List<Relation>() { new(0, null) }, WEST),
+            new(1, new List<Relation>() { new(0, null) }, TOP),
+            new(1, new List<Relation>() { new(0, null) }, BOTTOM),
+            // 1-1
+            // new(1, new List<Relation>() { new(0, null) }, NORTH),
+            new(1, new List<Relation>() { new(0, null) }, EAST),
+            // new(1, new List<Relation>() { new(0, null) }, SOUTH),
             new(1, new List<Relation>() { new(0, null) }, WEST),
             new(1, new List<Relation>() { new(0, null) }, TOP),
             new(1, new List<Relation>() { new(0, null) }, BOTTOM),
@@ -151,8 +220,6 @@ public class XWFCAnimator : MonoBehaviour
         
         // Set for keeping track of drawn terminals.
         _drawnTiles = new HashSet<GameObject>();
-
-        
         
         DrawTiles();
         
@@ -160,7 +227,17 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFC()
     {
-        _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent);
+        try
+        {
+            _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent);
+
+        }
+        catch (Exception exception)
+        {
+            var s = exception.ToString();
+            Debug.Log(s);
+            Debug.Log("Ran into an error...");
+        }
         Debug.Log("Initialized XWFC");
     }
 
@@ -435,9 +512,23 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
 
-    private void UpdateColorFromAtom(GameObject obj, int atomId)
+    private static Color ApplyVariation(Color c, float fluctuation)
     {
-        obj.GetComponent<Renderer>().material.color = GetTerminalColorFromAtom(atomId);
+        var rand = new Random();
+        var fluct = (float)rand.NextDouble() * fluctuation;
+        Color color = c;
+        color.r += fluct;
+        color.g += fluct;
+        color.b += fluct;
+        return color;
+
+    }
+
+    private void UpdateColorFromAtom(GameObject obj, int atomId, bool applyFluctuation=true)
+    {
+        var color = GetTerminalColorFromAtom(atomId);
+        if (applyFluctuation) color = ApplyVariation(color, 0.2f);
+        obj.GetComponent<Renderer>().material.color = color;
     }
 
     private void UpdateColorFromTerminal(GameObject obj, int tileId)
