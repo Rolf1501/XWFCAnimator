@@ -25,7 +25,6 @@ namespace XWFC
         private string _configPath;
         private string _stateActionPath;
         private string _stateActionQueuePath;
-        private string _levelTempPath;
         [CanBeNull] private Grid<string> _level;
 
         public TrainingDataFormatter(string directory, string fileName)
@@ -35,8 +34,8 @@ namespace XWFC
             // Time stamp used to uniquely identify data files.
             InitTimeStamp();
             InitConfig();
-            InitStateAction();
-            InitStateActionQueue();
+            // InitStateAction();
+            // InitStateActionQueue();
             InitLevel();
             InitLevelConcat();
         }
@@ -51,9 +50,15 @@ namespace XWFC
             return timeStamp.Replace("-","").Replace("/", "-").Replace("\\","-").Replace(" ", "-").Replace(":", "");
         }
 
-        public string CreateFile(string filePreFix)
+        private string GetFilePath(string filePrefix, bool failure=false)
         {
-            var path = FilePath($"{filePreFix}-{_timeStamp}-{_fileName}");
+            var name = filePrefix + (failure ? FailureSuffix : "");
+            return FilePath($"{name}-{_timeStamp}-{_fileName}");
+        }
+
+        public string CreateFile(string filePrefix)
+        {
+            var path = GetFilePath(filePrefix);// FilePath($"{filePrefix}-{_timeStamp}-{_fileName}");
             if (File.Exists(path)) return path;
             var file = File.Create(path);
             file.Close();
@@ -97,105 +102,105 @@ namespace XWFC
             File.AppendAllText(file, builder.ToString());
         }
 
-        public void InitStateAction()
-        {
-            var builder = new StringBuilder();
-            var file = CreateFile(StateActionPrefix);
-            builder.Append("state,action");
-            builder.Append("\n");
-            _stateActionPath = file;
-            File.WriteAllText(file, builder.ToString());
-        }
-        
-        public void WriteStateAction(GridManager gridManager, int[] action, Vector3Int index, Vector3Int observationWindow)
-        {
-            /*
-             * Structure:
-             * - state: whd * nTiles cells.
-             * - action: nTiles cells.
-             */
-            var builder = StateActionEntry(gridManager, action, index, observationWindow);
-            var file = CreateFile(StateActionPrefix);
-
-            builder.Append("\n");
-            File.AppendAllText(file, builder.ToString());
-        }
-
-        private StringBuilder StateActionEntry(GridManager gridManager, int[] action, Vector3Int index, Vector3Int observationWindow)
-        {
-            /*
-             * Structure:
-             * - state: whd * nTiles cells.
-             * - action: nTiles cells.
-             */
-            var builder = new StringBuilder();
-            var padded = new Grid<bool[]>(observationWindow, new bool[gridManager.GetNChoices()]);
-            var center = Vector3Util.Scale(observationWindow, 0.5f);
-            var posBoundDiff = observationWindow - center;
-            var negBoundDiff = -1 * center;
-
-            // Iterate sliding window.
-            for (int yw = negBoundDiff.y; yw < posBoundDiff.y; yw++)
-            {
-                for (int xw = negBoundDiff.x; xw < posBoundDiff.x; xw++)
-                {
-                    for (int zw = negBoundDiff.z; zw < posBoundDiff.z; zw++)
-                    {
-                        var windowOffset = new Vector3Int(xw, yw, zw);
-                        var gridIndex = index + windowOffset;
-                        if (!gridManager.WithinBounds(gridIndex)) continue;
-                        
-                        var sliderWindowIndex = center + windowOffset;
-                        padded.Set(sliderWindowIndex, gridManager.ChoiceBooleans.Get(gridIndex));
-                    }
-                }
-            }
-            
-            // var intFlattened = flattened.SelectMany(x => x.Select(x0 => x0 ? 1 : 0).ToArray()).ToArray();
-            var paddedFlattened = Grid<bool[]>.Flatten(padded).SelectMany(x => x.Select(x0 => x0 ? 1 : 0).ToArray()).ToArray();
-            
-            foreach (var t in paddedFlattened)
-            {
-                builder.Append(t + ",");
-            }
-
-            foreach (var value in action)
-            {
-                builder.Append(value + ",");
-            }
-
-            return builder;
-        }
-
-        private void InitStateActionQueue()
-        {
-            var builder = new StringBuilder();
-            var file = CreateFile(StateActionQueuePrefix);
-            builder.Append("state,action,queue");
-            builder.Append("\n");
-            _stateActionQueuePath = file;
-            File.WriteAllText(file, builder.ToString());
-        }
-
-        public void WriteStateActionQueue(GridManager gridManager, int[] action, Vector3Int index, Vector3Int observationWindow,
-            CollapsePriorityQueue collapsePriorityQueue)
-        {
-            /*
-             * Structure:
-             * - state: whd * nTiles cells.
-             * - action: nTiles cells.
-             * - collapse queue: remainder of cells.
-             */
-            var builder = StateActionEntry(gridManager, action, index, observationWindow);
-            var file = CreateFile(StateActionQueuePrefix);
-            foreach (var collapse in collapsePriorityQueue.List)
-            {
-                builder.Append(collapse + ",");
-            }
-
-            builder.Append("\n");
-            File.AppendAllText(file, builder.ToString());
-        }
+        // public void InitStateAction()
+        // {
+        //     var builder = new StringBuilder();
+        //     var file = CreateFile(StateActionPrefix);
+        //     builder.Append("state,action");
+        //     builder.Append("\n");
+        //     _stateActionPath = file;
+        //     File.WriteAllText(file, builder.ToString());
+        // }
+        //
+        // public void WriteStateAction(GridManager gridManager, int[] action, Vector3Int index, Vector3Int observationWindow)
+        // {
+        //     /*
+        //      * Structure:
+        //      * - state: whd * nTiles cells.
+        //      * - action: nTiles cells.
+        //      */
+        //     var builder = StateActionEntry(gridManager, action, index, observationWindow);
+        //     var file = CreateFile(StateActionPrefix);
+        //
+        //     builder.Append("\n");
+        //     File.AppendAllText(file, builder.ToString());
+        // }
+        //
+        // private StringBuilder StateActionEntry(GridManager gridManager, int[] action, Vector3Int index, Vector3Int observationWindow)
+        // {
+        //     /*
+        //      * Structure:
+        //      * - state: whd * nTiles cells.
+        //      * - action: nTiles cells.
+        //      */
+        //     var builder = new StringBuilder();
+        //     var padded = new Grid<bool[]>(observationWindow, new bool[gridManager.GetNChoices()]);
+        //     var center = Vector3Util.Scale(observationWindow, 0.5f);
+        //     var posBoundDiff = observationWindow - center;
+        //     var negBoundDiff = -1 * center;
+        //
+        //     // Iterate sliding window.
+        //     for (int yw = negBoundDiff.y; yw < posBoundDiff.y; yw++)
+        //     {
+        //         for (int xw = negBoundDiff.x; xw < posBoundDiff.x; xw++)
+        //         {
+        //             for (int zw = negBoundDiff.z; zw < posBoundDiff.z; zw++)
+        //             {
+        //                 var windowOffset = new Vector3Int(xw, yw, zw);
+        //                 var gridIndex = index + windowOffset;
+        //                 if (!gridManager.WithinBounds(gridIndex)) continue;
+        //                 
+        //                 var sliderWindowIndex = center + windowOffset;
+        //                 padded.Set(sliderWindowIndex, gridManager.ChoiceBooleans.Get(gridIndex));
+        //             }
+        //         }
+        //     }
+        //     
+        //     // var intFlattened = flattened.SelectMany(x => x.Select(x0 => x0 ? 1 : 0).ToArray()).ToArray();
+        //     var paddedFlattened = Grid<bool[]>.Flatten(padded).SelectMany(x => x.Select(x0 => x0 ? 1 : 0).ToArray()).ToArray();
+        //     
+        //     foreach (var t in paddedFlattened)
+        //     {
+        //         builder.Append(t + ",");
+        //     }
+        //
+        //     foreach (var value in action)
+        //     {
+        //         builder.Append(value + ",");
+        //     }
+        //
+        //     return builder;
+        // }
+        //
+        // private void InitStateActionQueue()
+        // {
+        //     var builder = new StringBuilder();
+        //     var file = CreateFile(StateActionQueuePrefix);
+        //     builder.Append("state,action,queue");
+        //     builder.Append("\n");
+        //     _stateActionQueuePath = file;
+        //     File.WriteAllText(file, builder.ToString());
+        // }
+        //
+        // public void WriteStateActionQueue(GridManager gridManager, int[] action, Vector3Int index, Vector3Int observationWindow,
+        //     CollapsePriorityQueue collapsePriorityQueue)
+        // {
+        //     /*
+        //      * Structure:
+        //      * - state: whd * nTiles cells.
+        //      * - action: nTiles cells.
+        //      * - collapse queue: remainder of cells.
+        //      */
+        //     var builder = StateActionEntry(gridManager, action, index, observationWindow);
+        //     var file = CreateFile(StateActionQueuePrefix);
+        //     foreach (var collapse in collapsePriorityQueue.List)
+        //     {
+        //         builder.Append(collapse + ",");
+        //     }
+        //
+        //     builder.Append("\n");
+        //     File.AppendAllText(file, builder.ToString());
+        // }
         private void InitLevel(int nCols=0)
         {
             var builder = new StringBuilder();
@@ -235,7 +240,6 @@ namespace XWFC
                         builder.Append($"'{elem}',");
                     }
                 }
-
             }
             
             /*
@@ -264,31 +268,50 @@ namespace XWFC
         public void Reset()
         {
             File.Delete(_configPath);
-            File.Delete(_stateActionPath);
-            File.Delete(_stateActionQueuePath);
-            File.Delete(_levelTempPath);
+            
+            // File.Delete(_stateActionPath);
+            // File.Delete(_stateActionQueuePath);
             // InitTimeStamp();
             InitConfig();
-            InitStateAction();
-            InitStateActionQueue();
+            // InitStateAction();
+            // InitStateActionQueue();
             InitLevel();
             InitLevelConcat();
         }
         
         
-        public void ResetLevel()
+        public void ResetLevel(bool delete=false)
         {
-            InitLevel();
+            if (delete)
+            {
+                Delete(LevelPrefix);
+            }
+            else
+            {
+                InitLevel();
+            }
+        }
+
+        private void Delete(string filePrefix, bool failure=false)
+        {
+            var name = GetFilePath(filePrefix, failure);
+            if (File.Exists(name))
+            {
+                File.Delete(name);
+            }
         }
 
         public void ConcatLevel(bool failure=false)
         {
-            var fileName = LevelPrefix;
-            if (failure) fileName += FailureSuffix;
-            var file = CreateFile(fileName);
+            // Fetch the correlating file containing the trace.
+            var levelPath = LevelPrefix;
+            var file = CreateFile(levelPath);
             
             var content = File.ReadAllLines(file);
-            var concatFile = CreateFile(LevelConcatPrefix);
+
+            var concatPath = LevelConcatPrefix;
+            if (failure) concatPath += FailureSuffix;
+            var concatFile = CreateFile(concatPath);
             var builder = new StringBuilder();
 
             var i = 1; // skip header if header is already present.

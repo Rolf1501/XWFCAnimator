@@ -265,6 +265,7 @@ namespace XWFC
 
         private int CalcMinSum(int[] baseSlice, int baseMaxDepth, int[] sliderSlice, int sliderMaxDepth)
         {
+            if (baseSlice.Length == 0 || sliderSlice.Length == 0) return -1;
             // There cannot be an adjacency when all layers in either the base or slider are empty.
             if (baseSlice.Min() > baseMaxDepth - 1 || sliderSlice.Min() > sliderMaxDepth - 1) return -1;
             
@@ -319,6 +320,12 @@ namespace XWFC
                     
                     int minSum = CalcMinSum(baseSlice, baseData.ShapeXyz[offsetDirectionIndex], 
                         sliderSlice, sliderData.ShapeXyz[offsetDirectionIndex]);
+
+                    if (minSum < 0)
+                    {
+                        // Debug.Log("Invalid minsum...");
+                        continue; 
+                    }
 
                     Vector3 relativeSliderPosition = RelativeSliderPosition(
                         sliderMinPositionFromBase, x, y, minSum, sign, offsetDirectionIndex, up, looking);

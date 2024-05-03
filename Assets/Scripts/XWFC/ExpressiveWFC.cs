@@ -1,10 +1,8 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Unity.VisualScripting;
 using UnityEngine;
 using Random = System.Random;
 
@@ -50,7 +48,7 @@ namespace XWFC
 
             int[] keys = _tileSet.Keys.ToArray();
             AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _tileSet);
-
+            
             _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
             _defaultWeights = ExpandDefaultWeights(defaultWeights);
             
@@ -209,7 +207,6 @@ namespace XWFC
                 if (!_allowBacktracking)
                 {
                     // Reset and start over.
-                    _trainingDataFormatter.Reset();
                     Reset();
                     
                     return affectedCells;
@@ -292,13 +289,13 @@ namespace XWFC
             var choiceWeights = GridManager.ChoiceWeights.Get(x, y, z);
 
             int chosenIndex = RandomChoice(choiceBooleans, choiceWeights);
+            // TODO: move this to propagation instead for early conflict detection.
+            if (chosenIndex < 0) throw new NoMoreChoicesException($"No more choice remain for cell {x}, {y}, {z}.");
             var updatedBool = new bool[AdjMatrix.GetNAtoms()];
             updatedBool[chosenIndex] = true;
             UpdateRemainingChoices(new Vector3(x,y,z), updatedBool);
             // GridManager.ChoiceBooleans.Set(x,y,z,updatedBool);
 
-            // TODO: move this to propagation instead for early conflict detection.
-            if (chosenIndex < 0) throw new NoMoreChoicesException($"No more choice remain for cell {x}, {y}, {z}.");
 
             return choiceIds[chosenIndex];
         }
@@ -550,7 +547,7 @@ namespace XWFC
             Reset();
         }
 
-        public void Reset(bool resetWriter=true, bool resetSeed=false)
+        public void Reset(bool resetWriter=false, bool resetSeed=false)
         {
             CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
             Level = new Grid<string>(GridExtent, Level.DefaultFillValue);
@@ -585,7 +582,12 @@ namespace XWFC
                     if (interval)
                     {
                         resetWriter = writeIntervals == intervalCounter;
-                        if (resetWriter) intervalCounter = 0;
+                    }
+
+                    if (resetWriter)
+                    { 
+                        intervalCounter = 0;
+                        // _trainingDataFormatter.ResetLevel(true);
                     }
                     // Resets the writer once every n intervals. Splits the output to make it less prone to loss of output progress.
                     Reset(resetWriter, true);
@@ -599,14 +601,14 @@ namespace XWFC
                     if (cells.Count != 0) continue;
                     
                     /*
-                     * Must reset random here too! Otherwise, the exact trace is not easily reproducible.
-                     * Since the seed does not seem to result in a successful solution, choose new seed.
+                     * Must reset random here too. Otherwise, the exact trace is not easily reproducible.
+                     * Since the seed does not seem to result in a successful solution, choose new seed and reset.
                      */
                     WriteConfig(true);
                     _trainingDataFormatter.ConcatLevel(true);
                     InitRandom();
                         
-                    _trainingDataFormatter.ResetLevel();
+                    _trainingDataFormatter.ResetLevel(true);
                 }
             }
         }
