@@ -78,7 +78,7 @@ namespace XWFC
 
             var extent = new Vector3Int(3, 3, 3);
             
-            var xwfc = new ExpressiveWFC(tileSet, adjacency, extent,  writeResults:true, allowBacktracking:false);
+            var xwfc = new ExpressiveWFC(tileSet, adjacency, extent,  writeResults:true, conflictMode:ConflictMode.None);
             Debug.Log("Initialized XWFC");
 
             const int lines = 10;

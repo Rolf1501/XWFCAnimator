@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Unity.VisualScripting;
 using UnityEngine;
 using Random = System.Random;
 
@@ -29,23 +30,21 @@ namespace XWFC
         private TrainingDataFormatter _trainingDataFormatter;
         private static Random _seededRandom;
         private int _seed;
-        private bool _allowBacktracking;
         public Grid<string> Level;
+        private ConflictMode _conflictMode;
 
 
         #nullable enable
         public ExpressiveWFC(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
-            Vector3Int gridExtent, Dictionary<int, float>? defaultWeights = null, bool writeResults = false, int? seed = null, bool allowBacktracking = true)
+            Vector3Int gridExtent, Dictionary<int, float>? defaultWeights = null, bool writeResults = false, int? seed = null, ConflictMode conflictMode = ConflictMode.Backtracking)
         {
             _tileSet = tileSet;
             GridExtent = gridExtent;
+
+            _conflictMode = conflictMode;
             
             InitRandom(seed);
             
-            Debug.Log($"Seed:{_seed}");
-
-            _allowBacktracking = allowBacktracking;
-
             int[] keys = _tileSet.Keys.ToArray();
             AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _tileSet);
             
@@ -85,10 +84,9 @@ namespace XWFC
             if (!WriteResults) return; 
             var dir = Directory.GetCurrentDirectory();
             var outPath = Path.Join(dir, "/Assets/Scripts/Output");
-            Debug.Log($"outpath: {outPath}");
             if (!Directory.Exists(outPath)) Directory.CreateDirectory(outPath);
             
-            _trainingDataFormatter = new TrainingDataFormatter(outPath,"output.csv");
+            _trainingDataFormatter = new TrainingDataFormatter(outPath,"output.csv", GridExtent);
         }
 
         private void WriteConfig(bool failure=false)
@@ -165,8 +163,6 @@ namespace XWFC
             {
                 CollapseOnce();
             }
-
-            Debug.Log("All done!");
         }
 
         public HashSet<Occupation> CollapseOnce()
@@ -203,25 +199,38 @@ namespace XWFC
                 /*
                  * Conflict block.
                  */
-                
-                if (!_allowBacktracking)
+
+                switch (_conflictMode)
                 {
-                    // Reset and start over.
-                    Reset();
-                    
-                    return affectedCells;
-                }
-                int undoneCells = RestoreSavePoint();
-                Debug.Log($"Restoring to earlier state... At progress {_progress}");
+                    case ConflictMode.Backtracking:
+                    {
+                        int undoneCells = RestoreSavePoint();
+                        Debug.Log($"Restoring to earlier state... At progress {_progress}");
                 
-                // When rewinding, pass the coordinates of the cells that changed.
-                // The caller can then refer the grid manager to find what the values of the cells should be. 
-                while (undoneCells > 0 && OccupationLog.Count > 0)
-                {
-                    affectedCells.Add(OccupationLog.Pop());
-                    undoneCells--;
+                        // When rewinding, pass the coordinates of the cells that changed.
+                        // The caller can then refer the grid manager to find what the values of the cells should be. 
+                        while (undoneCells > 0 && OccupationLog.Count > 0)
+                        {
+                            affectedCells.Add(OccupationLog.Pop());
+                            undoneCells--;
+                        }
+                        return affectedCells;
+                    }
+                    case ConflictMode.POD:
+                    {
+                        // Call oracle here...
+                        
+                        return affectedCells;
+                    }
+                    case ConflictMode.None:
+                    {
+                        // Reset and start over.
+                        Reset();
+                        
+                        return affectedCells;
+                    }
+                    default: return affectedCells;
                 }
-                return affectedCells;
             }
 
             UpdateState(tCoord);
@@ -230,14 +239,6 @@ namespace XWFC
             /*
              * After a collapse and propagation are complete, the state has stabilized and can be updated.
              */
-            
-            // if (WriteResults)
-            // {
-            //     var action = new int[AdjMatrix.GetNAtoms()];
-            //     action[tId] = 1;
-            //     _trainingDataFormatter.WriteStateAction(GridManager, action, new Vector3Int(x,y,z), GridManager.ChoiceBooleans.GetExtent());
-            //     // _trainingDataFormatter.WriteStateActionQueue(GridManager, action, new Vector3Int(x,y,z), GridManager.ChoiceBooleans.GetExtent(), _collapseQueue);
-            // }
             var occupation = new Occupation(tCoord, tId);
             affectedCells.Add(occupation);
             
@@ -340,9 +341,9 @@ namespace XWFC
 
         private void PrintProgressUpdate(float progress, int percentageIntervals = 10)
         {
-            if (_progress % percentageIntervals == 0)
-                Debug.Log(
-                    $"STATUS: {progress}%. Processed {_counter}/{GridExtent.x * GridExtent.y * GridExtent.z} cells");
+            // if (_progress % percentageIntervals == 0)
+            //     Debug.Log(
+            //         $"STATUS: {progress}%. Processed {_counter}/{GridExtent.x * GridExtent.y * GridExtent.z} cells");
         }
 
         private void UpdateProgress(int increment = 1)
@@ -556,7 +557,7 @@ namespace XWFC
             if (resetSeed) InitRandom();
         }
         
-        public void Run(int nRuns, float? writeIntervalsPercentage, bool write=true)
+        public void Run(int nRuns, float? writeIntervalsPercentage, bool write=true, bool countSteps=false)
         {
             int writeIntervals = -1;
             bool interval = false;
@@ -568,16 +569,21 @@ namespace XWFC
             WriteResults = write;
             int counter = 0;
             int intervalCounter = 0;
-            float progress = 0;
+            int stepsPerRun = 0;
             while (counter < nRuns)
             {
                 if (IsDone())
                 {
                     WriteConfig();
                     _trainingDataFormatter.ConcatLevel();
-                    if ((progress * 100) % 5 == 0) Debug.Log($"Done {counter} runs");
                     counter++;
                     intervalCounter++;
+                    if (countSteps)
+                    {
+                        _trainingDataFormatter.WriteStepCounter(stepsPerRun);
+                        stepsPerRun = 0;
+                    }
+                    
                     var resetWriter = false;
                     if (interval)
                     {
@@ -591,11 +597,15 @@ namespace XWFC
                     }
                     // Resets the writer once every n intervals. Splits the output to make it less prone to loss of output progress.
                     Reset(resetWriter, true);
-                    progress = counter * 1.0f / nRuns;
                 }
                 else
                 {
                     var cells = CollapseOnce();
+                    
+                    if (countSteps)
+                    {
+                        stepsPerRun += cells.Count;
+                    }
                     
                     // If run results in a conflict, handle discard.
                     if (cells.Count != 0) continue;

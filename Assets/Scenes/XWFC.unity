@@ -477,12 +477,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unitTilePrefab: {fileID: 8410042719729564467, guid: 3613ece26b5228a4a9482bacca203304, type: 3}
   tileLabelPrefab: {fileID: 3078947573050405680, guid: f3cbec5e06abcc5409468549833779dd, type: 3}
-  extent: {x: 32, y: 22, z: 1}
+  extent: {x: 5, y: 5, z: 5}
   stepSize: 20
   seed: -1
-  WriteResults: 1
+  writeResults: 1
   delay: 0
-  AllowBacktracking: 0
+  nRuns: 10
+  conflictMode: 0
+  countSteps: 1
 --- !u!4 &1830932354
 Transform:
   m_ObjectHideFlags: 0

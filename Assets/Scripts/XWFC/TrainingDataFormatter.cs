@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net;
 using JetBrains.Annotations;
 using Unity.VisualScripting;
+using UnityEngine.Assertions;
 
 namespace XWFC
 {
@@ -22,12 +23,15 @@ namespace XWFC
         private const string LevelPrefix = "level";
         private const string LevelConcatPrefix = "level-concat";
         private const string FailureSuffix = "-failure";
+        private const string StepCounterPrefix = "steps";
         private string _configPath;
         private string _stateActionPath;
         private string _stateActionQueuePath;
+        private int _nCols;
         [CanBeNull] private Grid<string> _level;
+        private bool _countSteps;
 
-        public TrainingDataFormatter(string directory, string fileName)
+        public TrainingDataFormatter(string directory, string fileName, Vector3 extent, bool countSteps = false)
         {
             _directoryPath = directory;
             _fileName = fileName;
@@ -36,8 +40,11 @@ namespace XWFC
             InitConfig();
             // InitStateAction();
             // InitStateActionQueue();
-            InitLevel();
-            InitLevelConcat();
+            _nCols = (int)Vector3Util.Product(extent);
+            InitLevel(_nCols);
+            InitLevelConcat(_nCols);
+            _countSteps = countSteps;
+            if (countSteps) InitStepCounter();
         }
 
         private void InitTimeStamp()
@@ -58,11 +65,11 @@ namespace XWFC
 
         public string CreateFile(string filePrefix)
         {
-            var path = GetFilePath(filePrefix);// FilePath($"{filePrefix}-{_timeStamp}-{_fileName}");
+            var path = GetFilePath(filePrefix);
             if (File.Exists(path)) return path;
             var file = File.Create(path);
             file.Close();
-            Debug.Log($"Created file {path}");
+            // Debug.Log($"Created file {path}");
             return path;
         }
 
@@ -70,7 +77,7 @@ namespace XWFC
         {
             var builder = new StringBuilder();
             var file = CreateFile(ConfigPrefix);
-            string header = "timestamp,gridSizeX,gridSizeY,gridSizeZ,randomSeed,tiles,adjacencyMatrix,atomMapping(atomId-atomCoord-tileId)";
+            string header = "timestamp,gridSizeX,gridSizeY,gridSizeZ,randomSeed,tiles";
             builder.Append(header + "\n");
             _configPath = file;
             File.WriteAllText(file, builder.ToString());
@@ -87,7 +94,7 @@ namespace XWFC
             var fileName = ConfigPrefix;
             if (failure) fileName += FailureSuffix;
             var file = CreateFile(fileName);
-            var adjMatrixString = adjacencyMatrix.AtomAdjacencyMatrixToFlattenedString();
+            // var adjMatrixString = adjacencyMatrix.AtomAdjacencyMatrixToFlattenedString();
             builder.Append($"{_timeStamp},{gridSize.x},{gridSize.y},{gridSize.z},{randomSeed},");
             foreach (var key in adjacencyMatrix.TileIds)
             {
@@ -95,12 +102,14 @@ namespace XWFC
             }
 
             builder.Append(",");
-            builder.Append(adjMatrixString);
-            if (!adjMatrixString.EndsWith(",")) builder.Append(",");
-            builder.Append(adjacencyMatrix.AtomMappingToString());
+            // builder.Append(adjMatrixString);
+            // if (!adjMatrixString.EndsWith(",")) builder.Append(",");
+            // builder.Append(adjacencyMatrix.AtomMappingToString());
             builder.Append("\n");
             File.AppendAllText(file, builder.ToString());
         }
+        
+        
 
         // public void InitStateAction()
         // {
@@ -221,7 +230,7 @@ namespace XWFC
             if (_level == null || !_level.GetExtent().Equals(extent))
             {
                 _level = level;
-                InitLevel((int)Vector3Util.Product(extent));
+                // InitLevel((int)Vector3Util.Product(extent));
             }
             
             var builder = new StringBuilder();
@@ -255,9 +264,18 @@ namespace XWFC
             File.AppendAllText(file, builder + "\n");
         }
 
-        private void InitLevelConcat()
+        private void InitLevelConcat(int nCols)
         {
-            CreateFile(LevelConcatPrefix);
+            var file = CreateFile(LevelConcatPrefix);
+            var builder = new StringBuilder();
+            for (int i = 1; i <= nCols; i++)
+            {
+                builder.Append($"col{i},");
+            }
+
+            builder.Append("x,y,z,target\n");
+            
+            File.WriteAllText(file, builder.ToString());
         }
         
         public string FilePath(string fileName)
@@ -275,11 +293,10 @@ namespace XWFC
             InitConfig();
             // InitStateAction();
             // InitStateActionQueue();
-            InitLevel();
-            InitLevelConcat();
+            InitLevel(_nCols);
+            InitLevelConcat(_nCols);
         }
-        
-        
+
         public void ResetLevel(bool delete=false)
         {
             if (delete)
@@ -315,7 +332,6 @@ namespace XWFC
             var builder = new StringBuilder();
 
             var i = 1; // skip header if header is already present.
-            if (File.ReadAllLines(concatFile).Length == 0) i = 0;
             while (i < content.Length)
             {
                 var line = content[i];
@@ -324,6 +340,29 @@ namespace XWFC
             }
             InitLevel();
             File.AppendAllText(concatFile, builder.ToString());
+        }
+        private void InitStepCounter()
+        {
+            var file = CreateFile(StepCounterPrefix);
+            File.WriteAllText(file, "");
+        }
+
+        public void WriteStepCounter(int stepCounter)
+        {
+            var file = CreateFile(StepCounterPrefix);
+            File.AppendAllText(file, $"{stepCounter.ToString()},");
+        }
+
+        public int GetTotalSteps(string path = null)
+        {
+            if (!_countSteps) return -1;
+
+            path ??= CreateFile(StepCounterPrefix);
+            if (!path.Contains(StepCounterPrefix)) return -1;
+            var allRuns = File.ReadAllText(path);
+            var runs = allRuns.Split(",");
+            var total = runs.Sum(run => int.Parse(run));
+            return total;
         }
     }
     

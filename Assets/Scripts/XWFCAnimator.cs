@@ -2,8 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 using XWFC;
 using Canvas = UnityEngine.Canvas;
@@ -20,14 +22,19 @@ public class XWFCAnimator : MonoBehaviour
     public TileSet TileSet;
     public TileSet CompleteTerminalSet = new();
     public Dictionary<int, Vector3> drawnTilePositions = new();
-
-    public bool WriteResults;
+    
+    public bool writeResults;
     public float delay;
 
     private float _updateDeltaTime;
     private float _iterationDeltaTime;
 
     private Vector3 _unitSize;
+    
+    [SerializeField] private int nRuns = 100000;
+    [SerializeField] private ConflictMode conflictMode;
+    [SerializeField] private bool countSteps=true;
+
     public static XWFCAnimator Instance { get; private set; }
     
     private int _iterationsDone;
@@ -40,13 +47,13 @@ public class XWFCAnimator : MonoBehaviour
     private HashSetAdjacency _adjacency;
 
     private HashSet<GameObject> _drawnTiles;
-    public bool AllowBacktracking = true;
     
     [Flags]
     private enum StateFlag
     {
         Collapsing = 1 << 0
     }
+
     
     // Singleton assurance.
     private void Awake()
@@ -86,9 +93,9 @@ public class XWFCAnimator : MonoBehaviour
         );
         
         var tileJ = new Terminal(
-            new Vector3(3, 1, 2),
+            new Vector3(2, 1, 3),
             new Color(0, 0, 240 / 255.0f),
-            new bool[,,] { { { true, true }, { false, true }, { false, true } } },
+            new bool[,,] { { { true, false, false }, { true, true, true } } },
             null
         );
         
@@ -136,10 +143,7 @@ public class XWFCAnimator : MonoBehaviour
         // TileSet.Add(0, t0);
         // TileSet.Add(1, t1);
         // TileSet.Add(2, t2);
-        //
-        // CompleteTerminalSet.Add(0, t0);
-        // CompleteTerminalSet.Add(1, t1);
-        // CompleteTerminalSet.Add(2, t2);
+
         
         var NORTH = new Vector3(0, 0, 1);
         var SOUTH = new Vector3(0, 0, -1);
@@ -165,24 +169,17 @@ public class XWFCAnimator : MonoBehaviour
             new(1, new List<Relation>() { new(0, null) }, TOP),
             new(1, new List<Relation>() { new(0, null) }, BOTTOM),
             // 1-1
-            // new(1, new List<Relation>() { new(0, null) }, NORTH),
-            new(1, new List<Relation>() { new(0, null) }, EAST),
-            // new(1, new List<Relation>() { new(0, null) }, SOUTH),
-            new(1, new List<Relation>() { new(0, null) }, WEST),
-            new(1, new List<Relation>() { new(0, null) }, TOP),
-            new(1, new List<Relation>() { new(0, null) }, BOTTOM),
-            // 1-1
-            new(1, new List<Relation>() { new(1, null) }, NORTH),
+            // new(1, new List<Relation>() { new(1, null) }, NORTH),
             new(1, new List<Relation>() { new(1, null) }, EAST),
-            new(1, new List<Relation>() { new(1, null) }, SOUTH),
+            // new(1, new List<Relation>() { new(1, null) }, SOUTH),
             new(1, new List<Relation>() { new(1, null) }, WEST),
             new(1, new List<Relation>() { new(1, null) }, TOP),
             new(1, new List<Relation>() { new(1, null) }, BOTTOM),
             // 2-0
             new(2, new List<Relation>() { new(0, null) }, NORTH),
             new(2, new List<Relation>() { new(0, null) }, EAST),
-            new(2, new List<Relation>() { new(0, null) }, SOUTH),
-            new(2, new List<Relation>() { new(0, null) }, WEST),
+            // new(2, new List<Relation>() { new(0, null) }, SOUTH),
+            // new(2, new List<Relation>() { new(0, null) }, WEST),
             new(2, new List<Relation>() { new(0, null) }, TOP),
             new(2, new List<Relation>() { new(0, null) }, BOTTOM),
             // 2-1
@@ -200,17 +197,15 @@ public class XWFCAnimator : MonoBehaviour
             new(2, new List<Relation>() { new(2, null) }, TOP),
             new(2, new List<Relation>() { new(2, null) }, BOTTOM),
         };
-
-        extent = new Vector3Int(3, 3, 3);
+        
         InitXWFC();
+        Debug.Log(_xwfc.AdjMatrix.AtomAdjacencyMatrixToFlattenedString());
         
         Debug.Log("Initialized XWFC");
 
-        const int lines = 500;
-        const float runsPerIntervalFraction = 0.2f;
-        int nRuns = CalcNRuns(lines, extent);
+        const float runsPerIntervalFraction = 2f;
 
-        _xwfc.Run(nRuns, runsPerIntervalFraction);
+        _xwfc.Run(nRuns, runsPerIntervalFraction,write:writeResults, countSteps:countSteps);
 
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
@@ -257,7 +252,7 @@ public class XWFCAnimator : MonoBehaviour
     
     private void InitXWFC()
     {
-        _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent, writeResults:WriteResults, allowBacktracking:AllowBacktracking);
+        _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent, conflictMode:conflictMode, writeResults:writeResults);
 
         Debug.Log("Initialized XWFC");
     }
