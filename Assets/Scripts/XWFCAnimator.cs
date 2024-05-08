@@ -116,7 +116,7 @@ public class XWFCAnimator : MonoBehaviour
             null
         );
 
-        var tetrisTiles = new Terminal[] { tileO, tileL, tileJ };//, tileL, tileI, tileJ, tileO };
+        var tetrisTiles = new Terminal[] { tileO, tileS, tileZ, tileL, tileI, tileJ, tileO };
         
         // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, 0, .8f), null, null);
         
@@ -257,14 +257,6 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
 
-    public void UpdateAdjacencyConstraintsAllTrue()
-    {
-        foreach (var (k,v) in TileSet)
-        {
-            
-        }
-    }
-
     public void UpdateTerminals(TileSet newTileSet)
     {
         var tempXWFC = _xwfc;
@@ -285,9 +277,9 @@ public class XWFCAnimator : MonoBehaviour
     public void DrawTiles()
     {
         // Draw in z-axis.
-        var start = new Vector3(0,0,-5);
-        var gap = new Vector3(2, 0, 0);
-        foreach (var (key, value) in TileSet)
+        var start = new Vector3(-100,-100,-5);
+        var gap = new Vector3(5, 0, 0);
+        foreach (var (key, value) in CompleteTerminalSet)
         {
             var maxIndex = new Vector3();
             bool labeled = false;
@@ -533,7 +525,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void UpdateColorFromTerminal(GameObject obj, int tileId)
     {
-        obj.GetComponent<Renderer>().material.color = TileSet[tileId].Color;
+        obj.GetComponent<Renderer>().material.color = CompleteTerminalSet[tileId].Color;
     }
 
     private Color GetTerminalColorFromAtom(int atomId)
