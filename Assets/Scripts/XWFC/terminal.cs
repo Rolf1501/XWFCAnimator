@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JetBrains.Annotations;
 using Numpy;
 
 using UnityEngine;
@@ -11,7 +12,7 @@ namespace XWFC
     {
         private Vector3 Extent { get; }
         public Color Color { get; }
-        private bool[,,] Mask { get; }
+        public bool[,,] Mask { get; }
         public int[] DistinctOrientations { get; }
         private string Description { get; }
         public Dictionary<Vector3, Atom> AtomIndexToIdMapping { get; } = new();
@@ -19,12 +20,13 @@ namespace XWFC
         private Dictionary<int, bool[,,,]> OrientedAtomMask { get; } = new();
         public Dictionary<int, Vector3[]> OrientedIndices { get; } = new();
         public Dictionary<Vector3, Dictionary<int, int[,]>> OrientedVoidMasks { get; } = new();
+        [CanBeNull] public Dictionary<Vector3Int, HashSet<BorderOutline.Edge>> AtomEdges;
 
         public int NAtoms { get; private set; }
 
         #nullable enable
         public Terminal(Vector3 extent, Color color, bool[,,]? mask, int[]? distinctOrientations,
-            string description = "")
+            string description = "", bool computeAtomEdges=false)
         {
             Extent = extent;
             Color = color;
@@ -34,6 +36,10 @@ namespace XWFC
             Description = description;
             CalcOrientedMasks();
             CalcVoidMasks();
+            if (computeAtomEdges)
+            {
+                AtomEdges = new BorderOutline().GetEdgesPerAtom(mask);
+            }
         }
 
         public Dictionary<string, object> ToJson()

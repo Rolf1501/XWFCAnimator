@@ -16,6 +16,21 @@ namespace XWFC
         }
         
         public static Vector3 Mult(Vector3 v0, Vector3 v1) => new(v0.x * v1.x, v0.y * v1.y, v0.z * v1.z);
+
+        public static Vector3 Div(Vector3 v0, Vector3 v1)
+        {
+            if (v0.x != 0 && v0.y != 0 && v0.z != 0 && v1.x != 0 && v1.y != 0 && v1.z != 0)
+            {
+                return new Vector3(v0.x / v1.x, v0.y / v1.y, v0.z / v1.z);
+            }
+
+            return v0;
+        }
+
+        public static Vector3 Scale(Vector3 v, float scalar)
+        {
+            return new Vector3(v.x * scalar, v.y * scalar, v.z * scalar);
+        }
     }
     
     public static class Util

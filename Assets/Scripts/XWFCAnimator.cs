@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using JetBrains.Annotations;
 using TMPro;
 using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
@@ -57,6 +60,8 @@ public class XWFCAnimator : MonoBehaviour
         TileSet = new TileSet();
 
         var defaultWeights = new Dictionary<int, float>();
+
+        var borderOutline = new BorderOutline();
         
         // var t0 = new Terminal(
         //     new Vector3(2,1, 2), 
@@ -72,40 +77,46 @@ public class XWFCAnimator : MonoBehaviour
             new Vector3(2, 1, 3),
             new Color(240 / 255.0f, 160 / 255.0f, 0),
             new bool[,,] { { { true, true, true }, { true, false, false } } },
-            null
+            null,
+            computeAtomEdges:true
         );
         var tileT = new Terminal(
             new Vector3(2, 1, 3),
             new Color(160 / 255.0f, 0, 240/255.0f),
             new bool[,,] { { { false, true, false }, { true, true, true }} },
-            null
+            null,
+            computeAtomEdges:true
         );
         
         var tileJ = new Terminal(
             new Vector3(3, 1, 2),
             new Color(0, 0, 240 / 255.0f),
             new bool[,,] { { { true, true }, { false, true }, { false, true } } },
-            null
+            null,
+            computeAtomEdges:true
         );
         
         var tileI = new Terminal(
             new Vector3(4, 1, 1),
             new Color(0, 240 / 255.0f, 240 / 255.0f),
             new bool[,,] { { { true }, { true }, { true }, { true } } },
-            null
+            null,
+            computeAtomEdges:true
         );
         
         var tileS = new Terminal(
             new Vector3(2, 1, 3),
             new Color(0, 240 / 255.0f, 0),
             new bool[,,] { { { true, true, false }, { false, true, true }} },
-            null
+            null,
+            computeAtomEdges:true
         );
         var tileZ = new Terminal(
             new Vector3(2, 1, 3),
             new Color(240 / 255.0f, 0, 0),
             new bool[,,] { { { false, true, true }, { true, true, false }} },
-            null
+            null,
+            computeAtomEdges:true
         );
         var tileO = new Terminal(
             new Vector3(2, 1, 2),
@@ -113,8 +124,17 @@ public class XWFCAnimator : MonoBehaviour
 
             // new Color(240 / 255.0f, 240 / 255.0f, 0),
             new bool[,,] { { { true, true }, { true, true }} },
-            null
+            null,
+            computeAtomEdges:true
         );
+
+        // var atomEdges = borderOutline.GetEdgesPerAtom(tileJ.Mask);
+        // Debug.Log("TileJ");
+        // foreach (var (k,v) in atomEdges)
+        // {
+        //     Debug.Log($"Atom:{k}");
+        //     foreach (var val in v) Debug.Log(val + ",");
+        // }
 
         var tetrisTiles = new Terminal[] { tileO, tileS, tileZ, tileL, tileI, tileJ, tileO };
         
@@ -483,7 +503,10 @@ public class XWFCAnimator : MonoBehaviour
             if (status == drawnStatus.Id) continue;
             
             // Clear the cells content to be replaced with a new drawing.
-            if (drawnStatus.Id != grid.DefaultFillValue) Destroy(drawnStatus.Atom);
+            if (drawnStatus.Id != grid.DefaultFillValue)
+            {
+                Drawing.DestroyAtom(drawnStatus);
+            }
             
             // Empty cell should not show an object. Drawn grid restored to default.
             if (status == grid.DefaultFillValue)
@@ -495,13 +518,52 @@ public class XWFCAnimator : MonoBehaviour
                 // Drawn atom should be updated to match the new atom's specification.
                 // TODO: reference the prefab corresponding to the atom, instead of assuming the same is used for all.
                 var atom = Instantiate(unitTilePrefab);
-                var drawing = new Drawing(status, atom);
+                
                 atom.transform.position = CalcAtomPosition(coord);
+                var edges = DrawEdges(status, atom);
+                var drawing = new Drawing(status, atom, edges);
                 UpdateColorFromAtom(atom, status);
                 // atom.GetComponent<Renderer>().material.color = GetTerminalColor(status);
                 _drawnGrid.Set(coord, drawing);
             }
         }
+    }
+
+    private HashSet<GameObject> DrawEdges(int atomId, GameObject atom)
+    {
+        var bounds = atom.GetComponent<Renderer>().bounds.size;
+        var edgeExtent = new Vector3(0.05f,0.05f,0.05f);
+        var origin = atom.transform.position;
+        var halfBounds = Vector3Util.Scale(bounds, 0.5f);
+        var zeroOrigin = origin - halfBounds;
+        
+        var (terminalId, atomIndex, _) = _xwfc.AdjMatrix.AtomMapping.Get(atomId);
+        
+        var edges = TileSet[terminalId].AtomEdges;
+        var edgeObjects = new HashSet<GameObject>();
+        if (edges == null) return edgeObjects;
+
+        var atomEdges = edges[new Vector3Int((int)atomIndex.x, (int)atomIndex.y, (int)atomIndex.z)];
+        foreach (var atomEdge in atomEdges)
+        {
+            var edge = Instantiate(unitTilePrefab);
+            var edgeCenter = Vector3Util.Scale(atomEdge.GetDistance(), 0.5f);
+            
+            // Edge pos, account for origin being center of object. 
+            var edgePos = zeroOrigin + Vector3Util.Mult(atomEdge.From + edgeCenter, bounds);
+            
+            edge.transform.position = edgePos;
+            var atomDist = atomEdge.GetDistance();
+            var newEdgeBounds = atomDist;//Vector3Util.Mult(atomDist, bounds);
+            newEdgeBounds.x = Math.Max(edgeExtent.x, newEdgeBounds.x);
+            newEdgeBounds.y = Math.Max(edgeExtent.y, newEdgeBounds.y);
+            newEdgeBounds.z = Math.Max(edgeExtent.z, newEdgeBounds.z);
+            edge.transform.localScale = newEdgeBounds;
+            edge.transform.rotation = new Quaternion(90, 0, 0, 1);
+            edgeObjects.Add(edge);
+        }
+
+        return edgeObjects;
     }
 
     private static Color ApplyVariation(Color c, float fluctuation)
@@ -567,16 +629,27 @@ public class XWFCAnimator : MonoBehaviour
     {
         public int Id;
         public GameObject Atom;
+        public HashSet<GameObject> Edges;
 
-        public Drawing(int id, GameObject atom)
+        public Drawing(int id, GameObject atom, [CanBeNull] HashSet<GameObject> edges=null)
         {
             Id = id;
             Atom = atom;
+            Edges = edges;
         }
 
         public static void DestroyAtom(Drawing drawing)
         {
-            if (drawing != null && drawing.Atom != null) Destroy(drawing.Atom);
+            if (drawing == null || drawing.Atom == null) return; 
+            
+            Destroy(drawing.Atom);
+            
+            if (drawing.Edges == null) return;
+            
+            foreach (var edge in drawing.Edges)
+            {
+                Destroy(edge);
+            }
         }
     }
 }
