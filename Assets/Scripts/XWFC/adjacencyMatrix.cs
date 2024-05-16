@@ -3,10 +3,50 @@ using System.Linq;
 using UnityEngine;
 
 using System.Collections.Generic;
+using System.Text;
+using Newtonsoft.Json;
+using Unity.VisualScripting;
 
 namespace XWFC
 {
-    public class HashSetAdjacency : HashSet<Adjacency> { } // Class for shorthand notation of set of adjacency constraints.
+    public class HashSetAdjacency : HashSet<Adjacency>
+    {
+        // Class for shorthand notation of set of adjacency constraints.
+        public string ToJson()
+        {
+            var dict = new Dictionary<string, string>();
+            var set = new HashSet<string>();
+            
+            foreach (var adj in this)
+            {
+                set.Add(adj.ToJson());
+            }
+
+            dict["adjacencyConstraints"] = JsonConvert.SerializeObject(set);
+            var json = JsonConvert.SerializeObject(dict);
+            return json;
+        }
+
+        public static HashSetAdjacency FromJson(string s)
+        {
+            Debug.Log("HASHSETSTRING" + s);
+            var set = new HashSetAdjacency();
+            
+            var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(s);
+            foreach (var (k,v) in dict)
+            {
+                var hashSetString = JsonConvert.DeserializeObject<HashSet<string>>(v);
+                foreach (var adjacencyString in hashSetString)
+                {
+                    Debug.Log(adjacencyString);
+                    var adjDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(adjacencyString);
+                    var adjacency = new Adjacency(adjDict["source"], adjDict["relations"], adjDict["offset"]);
+                    set.Add(adjacency);
+                }
+            }
+            return set;
+        }
+    } 
 
     public class AdjacencyMatrix
     {
@@ -25,9 +65,9 @@ namespace XWFC
         public Dictionary<int, (int, int)> TileAtomRangeMapping { get; } // Reserves an index range for the atoms of the tile.
         public Dictionary<int, HashSetAdjacency> TileAdjacencyMapping { get; private set; }
 
-        public AdjacencyMatrix(int[] tileIds, HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, int offsetsDimensions = 3)
+        public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, int offsetsDimensions = 3)
         {
-            TileIds = tileIds;
+            TileIds = tileSet.Keys.ToArray();
             TileAdjacencyConstraints = tileAdjacencyConstraints;
             TileSet = tileSet;
             OffsetsDimensions = offsetsDimensions;
@@ -57,13 +97,7 @@ namespace XWFC
             }
             InferTileAdjacencyConstraints(TileAdjacencyConstraints);
         }
-
-        // TODO: implement this for showing adjs in GUI.
-        // public Dictionary<int, HashSetAdjacency> GetAllPartAdjacenciesAsId()
-        // {
-        //     return null;
-        // }
-
+        
         public int GetNAtoms()
         {
             return AtomMapping.GetNEntries();
@@ -466,7 +500,6 @@ namespace XWFC
                     TileAdjacencyMatrix[complement][sourceIndex, relationIndex] = true;
                     TileAdjacencyMatrixWeights[a.Offset][sourceIndex, relationIndex] = r.Weight;
                     TileAdjacencyMatrixWeights[complement][sourceIndex, relationIndex] = r.Weight;
-
                 }
             }
         }
@@ -548,6 +581,43 @@ namespace XWFC
             VmShapeVector = new Vector2(VoidMask.GetLength(1), VoidMask.GetLength(0));
             MaxY = VoidMask.GetLength(0) - 1;
             MaxX = VoidMask.GetLength(1) - 1;
+        }
+    }
+
+    public class AdjacencyMatrixJsonFormatter
+    {
+        private HashSetAdjacency _tileAdjacencyConstraints;
+        private TileSet _tiles;
+        private JsonFormatter _jsonFormatter = new JsonFormatter();
+        public AdjacencyMatrixJsonFormatter(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet)
+        {
+            _tileAdjacencyConstraints = tileAdjacencyConstraints;
+            _tiles = tileSet;
+        }
+        public string ToJson()
+        {
+            var dict = new Dictionary<string, string>();
+            var tileString = new Dictionary<string, string>();
+            foreach (var (k,v) in _tiles)
+            {
+                tileString[k.ToString()] = JsonFormatter.Serialize(v.ToJson());
+            }
+            
+            dict["tileset"] = JsonFormatter.Serialize(tileString);
+            dict["tileAdjacencyConstraints"] = _tileAdjacencyConstraints.ToJson();
+            
+            return JsonFormatter.Serialize(dict);
+        }
+
+        public AdjacencyMatrix FromJson(string s)
+        {
+            var dict = JsonFormatter.Deserialize<Dictionary<string, string>>(s);
+            var tilesetString = dict["tileset"];
+            var tileset = TileSet.FromJson(tilesetString);
+            var adjConstraintsString = dict["tileAdjacencyConstraints"];
+            var adjConstraints = HashSetAdjacency.FromJson(adjConstraintsString);
+
+            return new AdjacencyMatrix(adjConstraints, tileset);
         }
     }
 }

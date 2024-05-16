@@ -32,9 +32,8 @@ namespace XWFC
         {
             _tileSet = tileSet;
             GridExtent = gridExtent;
-
-            int[] keys = _tileSet.Keys.ToArray();
-            AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _tileSet);
+            
+            AdjMatrix = new AdjacencyMatrix(adjacencyConstraints, _tileSet);
             
             _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
             _defaultWeights = ExpandDefaultWeights(defaultWeights);

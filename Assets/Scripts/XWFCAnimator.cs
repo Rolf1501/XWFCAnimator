@@ -244,7 +244,10 @@ public class XWFCAnimator : MonoBehaviour
         
         DrawTiles();
         
-        SaveConfig();
+        // SaveConfig();
+        var zzz = new AdjacencyMatrixJsonFormatter(_xwfc.AdjMatrix.TileAdjacencyConstraints, TileSet);
+        var json = zzz.ToJson();
+        zzz.FromJson(json);
         
     }
 

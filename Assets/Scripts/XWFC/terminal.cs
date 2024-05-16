@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
 using Numpy;
-
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace XWFC
@@ -351,8 +351,5 @@ namespace XWFC
         }
     }
 
-    public class TerminalJsonFormatter
-    {
-        
-    }
+    
 }
