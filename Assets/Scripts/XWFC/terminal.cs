@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using JetBrains.Annotations;
 using Numpy;
 
@@ -42,28 +43,94 @@ namespace XWFC
             }
         }
 
-        public Dictionary<string, object> ToJson()
+        public Dictionary<string, string> ToJson()
         {
-            return new Dictionary<string, object>
+            return new Dictionary<string, string>
             {
-                { "extent", Extent },
-                { "color", Color },
-                { "mask", Mask },
-                { "distinct_orientations", DistinctOrientations },
+                { "extent", Vector3Util.Vector3ToString(Extent) },
+                { "color", ColorUtil.ColorToString(Color) },
+                { "mask", MaskToString() },
+                { "distinct_orientations",  OrientationsToString() },
                 { "description", Description }
             };
         }
+        
+        public static Terminal FromJson(Dictionary<string, string> jsn)
+        {
+            var extent = Vector3Util.Vector3FromString(jsn["extent"]);
+            return new Terminal(
+                extent,
+                ColorUtil.ColorFromString(jsn["color"]),
+                MaskFromString(jsn["mask"], extent),
+                OrientationsFromString(jsn["distinct_orientations"]),
+                jsn["description"]
+            );
+            
+        }
 
-        // public static Terminal FromJson(Dictionary<string, object> jsn)
-        // {
-        //     return new Terminal(
-        //         new Vector3((int)jsn["extent"][0], (int)jsn["extent"][1], (int)jsn["extent"][2]),
-        //         new Vector3((float)jsn["color"][0], (float)jsn["color"][1], (float)jsn["color"][2]),
-        //         ((List<object>)jsn["mask"]).Select(b => (bool)b).ToArray(),
-        //         ((List<int>)jsn["distinct_orientations"]).ToArray(),
-        //         (string)jsn["description"]
-        //     );
-        // }
+        private string MaskToString()
+        {
+            var builder = new StringBuilder();
+            builder.Append("[");
+            for (int i = 0; i < Mask.GetLength(0); i++)
+            {
+                for (int j = 0; j < Mask.GetLength(1); j++)
+                {
+                    for (int k = 0; k < Mask.GetLength(2); k++)
+                    {
+                        char item = Mask[i, j, k] ? '1' : '0';
+                        builder.Append(item + ",");
+                    }
+                }
+            }
+
+            var lastIndex = builder.Length - 1;
+            if (builder[lastIndex].Equals(',')) builder.Remove(lastIndex, 1);
+            builder.Append("]");
+            return builder.ToString();
+        }
+
+        private static bool[,,] MaskFromString(string s, Vector3 extent)
+        {
+            var trimmed = s.Trim(new char[] { '[', ']' });
+            var split = trimmed.Split(",");
+            var mask = new bool[(int)extent.y, (int)extent.x, (int)extent.z];
+            var index = 0;
+            for (int i = 0; i < extent.y; i++)
+            {
+                for (int j = 0; j < extent.x; j++)
+                {
+                    for (int k = 0; k < extent.z; k++)
+                    {
+                        mask[i, j, k] = split[index].Equals("1");
+                        index++;
+                    }
+                }
+            }
+
+            return mask;
+        }
+
+        private static int[] OrientationsFromString(string s)
+        {
+            var trimmed = s.Trim(new char[] { '[', ']' });
+            var split = trimmed.Split(",");
+            return split.Select(item => int.Parse(item)).ToArray();
+        }
+        
+        private string OrientationsToString()
+        {
+            var builder = new StringBuilder();
+            builder.Append("[");
+            foreach (int i in DistinctOrientations)
+            {
+                builder.Append(i + ",");
+            }
+            var lastIndex = builder.Length - 1;
+            if (builder[lastIndex].Equals(',')) builder.Remove(lastIndex, 1);
+            builder.Append("]");
+            return builder.ToString();
+        }
 
         private static IEnumerable<(int, int, int)> NonEmptyIndices3D<T>(T[,,] grid)
         {
@@ -246,6 +313,9 @@ namespace XWFC
                 return (rotation + 2) % 3;
             }
 
+            /*
+             * TODO: get distinct orientations here for rotation.
+             */
             return DistinctOrientations[0];
         }
 
@@ -279,5 +349,10 @@ namespace XWFC
             return coord.x < Mask.GetLength(1) && coord.y < Mask.GetLength(0) && coord.z < Mask.GetLength(2) &&
                    coord is { x: >= 0, y: >= 0, z: >= 0 };
         }
+    }
+
+    public class TerminalJsonFormatter
+    {
+        
     }
 }

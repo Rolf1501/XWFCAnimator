@@ -31,6 +31,22 @@ namespace XWFC
         {
             return new Vector3(v.x * scalar, v.y * scalar, v.z * scalar);
         }
+
+        public static string Vector3ToString(Vector3 v)
+        {
+            return $"<{v.x},{v.y},{v.z}>";
+        }
+
+        public static Vector3 Vector3FromString(string v)
+        {
+            var trimmed = v.Trim(new char[] { '<', '>' });
+            var split = trimmed.Split(",");
+            return split.Length switch
+            {
+                3 => new Vector3(float.Parse(split[0]), float.Parse(split[1]), float.Parse(split[2])),
+                _ => new Vector3()
+            };
+        }
     }
     
     public static class Util
@@ -51,6 +67,26 @@ namespace XWFC
 
             return output;
         }
+    }
 
+    public static class ColorUtil
+    {
+        public static string ColorToString(Color c)
+        {
+            return $"<{c.r},{c.g},{c.b},{c.a}>";
+        }
+
+        public static Color ColorFromString(string c)
+        {
+            var trimmed = c.Trim(new char[] { '<', '>' });
+            var split = trimmed.Split(",");
+            return split.Length switch
+            {
+                4 => new Color(float.Parse(split[0]), float.Parse(split[1]), float.Parse(split[2]),
+                    float.Parse(split[3])),
+                3 => new Color(float.Parse(split[0]), float.Parse(split[1]), float.Parse(split[2]), 1.0f),
+                _ => new Color()
+            };
+        }
     }
 }

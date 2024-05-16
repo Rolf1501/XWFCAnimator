@@ -244,6 +244,8 @@ public class XWFCAnimator : MonoBehaviour
         
         DrawTiles();
         
+        SaveConfig();
+        
     }
 
     private void InitXWFC()
@@ -627,6 +629,30 @@ public class XWFCAnimator : MonoBehaviour
     public void UpdateDelay(float value)
     {
         delay = value;
+    }
+
+    public void SaveConfig()
+    {
+        /*
+         * To replicate a config need:
+         * tileset and adjacency constraints.
+         */
+        var config = new Dictionary<string, object>();
+        foreach (var (k,v) in TileSet)
+        {
+            var json = v.ToJson();
+        }
+        /*
+         * To replicate tileset need:
+         * Tile id and its extent, color, mask, orientation and description.
+         */
+
+        /*
+         * To replicate adjacency constraints need:
+         * Tile ids.
+         * Tile adjacency constraints per offset.
+         */
+
     }
     
     private record Drawing
