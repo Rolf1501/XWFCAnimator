@@ -16,6 +16,7 @@ using Vector3 = UnityEngine.Vector3;
 public class XWFCAnimator : MonoBehaviour
 {
     [SerializeField] private GameObject unitTilePrefab;
+    [SerializeField] private GameObject edgePrefab;
     [SerializeField] private Canvas tileLabelPrefab;
     public Vector3 extent;
     public float stepSize;
@@ -546,7 +547,7 @@ public class XWFCAnimator : MonoBehaviour
         var atomEdges = edges[new Vector3Int((int)atomIndex.x, (int)atomIndex.y, (int)atomIndex.z)];
         foreach (var atomEdge in atomEdges)
         {
-            var edge = Instantiate(unitTilePrefab);
+            var edge = Instantiate(edgePrefab);
             var edgeCenter = Vector3Util.Scale(atomEdge.GetDistance(), 0.5f);
             
             // Edge pos, account for origin being center of object. 
@@ -555,11 +556,14 @@ public class XWFCAnimator : MonoBehaviour
             edge.transform.position = edgePos;
             var atomDist = atomEdge.GetDistance();
             var newEdgeBounds = atomDist;//Vector3Util.Mult(atomDist, bounds);
+            var normScale = Vector3Util.Div(bounds, edge.GetComponent<Renderer>().bounds.size);
             newEdgeBounds.x = Math.Max(edgeExtent.x, newEdgeBounds.x);
             newEdgeBounds.y = Math.Max(edgeExtent.y, newEdgeBounds.y);
             newEdgeBounds.z = Math.Max(edgeExtent.z, newEdgeBounds.z);
-            edge.transform.localScale = newEdgeBounds;
-            edge.transform.rotation = new Quaternion(90, 0, 0, 1);
+            edge.transform.localScale = Vector3Util.Mult(normScale, newEdgeBounds);
+            
+            // Prefab from blender needs to be rotated first...
+            edge.transform.Rotate(new Vector3(90,0,0));
             edgeObjects.Add(edge);
         }
 
