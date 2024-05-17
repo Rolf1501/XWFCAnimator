@@ -51,7 +51,8 @@ namespace XWFC
                 { "color", ColorUtil.ColorToString(Color) },
                 { "mask", MaskToString() },
                 { "distinct_orientations",  OrientationsToString() },
-                { "description", Description }
+                { "description", Description },
+                { "edges", AtomEdges is { Count: > 0 } ? "1" : "0" }
             };
         }
         
@@ -63,7 +64,8 @@ namespace XWFC
                 ColorUtil.ColorFromString(jsn["color"]),
                 MaskFromString(jsn["mask"], extent),
                 OrientationsFromString(jsn["distinct_orientations"]),
-                jsn["description"]
+                jsn["description"],
+                computeAtomEdges: jsn["edges"].Equals("1")
             );
             
         }

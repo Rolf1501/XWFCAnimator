@@ -3,9 +3,7 @@ using System.Linq;
 using UnityEngine;
 
 using System.Collections.Generic;
-using System.Text;
 using Newtonsoft.Json;
-using Unity.VisualScripting;
 
 namespace XWFC
 {
@@ -37,7 +35,6 @@ namespace XWFC
                 var hashSetString = JsonConvert.DeserializeObject<HashSet<string>>(v);
                 foreach (var adjacencyString in hashSetString)
                 {
-                    Debug.Log(adjacencyString);
                     var adjDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(adjacencyString);
                     var adjacency = new Adjacency(adjDict["source"], adjDict["relations"], adjDict["offset"]);
                     set.Add(adjacency);
@@ -51,7 +48,7 @@ namespace XWFC
     {
         private int[] TileIds { get; }
         public HashSetAdjacency TileAdjacencyConstraints { get; } // Set of tile adjacency constraints.
-        private TileSet TileSet { get; }
+        public TileSet TileSet { get; }
         private int OffsetsDimensions { get; } // Set the number of dimensions to operate in.
         public HashSetAdjacency AtomAdjacencies { get; private set; } // Set of atom adjacency constraints.
         private Vector3[] Offsets { get; }
@@ -355,7 +352,6 @@ namespace XWFC
 
                     if (minSum < 0)
                     {
-                        // Debug.Log("Invalid minsum...");
                         continue; 
                     }
 

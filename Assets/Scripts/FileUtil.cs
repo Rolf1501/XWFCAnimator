@@ -48,4 +48,9 @@ public class FileUtil
         var timeStamp = DateTime.Now.ToString(CultureInfo.InvariantCulture);
         return timeStamp.Replace("-","").Replace("/", "-").Replace("\\","-").Replace(" ", "-").Replace(":", "");
     }
+
+    public static string GetFileNameFromPath(string path, bool includeExtension)
+    {
+        return includeExtension ? Path.GetFileName(path) : Path.GetFileNameWithoutExtension(path);
+    }
 }

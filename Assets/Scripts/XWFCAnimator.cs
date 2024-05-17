@@ -4,10 +4,7 @@ using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using TMPro;
-using Unity.VisualScripting;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 using XWFC;
 using Canvas = UnityEngine.Canvas;
@@ -65,16 +62,6 @@ public class XWFCAnimator : MonoBehaviour
 
         var borderOutline = new BorderOutline();
         
-        // var t0 = new Terminal(
-        //     new Vector3(2,1, 2), 
-        //     new Color(.8f, 0, .2f) ,
-        //     null,
-        //     null
-        //     );
-        // var t1 = new Terminal(new Vector3(2, 1, 2), new Color(.2f, 0, .8f), new bool[,,]{ { {true, true}, {true, false} } }, null);
-        // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, .4f, .3f), new bool[,,] { { {true}, {true} } }, null);
-
-        // var t2 = new Terminal(
         var tileL = new Terminal(
             new Vector3(2, 1, 3),
             new Color(240 / 255.0f, 160 / 255.0f, 0),
@@ -130,15 +117,7 @@ public class XWFCAnimator : MonoBehaviour
             computeAtomEdges:true
         );
 
-        // var atomEdges = borderOutline.GetEdgesPerAtom(tileJ.Mask);
-        // Debug.Log("TileJ");
-        // foreach (var (k,v) in atomEdges)
-        // {
-        //     Debug.Log($"Atom:{k}");
-        //     foreach (var val in v) Debug.Log(val + ",");
-        // }
-
-        var tetrisTiles = new Terminal[] { tileO, tileS, tileZ, tileL, tileI, tileJ, tileO };
+        var tetrisTiles = new Terminal[] { tileO, tileS, tileZ, tileL, tileI, tileJ, tileT };
         
         // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, 0, .8f), null, null);
         
@@ -151,65 +130,58 @@ public class XWFCAnimator : MonoBehaviour
         TileSet.Add(1, tetrisTiles[1]);
         TileSet.Add(2, tetrisTiles[2]);
         
-        // TileSet.Add(0, t0);
-        // TileSet.Add(1, t1);
-        // TileSet.Add(2, t2);
-        //
-        // CompleteTerminalSet.Add(0, t0);
-        // CompleteTerminalSet.Add(1, t1);
-        // CompleteTerminalSet.Add(2, t2);
-        
         var NORTH = new Vector3(0, 0, 1);
         var SOUTH = new Vector3(0, 0, -1);
         var EAST = new Vector3(1, 0, 0);
         var WEST = new Vector3(-1, 0, 0);
         var TOP = new Vector3(0, 1, 0);
         var BOTTOM = new Vector3(0, -1, 0);
-        
-        _adjacency = new HashSetAdjacency(){
-            // 0-0
-            // new(0, new List<Relation>() { new(0, null) }, NORTH),
-            new(0, new List<Relation>() { new(0, null) }, EAST),
-            // new(0, new List<Relation>() { new(0, null) }, SOUTH),
-            new(0, new List<Relation>() { new(0, null) }, WEST),
-            new(0, new List<Relation>() { new(0, null) }, TOP),
-            new(0, new List<Relation>() { new(0, null) }, BOTTOM),
-            // 1-0
-            new(1, new List<Relation>() { new(0, null) }, NORTH),
-            // new(1, new List<Relation>() { new(0, null) }, EAST),
-            new(1, new List<Relation>() { new(0, null) }, SOUTH),
-            // new(1, new List<Relation>() { new(0, null) }, WEST),
-            new(1, new List<Relation>() { new(0, null) }, TOP),
-            new(1, new List<Relation>() { new(0, null) }, BOTTOM),
-            // 1-1
-            // new(1, new List<Relation>() { new(0, null) }, NORTH),
-            new(1, new List<Relation>() { new(0, null) }, EAST),
-            // new(1, new List<Relation>() { new(0, null) }, SOUTH),
-            new(1, new List<Relation>() { new(0, null) }, WEST),
-            new(1, new List<Relation>() { new(0, null) }, TOP),
-            new(1, new List<Relation>() { new(0, null) }, BOTTOM),
-            // 2-0
-            new(2, new List<Relation>() { new(0, null) }, NORTH),
-            new(2, new List<Relation>() { new(0, null) }, EAST),
-            new(2, new List<Relation>() { new(0, null) }, SOUTH),
-            new(2, new List<Relation>() { new(0, null) }, WEST),
-            new(2, new List<Relation>() { new(0, null) }, TOP),
-            new(2, new List<Relation>() { new(0, null) }, BOTTOM),
-            // 2-1
-            new(2, new List<Relation>() { new(1, null) }, NORTH),
-            new(2, new List<Relation>() { new(1, null) }, EAST),
-            new(2, new List<Relation>() { new(1, null) }, SOUTH),
-            new(2, new List<Relation>() { new(1, null) }, WEST),
-            new(2, new List<Relation>() { new(1, null) }, TOP),
-            new(2, new List<Relation>() { new(1, null) }, BOTTOM),
-            // 2-2
-            new(2, new List<Relation>() { new(2, null) }, NORTH),
-            new(2, new List<Relation>() { new(2, null) }, EAST),
-            new(2, new List<Relation>() { new(2, null) }, SOUTH),
-            new(2, new List<Relation>() { new(2, null) }, WEST),
-            new(2, new List<Relation>() { new(2, null) }, TOP),
-            new(2, new List<Relation>() { new(2, null) }, BOTTOM),
-        };
+
+        _adjacency = new HashSetAdjacency();
+        // _adjacency = new HashSetAdjacency(){
+        //     // 0-0
+        //     // new(0, new List<Relation>() { new(0, null) }, NORTH),
+        //     new(0, new List<Relation>() { new(0, null) }, EAST),
+        //     // new(0, new List<Relation>() { new(0, null) }, SOUTH),
+        //     new(0, new List<Relation>() { new(0, null) }, WEST),
+        //     new(0, new List<Relation>() { new(0, null) }, TOP),
+        //     new(0, new List<Relation>() { new(0, null) }, BOTTOM),
+        //     // 1-0
+        //     new(1, new List<Relation>() { new(0, null) }, NORTH),
+        //     // new(1, new List<Relation>() { new(0, null) }, EAST),
+        //     new(1, new List<Relation>() { new(0, null) }, SOUTH),
+        //     // new(1, new List<Relation>() { new(0, null) }, WEST),
+        //     new(1, new List<Relation>() { new(0, null) }, TOP),
+        //     new(1, new List<Relation>() { new(0, null) }, BOTTOM),
+        //     // 1-1
+        //     // new(1, new List<Relation>() { new(0, null) }, NORTH),
+        //     new(1, new List<Relation>() { new(0, null) }, EAST),
+        //     // new(1, new List<Relation>() { new(0, null) }, SOUTH),
+        //     new(1, new List<Relation>() { new(0, null) }, WEST),
+        //     new(1, new List<Relation>() { new(0, null) }, TOP),
+        //     new(1, new List<Relation>() { new(0, null) }, BOTTOM),
+        //     // 2-0
+        //     new(2, new List<Relation>() { new(0, null) }, NORTH),
+        //     new(2, new List<Relation>() { new(0, null) }, EAST),
+        //     new(2, new List<Relation>() { new(0, null) }, SOUTH),
+        //     new(2, new List<Relation>() { new(0, null) }, WEST),
+        //     new(2, new List<Relation>() { new(0, null) }, TOP),
+        //     new(2, new List<Relation>() { new(0, null) }, BOTTOM),
+        //     // 2-1
+        //     new(2, new List<Relation>() { new(1, null) }, NORTH),
+        //     new(2, new List<Relation>() { new(1, null) }, EAST),
+        //     new(2, new List<Relation>() { new(1, null) }, SOUTH),
+        //     new(2, new List<Relation>() { new(1, null) }, WEST),
+        //     new(2, new List<Relation>() { new(1, null) }, TOP),
+        //     new(2, new List<Relation>() { new(1, null) }, BOTTOM),
+        //     // 2-2
+        //     new(2, new List<Relation>() { new(2, null) }, NORTH),
+        //     new(2, new List<Relation>() { new(2, null) }, EAST),
+        //     new(2, new List<Relation>() { new(2, null) }, SOUTH),
+        //     new(2, new List<Relation>() { new(2, null) }, WEST),
+        //     new(2, new List<Relation>() { new(2, null) }, TOP),
+        //     new(2, new List<Relation>() { new(2, null) }, BOTTOM),
+        // };
         
         InitXWFC();
         
@@ -235,7 +207,7 @@ public class XWFCAnimator : MonoBehaviour
         
         foreach (var (k,v) in _xwfc.AdjMatrix.AtomMapping.Dict)
         {
-            Debug.Log(k.ToString() +  v.ToString());
+            Debug.Log($"{k}: {v}");
         }
         
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
@@ -244,14 +216,8 @@ public class XWFCAnimator : MonoBehaviour
         _drawnTiles = new HashSet<GameObject>();
         
         DrawTiles();
-        
-        SaveConfig();
-
-        FindSaveConfigPaths();
-        // var zzz = new AdjacencyMatrixJsonFormatter(_xwfc.AdjMatrix.TileAdjacencyConstraints, TileSet);
-        // var json = zzz.ToJson();
-        // zzz.FromJson(json);
-
+        if (!FindConfigFileNames().Any()) SaveConfig();
+        LoadConfig();
     }
 
     private void InitXWFC()
@@ -637,7 +603,7 @@ public class XWFCAnimator : MonoBehaviour
         delay = value;
     }
 
-    public void SaveConfig()
+    public string SaveConfig()
     {
         /*
          * To replicate a config need:
@@ -648,8 +614,9 @@ public class XWFCAnimator : MonoBehaviour
         var adjs = _xwfc.AdjMatrix.TileAdjacencyConstraints;
         var tiles = TileSet;
         var config = new AdjacencyMatrixJsonFormatter(adjs, tiles).ToJson();
-        
-        FileUtil.WriteToFile(config, CreateSaveConfigPath());
+        var path = CreateSaveConfigPath();
+        FileUtil.WriteToFile(config, path);
+        return path;
     }
 
     private string GetConfigFolderPath()
@@ -657,9 +624,26 @@ public class XWFCAnimator : MonoBehaviour
         return FileUtil.RootPathTo("Configs");
     }
 
-    public void LoadConfig(string path)
+    public void LoadConfig(string fileName="")
     {
+        var extension = ".json";
         
+        var path = "";
+        if (fileName.Length == 0)
+        {
+            var files = FindConfigPaths();
+            path = files.Last();
+        }
+        else
+        {
+            if (!fileName.EndsWith(extension)) fileName += extension;
+            path = Path.Join(GetConfigFolderPath(), fileName);
+        }
+        var contents = FileUtil.ReadFromFile(path);
+        var adjMat = AdjacencyMatrixJsonFormatter.FromJson(contents);
+        
+        UpdateTerminals(adjMat.TileSet);
+        UpdateAdjacencyConstraints(adjMat.TileAdjacencyConstraints);
     }
 
     private string CreateSaveConfigPath()
@@ -673,10 +657,19 @@ public class XWFCAnimator : MonoBehaviour
         return filePath;
     }
 
-    private IEnumerable<string> FindSaveConfigPaths()
+    public IEnumerable<string> FindConfigPaths()
     {
         var files = FileUtil.FindFiles(GetConfigFolderPath(), "*.json").ToArray();
         return files;
+    }
+
+    public IEnumerable<string> FindConfigFileNames(bool includeExtension = false)
+    {
+        var paths = FindConfigPaths();
+        foreach (var path in paths)
+        {
+            yield return FileUtil.GetFileNameFromPath(path, includeExtension);
+        }
     }
     
     private record Drawing

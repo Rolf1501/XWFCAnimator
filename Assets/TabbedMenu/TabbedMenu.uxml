@@ -5,6 +5,7 @@
             <ui:Label text="Grid" name="GridControlTab" class="tab currentlySelectedTab small" />
             <ui:Label text="Adjacency View" name="AdjacencyViewTab" class="tab large" />
             <ui:Label text="Tileset" name="TilesetTab" class="tab large" />
+            <ui:Label text="Config" name="ConfigTab" class="tab small" />
         </ui:VisualElement>
         <ui:VisualElement name="tabContent">
             <ui:VisualElement name="GridControlContent">
@@ -43,7 +44,12 @@
             <ui:VisualElement name="TilesetContent" class="unselectedContent">
                 <ui:VisualElement name="tilesetListContainer" class="tileset-list-container" />
                 <ui:Button name="updateTilesetButton" text="Apply"/>
-                
+            </ui:VisualElement>
+            <ui:VisualElement name="ConfigContent" class="unselectedContent">
+                <ui:VisualElement name="configContentContainer" class="config-container"/>
+                <ui:Button name="loadConfigButton" text="Load Selected"/>
+                <ui:Button name="saveConfigButton" text="Save Current"/>
+                <!-- <ui:Button name="deleteConfigButton" text="Delete all but current"/> -->
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
