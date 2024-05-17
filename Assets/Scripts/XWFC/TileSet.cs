@@ -18,13 +18,12 @@ namespace XWFC
 
         public static TileSet FromJson(string s)
         {
-            var formatter = new JsonFormatter();
             var json = JsonConvert.DeserializeObject<Dictionary<string, string>>(s);
             var tiles = new TileSet();
             foreach (var (k,v )in json)
             {
                 var id = int.Parse(k);
-                var terminal = Terminal.FromJson(JsonFormatter.Deserialize<Dictionary<string,string>>(v));
+                var terminal = Terminal.FromJson(JsonConvert.DeserializeObject<Dictionary<string,string>>(v));
                 tiles.Add(id, terminal);
             }
 

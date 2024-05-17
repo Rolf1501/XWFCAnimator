@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using TMPro;
@@ -244,11 +245,13 @@ public class XWFCAnimator : MonoBehaviour
         
         DrawTiles();
         
-        // SaveConfig();
-        var zzz = new AdjacencyMatrixJsonFormatter(_xwfc.AdjMatrix.TileAdjacencyConstraints, TileSet);
-        var json = zzz.ToJson();
-        zzz.FromJson(json);
-        
+        SaveConfig();
+
+        FindSaveConfigPaths();
+        // var zzz = new AdjacencyMatrixJsonFormatter(_xwfc.AdjMatrix.TileAdjacencyConstraints, TileSet);
+        // var json = zzz.ToJson();
+        // zzz.FromJson(json);
+
     }
 
     private void InitXWFC()
@@ -638,24 +641,42 @@ public class XWFCAnimator : MonoBehaviour
     {
         /*
          * To replicate a config need:
-         * tileset and adjacency constraints.
+         * Json representation of AdjacencyMatrix.
+         * This contains the tileset, the tile id mapping and the adjacency constraints.
+         * From those, the parameters for recreating config can be restored.
          */
-        var config = new Dictionary<string, object>();
-        foreach (var (k,v) in TileSet)
-        {
-            var json = v.ToJson();
-        }
-        /*
-         * To replicate tileset need:
-         * Tile id and its extent, color, mask, orientation and description.
-         */
+        var adjs = _xwfc.AdjMatrix.TileAdjacencyConstraints;
+        var tiles = TileSet;
+        var config = new AdjacencyMatrixJsonFormatter(adjs, tiles).ToJson();
+        
+        FileUtil.WriteToFile(config, CreateSaveConfigPath());
+    }
 
-        /*
-         * To replicate adjacency constraints need:
-         * Tile ids.
-         * Tile adjacency constraints per offset.
-         */
+    private string GetConfigFolderPath()
+    {
+        return FileUtil.RootPathTo("Configs");
+    }
 
+    public void LoadConfig(string path)
+    {
+        
+    }
+
+    private string CreateSaveConfigPath()
+    {
+        var prefix = "config-";
+        var timeStamp = FileUtil.GetTimeStamp();
+        var format = ".json";
+        var fileName = $"{prefix}{timeStamp}{format}";
+        var filePath = Path.Join(GetConfigFolderPath(), fileName);
+
+        return filePath;
+    }
+
+    private IEnumerable<string> FindSaveConfigPaths()
+    {
+        var files = FileUtil.FindFiles(GetConfigFolderPath(), "*.json").ToArray();
+        return files;
     }
     
     private record Drawing

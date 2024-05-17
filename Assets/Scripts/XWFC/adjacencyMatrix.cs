@@ -29,7 +29,6 @@ namespace XWFC
 
         public static HashSetAdjacency FromJson(string s)
         {
-            Debug.Log("HASHSETSTRING" + s);
             var set = new HashSetAdjacency();
             
             var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(s);
@@ -588,7 +587,6 @@ namespace XWFC
     {
         private HashSetAdjacency _tileAdjacencyConstraints;
         private TileSet _tiles;
-        private JsonFormatter _jsonFormatter = new JsonFormatter();
         public AdjacencyMatrixJsonFormatter(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet)
         {
             _tileAdjacencyConstraints = tileAdjacencyConstraints;
@@ -600,18 +598,18 @@ namespace XWFC
             var tileString = new Dictionary<string, string>();
             foreach (var (k,v) in _tiles)
             {
-                tileString[k.ToString()] = JsonFormatter.Serialize(v.ToJson());
+                tileString[k.ToString()] = JsonConvert.SerializeObject(v.ToJson());
             }
             
-            dict["tileset"] = JsonFormatter.Serialize(tileString);
+            dict["tileset"] = JsonConvert.SerializeObject(tileString);
             dict["tileAdjacencyConstraints"] = _tileAdjacencyConstraints.ToJson();
             
-            return JsonFormatter.Serialize(dict);
+            return JsonConvert.SerializeObject(dict);
         }
 
-        public AdjacencyMatrix FromJson(string s)
+        public static AdjacencyMatrix FromJson(string s)
         {
-            var dict = JsonFormatter.Deserialize<Dictionary<string, string>>(s);
+            var dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(s);
             var tilesetString = dict["tileset"];
             var tileset = TileSet.FromJson(tilesetString);
             var adjConstraintsString = dict["tileAdjacencyConstraints"];

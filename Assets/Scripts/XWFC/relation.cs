@@ -24,7 +24,7 @@ namespace XWFC
         public Relation(string other, string rotations, string weight)
         {
             Other = int.Parse(other);
-            var list = JsonFormatter.ListTrimSplit(rotations.Replace("\"", ""));
+            var list = StringUtil.ListTrimSplit(rotations.Replace("\"", ""));
             Rotations = list.Select(int.Parse).ToArray();
             Weight = float.Parse(weight);
         }
