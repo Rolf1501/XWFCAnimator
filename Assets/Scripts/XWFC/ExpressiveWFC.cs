@@ -144,7 +144,7 @@ namespace XWFC
             try
             {
                 (tCoord, tId, _) = Collapse(x, y, z);
-                _propQueue.Enqueue(new Propagation(new int[] { tId }, tCoord));
+                // _propQueue.Enqueue(new Propagation(new int[] { tId }, tCoord));
             }
             catch (NoMoreChoicesException)
             {
@@ -185,7 +185,6 @@ namespace XWFC
             var (_, _, tO) = AdjMatrix.AtomMapping.Get(choiceId);
 
             SetOccupied(coord, choiceId);
-
             return (coord, choiceId, tO);
         }
 
@@ -193,6 +192,8 @@ namespace XWFC
         {
             GridManager.Grid.Set(coord, id);
             GridManager.Entropy.Set(coord, CalcEntropy(1));
+            _propQueue.Enqueue(new Propagation(new int[] { id }, coord));
+            
             // Whenever a cell is set to be occupied, progress is made and needs to be updated.
             UpdateProgress();
         }
@@ -355,6 +356,11 @@ namespace XWFC
                         if (Math.Abs(GridManager.Entropy.Get(n) - _maxEntropy) < 0.0001)
                             continue;
 
+                        if (nChoices == 1)
+                        {
+                            SetOccupied(n, neighborWChoicesI[0]);
+                        }
+
                         if (!GridManager.Grid.IsChosen(n))
                             _propQueue.Enqueue(new Propagation(neighborWChoicesI.ToArray(), n));
                     }
@@ -368,6 +374,7 @@ namespace XWFC
 
         public bool IsDone()
         {
+            return _collapseQueue.IsDone();
             return _progress >= 100;
         }
 

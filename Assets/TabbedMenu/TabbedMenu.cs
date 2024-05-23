@@ -52,7 +52,6 @@ public class TabbedMenu : MonoBehaviour
     private Button _loadConfigButton;
     private VisualElement _configContainer;
     private VisualElement _tilesetListContainer;
-    private Button _deleteConfigsButton;
 
 
     private void OnEnable()
@@ -86,7 +85,6 @@ public class TabbedMenu : MonoBehaviour
         _updateTilesetButton = _root.Q<Button>("updateTilesetButton");
         _saveConfigButton = _root.Q<Button>("saveConfigButton");
         _loadConfigButton = _root.Q<Button>("loadConfigButton");
-        _deleteConfigsButton = _root.Q<Button>("deleteConfigButton");
         _configContainer = _root.Q<VisualElement>("configContentContainer");
     }
 
@@ -176,6 +174,7 @@ public class TabbedMenu : MonoBehaviour
 
     private void UpdateExtent()
     {
+        
         XWFCAnimator.Instance.UpdateExtent(new Vector3(_wSlider.value, _hSlider.value, _dSlider.value));
     }
 

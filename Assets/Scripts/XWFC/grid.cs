@@ -22,6 +22,11 @@ namespace XWFC
             _grid = new T[Height, Width, Depth];
         }
 
+        public Vector3 GetExtent()
+        {
+            return new Vector3(Width, Height, Depth);
+        }
+
         public void Populate(T value)
         {
             for (int i = 0; i < Height; i++)

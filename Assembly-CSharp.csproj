@@ -46,24 +46,29 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\Scripts\XWFC\adjacencyMatrix.cs" />
+    <Compile Include="Assets\Scripts\BorderOutline.cs" />
     <Compile Include="Assets\Scripts\XWFC\grid.cs" />
     <Compile Include="Assets\Scripts\CameraMovement.cs" />
     <Compile Include="Assets\Scripts\XWFC\util.cs" />
     <Compile Include="Assets\TabbedMenu\TabbedMenu.cs" />
     <Compile Include="Assets\Scripts\Auxiliary.cs" />
     <Compile Include="Assets\Scripts\XWFC\collapseQueue.cs" />
+    <Compile Include="Assets\Scripts\XWFC\TileSet.cs" />
     <Compile Include="Assets\Scripts\XWFCAnimator.cs" />
+    <Compile Include="Assets\Scripts\TileTexture.cs" />
     <Compile Include="Assets\Scripts\XWFC\adjacency.cs" />
     <Compile Include="Assets\Scripts\XWFC\savePoint.cs" />
     <Compile Include="Assets\Scripts\UIHandler.cs" />
     <Compile Include="Assets\Scripts\XWFC\customExceptions.cs" />
     <Compile Include="Assets\Scripts\XWFC\voidMaskAdjacencyData.cs" />
     <Compile Include="Assets\TabbedMenu\TabbedMenuController.cs" />
+    <Compile Include="Assets\Scripts\StringUtil.cs" />
     <Compile Include="Assets\Scripts\XWFC\terminal.cs" />
     <Compile Include="Assets\Scripts\XWFCRunner.cs" />
     <Compile Include="Assets\Scripts\XWFC\ExpressiveWFC.cs" />
     <Compile Include="Assets\Scripts\XWFC\relation.cs" />
     <Compile Include="Assets\Scripts\XWFC\atom.cs" />
+    <Compile Include="Assets\Scripts\FileUtil.cs" />
     <Compile Include="Assets\Scripts\XWFC\offset.cs" />
     <Compile Include="Assets\Scripts\XWFC\bidict.cs" />
     <Compile Include="Assets\Scripts\XWFC\color.cs" />
@@ -78,9 +83,11 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
     <None Include="Assets\TabbedMenu\TabbedMenuStyle.uss" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface.shader" />
+    <None Include="Assets\Scripts\Configs\config-05-17-2024-144010.json" />
     <None Include="Assets\TextMesh Pro\Sprites\EmojiOne Attribution.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Custom-Atlas.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF.shader" />
+    <None Include="Assets\Scripts\Configs\config-05-23-2024-110156.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile SSD.shader" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Leading Characters.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Properties.cginc" />
@@ -88,6 +95,8 @@
     <None Include="Assets\Resources\BillingMode.json" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
     <None Include="Assets\TabbedMenu\TabbedMenu.uxml" />
+    <None Include="Assets\Scripts\Configs\config-05-22-2024-220842.json" />
+    <None Include="Assets\Scripts\Configs\config-05-23-2024-110003.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Mobile.shader" />

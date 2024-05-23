@@ -382,6 +382,7 @@ public class XWFCAnimator : MonoBehaviour
                 affectedCells.UnionWith(cells);
                 _iterationsDone++;
             }
+            
             Draw(affectedCells);
         }
         
@@ -465,43 +466,103 @@ public class XWFCAnimator : MonoBehaviour
 
     private void Draw(HashSet<Occupation> affectedCells)
     {
-        foreach (var occupation in affectedCells)
+        var grid = _xwfc.GridManager.Grid;
+        var gridExtent = grid.GetExtent();
+        for (int y = 0; y < gridExtent.y; y++)
         {
-            var coord = occupation.Coord;
-            var (x,y,z) = Vector3Util.CastInt(coord);
-            if (!_drawnGrid.WithinBounds(x,y,z)) continue;
-            var grid = _xwfc.GridManager.Grid;
-            var status = grid.Get(coord);
-            var drawnStatus = _drawnGrid.Get(coord);
-            
-            // Only update if there is a change.
-            if (status == drawnStatus.Id) continue;
-            
-            // Clear the cells content to be replaced with a new drawing.
-            if (drawnStatus.Id != grid.DefaultFillValue)
+            for (int x = 0; x < gridExtent.x; x++)
             {
-                Drawing.DestroyAtom(drawnStatus);
-            }
-            
-            // Empty cell should not show an object. Drawn grid restored to default.
-            if (status == grid.DefaultFillValue)
-            {
-                _drawnGrid.Set(coord, new Drawing(grid.DefaultFillValue, null));
-            }
-            else
-            {
-                // Drawn atom should be updated to match the new atom's specification.
-                // TODO: reference the prefab corresponding to the atom, instead of assuming the same is used for all.
-                var atom = Instantiate(unitTilePrefab);
-                
-                atom.transform.position = CalcAtomPosition(coord);
-                var edges = DrawEdges(status, atom);
-                var drawing = new Drawing(status, atom, edges);
-                UpdateColorFromAtom(atom, status);
-                // atom.GetComponent<Renderer>().material.color = GetTerminalColor(status);
-                _drawnGrid.Set(coord, drawing);
+                for (int z = 0; z < gridExtent.z; z++)
+                {
+                    var drawing = _drawnGrid.Get(x, y, z);
+                    var gridValue = grid.Get(x, y, z);
+
+                    var coord = new Vector3(x, y, z);
+                    if (gridValue == grid.DefaultFillValue && drawing.Atom != null)
+                    {
+                        Drawing.DestroyAtom(drawing);
+                        _drawnGrid.Set(coord, new Drawing(grid.DefaultFillValue, null));
+                    }
+                    else if (drawing.Id != gridValue)
+                    {
+                        if (drawing.Atom != null)
+                        {
+                            Drawing.DestroyAtom(drawing);
+                        }
+                        DrawAtom(coord,gridValue);
+                    }
+                    // else
+                    // {
+                    //     // if (drawing.Id == gridValue)
+                    //     // {
+                    //     //     return;
+                    //     // }
+                    //     
+                    //     // Drawing.DestroyAtom(drawing);
+                    //     
+                    //     if (gridValue != grid.DefaultFillValue)
+                    //     {
+                    //         // draw new atom
+                    //         DrawAtom(coord, gridValue);
+                    //     }
+                    // }
+
+                    if (_drawnGrid.Get(coord).Id != grid.Get(coord))
+                    {
+                        Debug.Log("Somehow not matched...");
+                    }
+                }
             }
         }
+        // foreach (var occupation in affectedCells)
+        // {
+        //     var coord = occupation.Coord;
+        //     var (x,y,z) = Vector3Util.CastInt(coord);
+        //     if (!_drawnGrid.WithinBounds(x,y,z)) continue;
+        //     // var grid = _xwfc.GridManager.Grid;
+        //     var status = grid.Get(coord);
+        //     var drawnStatus = _drawnGrid.Get(coord);
+        //     
+        //     // Only update if there is a change.
+        //     if (status == drawnStatus.Id) continue;
+        //     
+        //     // Clear the cells content to be replaced with a new drawing.
+        //     if (drawnStatus.Id != grid.DefaultFillValue)
+        //     {
+        //         Drawing.DestroyAtom(drawnStatus);
+        //     }
+        //     
+        //     // Empty cell should not show an object. Drawn grid restored to default.
+        //     if (status == grid.DefaultFillValue)
+        //     {
+        //         _drawnGrid.Set(coord, new Drawing(grid.DefaultFillValue, null));
+        //     }
+        //     else
+        //     {
+        //         // Drawn atom should be updated to match the new atom's specification.
+        //         // TODO: reference the prefab corresponding to the atom, instead of assuming the same is used for all.
+        //         var atom = Instantiate(unitTilePrefab);
+        //         
+        //         atom.transform.position = CalcAtomPosition(coord);
+        //         var edges = DrawEdges(status, atom);
+        //         var drawing = new Drawing(status, atom, edges);
+        //         UpdateColorFromAtom(atom, status);
+        //         // atom.GetComponent<Renderer>().material.color = GetTerminalColor(status);
+        //         _drawnGrid.Set(coord, drawing);
+        //     }
+        // }
+    }
+
+    private void DrawAtom(Vector3 coord, int atomId)
+    {
+        var atom = Instantiate(unitTilePrefab);
+                
+        atom.transform.position = CalcAtomPosition(coord);
+        var edges = DrawEdges(atomId, atom);
+        var drawing = new Drawing(atomId, atom, edges);
+        UpdateColorFromAtom(atom, atomId);
+        // atom.GetComponent<Renderer>().material.color = GetTerminalColor(status);
+        _drawnGrid.Set(coord, drawing);
     }
 
     private HashSet<GameObject> DrawEdges(int atomId, GameObject atom)
