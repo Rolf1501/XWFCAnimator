@@ -3,9 +3,9 @@ using Newtonsoft.Json;
 
 namespace XWFC
 {
-    public class TileSet : Dictionary<int, Terminal>
+    public class TileSet : Dictionary<int, Tile>
     {
-        public static TileSet FromDict(Dictionary<int, Terminal> dictionary)
+        public static TileSet FromDict(Dictionary<int, Tile> dictionary)
         {
             var tileSet = new TileSet();
             foreach (var (key, value) in dictionary)
@@ -23,7 +23,7 @@ namespace XWFC
             foreach (var (k,v )in json)
             {
                 var id = int.Parse(k);
-                var terminal = Terminal.FromJson(JsonConvert.DeserializeObject<Dictionary<string,string>>(v));
+                var terminal = Tile.FromJson(JsonConvert.DeserializeObject<Dictionary<string,string>>(v));
                 tiles.Add(id, terminal);
             }
 

@@ -11,6 +11,8 @@ using Canvas = UnityEngine.Canvas;
 using Random = System.Random;
 using Vector3 = UnityEngine.Vector3;
 
+using InputTiles = System.Collections.Generic.Dictionary<int, (bool[,,] mask, UnityEngine.Color color)>;
+
 public class XWFCAnimator : MonoBehaviour
 {
     [SerializeField] private GameObject unitTilePrefab;
@@ -62,14 +64,14 @@ public class XWFCAnimator : MonoBehaviour
 
         var borderOutline = new BorderOutline();
         
-        var tileL = new Terminal(
+        var tileL = new Tile(
             new Vector3(2, 1, 3),
             new Color(240 / 255.0f, 160 / 255.0f, 0),
             new bool[,,] { { { true, true, true }, { true, false, false } } },
             null,
             computeAtomEdges:true
         );
-        var tileT = new Terminal(
+        var tileT = new Tile(
             new Vector3(2, 1, 3),
             new Color(160 / 255.0f, 0, 240/255.0f),
             new bool[,,] { { { false, true, false }, { true, true, true }} },
@@ -77,7 +79,7 @@ public class XWFCAnimator : MonoBehaviour
             computeAtomEdges:true
         );
         
-        var tileJ = new Terminal(
+        var tileJ = new Tile(
             new Vector3(3, 1, 2),
             new Color(0, 0, 240 / 255.0f),
             new bool[,,] { { { true, true }, { false, true }, { false, true } } },
@@ -85,7 +87,7 @@ public class XWFCAnimator : MonoBehaviour
             computeAtomEdges:true
         );
         
-        var tileI = new Terminal(
+        var tileI = new Tile(
             new Vector3(4, 1, 1),
             new Color(0, 240 / 255.0f, 240 / 255.0f),
             new bool[,,] { { { true }, { true }, { true }, { true } } },
@@ -93,21 +95,21 @@ public class XWFCAnimator : MonoBehaviour
             computeAtomEdges:true
         );
         
-        var tileS = new Terminal(
+        var tileS = new Tile(
             new Vector3(2, 1, 3),
             new Color(0, 240 / 255.0f, 0),
             new bool[,,] { { { true, true, false }, { false, true, true }} },
             null,
             computeAtomEdges:true
         );
-        var tileZ = new Terminal(
+        var tileZ = new Tile(
             new Vector3(2, 1, 3),
             new Color(240 / 255.0f, 0, 0),
             new bool[,,] { { { false, true, true }, { true, true, false }} },
             null,
             computeAtomEdges:true
         );
-        var tileO = new Terminal(
+        var tileO = new Tile(
             new Vector3(2, 1, 2),
             new Color(0, 240 / 255.0f, 240 / 255.0f),
 
@@ -117,7 +119,7 @@ public class XWFCAnimator : MonoBehaviour
             computeAtomEdges:true
         );
 
-        var tetrisTiles = new Terminal[] { tileO, tileS, tileZ, tileL, tileI, tileJ, tileT };
+        var tetrisTiles = new Tile[] { tileO, tileS, tileZ, tileL, tileI, tileJ, tileT };
         
         // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, 0, .8f), null, null);
         
@@ -184,6 +186,12 @@ public class XWFCAnimator : MonoBehaviour
         // };
         
         InitXWFC();
+
+
+        var inputTiles = new InputTiles();
+        var tiles = InputHandler.ToTileSet(inputTiles);
+        var grid = new Grid<(int tileId, int instanceId)>(extent, (-1, -1));
+        InitXWFCInput(tiles, grid);
         
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
@@ -218,6 +226,11 @@ public class XWFCAnimator : MonoBehaviour
         DrawTiles();
         if (!FindConfigFileNames().Any()) SaveConfig();
         LoadConfig();
+    }
+
+    private void InitXWFCInput(TileSet tiles, Grid<(int tileId, int instanceId)> grid)
+    {
+        _xwfc = new ExpressiveWFC(tiles, grid);
     }
 
     private void InitXWFC()
@@ -329,7 +342,7 @@ public class XWFCAnimator : MonoBehaviour
         return _xwfc.Offsets;
     }
 
-    public Dictionary<int, Terminal> GetTiles()
+    public Dictionary<int, Tile> GetTiles()
     {
         return TileSet;
     }
@@ -383,7 +396,7 @@ public class XWFCAnimator : MonoBehaviour
                 _iterationsDone++;
             }
             
-            Draw(affectedCells);
+            Draw();
         }
         
         if (!MayCollapse())
@@ -441,7 +454,7 @@ public class XWFCAnimator : MonoBehaviour
          * Returns the set of affected cells.
          */
         var affectedCells = CollapseOnce();
-        Draw(affectedCells);
+        Draw();
         return affectedCells;
     }
 
@@ -464,7 +477,7 @@ public class XWFCAnimator : MonoBehaviour
         return _iterationsDone < stepSize || stepSize < 0;
     }
 
-    private void Draw(HashSet<Occupation> affectedCells)
+    private void Draw()
     {
         var grid = _xwfc.GridManager.Grid;
         var gridExtent = grid.GetExtent();
@@ -491,21 +504,6 @@ public class XWFCAnimator : MonoBehaviour
                         }
                         DrawAtom(coord,gridValue);
                     }
-                    // else
-                    // {
-                    //     // if (drawing.Id == gridValue)
-                    //     // {
-                    //     //     return;
-                    //     // }
-                    //     
-                    //     // Drawing.DestroyAtom(drawing);
-                    //     
-                    //     if (gridValue != grid.DefaultFillValue)
-                    //     {
-                    //         // draw new atom
-                    //         DrawAtom(coord, gridValue);
-                    //     }
-                    // }
 
                     if (_drawnGrid.Get(coord).Id != grid.Get(coord))
                     {
@@ -514,43 +512,6 @@ public class XWFCAnimator : MonoBehaviour
                 }
             }
         }
-        // foreach (var occupation in affectedCells)
-        // {
-        //     var coord = occupation.Coord;
-        //     var (x,y,z) = Vector3Util.CastInt(coord);
-        //     if (!_drawnGrid.WithinBounds(x,y,z)) continue;
-        //     // var grid = _xwfc.GridManager.Grid;
-        //     var status = grid.Get(coord);
-        //     var drawnStatus = _drawnGrid.Get(coord);
-        //     
-        //     // Only update if there is a change.
-        //     if (status == drawnStatus.Id) continue;
-        //     
-        //     // Clear the cells content to be replaced with a new drawing.
-        //     if (drawnStatus.Id != grid.DefaultFillValue)
-        //     {
-        //         Drawing.DestroyAtom(drawnStatus);
-        //     }
-        //     
-        //     // Empty cell should not show an object. Drawn grid restored to default.
-        //     if (status == grid.DefaultFillValue)
-        //     {
-        //         _drawnGrid.Set(coord, new Drawing(grid.DefaultFillValue, null));
-        //     }
-        //     else
-        //     {
-        //         // Drawn atom should be updated to match the new atom's specification.
-        //         // TODO: reference the prefab corresponding to the atom, instead of assuming the same is used for all.
-        //         var atom = Instantiate(unitTilePrefab);
-        //         
-        //         atom.transform.position = CalcAtomPosition(coord);
-        //         var edges = DrawEdges(status, atom);
-        //         var drawing = new Drawing(status, atom, edges);
-        //         UpdateColorFromAtom(atom, status);
-        //         // atom.GetComponent<Renderer>().material.color = GetTerminalColor(status);
-        //         _drawnGrid.Set(coord, drawing);
-        //     }
-        // }
     }
 
     private void DrawAtom(Vector3 coord, int atomId)
