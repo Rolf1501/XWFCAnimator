@@ -39,7 +39,7 @@ namespace XWFC
             CalcVoidMasks();
             if (computeAtomEdges)
             {
-                AtomEdges = new BorderOutline().GetEdgesPerAtom(mask);
+                AtomEdges = new BorderOutline().GetEdgesPerAtom(Mask);
             }
         }
 

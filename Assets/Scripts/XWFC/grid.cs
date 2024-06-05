@@ -21,6 +21,16 @@ namespace XWFC
             DefaultFillValue = defaultFillValue;
             _grid = new T[Height, Width, Depth];
         }
+        
+                
+        protected AbstractGrid(T[,,] grid, T defaultFillValue)
+        {
+            Height = grid.GetLength(0);
+            Width = grid.GetLength(1);
+            Depth = grid.GetLength(2);
+            DefaultFillValue = defaultFillValue; 
+            _grid = grid;
+        }
 
         public Vector3 GetExtent()
         {
@@ -79,6 +89,11 @@ namespace XWFC
             return x < Width && y < Height && z < Depth && x >= 0 && y >= 0 && z >= 0;
         }
 
+        public bool WithinBounds(Vector3 vector)
+        {
+            return WithinBounds((int)vector.x, (int)vector.y, (int)vector.z);
+        }
+
         public T Get(int x, int y, int z)
         {
             return _grid[y, x, z];
@@ -104,56 +119,6 @@ namespace XWFC
             Set(x, y, z, value);
         }
         
-        
-        //
-        // public void PrintXY()
-        // {
-        //     for (int z = 0; z < Depth; z++)
-        //     {
-        //         for (int y = 0; y < Height; y++)
-        //         {
-        //             for (int x = 0; x < Width; x++)
-        //             {
-        //                 Console.Write(_grid[y, x, z] + " ");
-        //             }
-        //             Console.WriteLine();
-        //         }
-        //         Console.WriteLine();
-        //     }
-        // }
-        //
-        // public void PrintXZ()
-        // {
-        //     for (int y = 0; y < Height; y++)
-        //     {
-        //         for (int x = 0; x < Width; x++)
-        //         {
-        //             for (int z = 0; z < Depth; z++)
-        //             {
-        //                 Console.Write(_grid[y, x, z] + " ");
-        //             }
-        //             Console.WriteLine();
-        //         }
-        //         Console.WriteLine();
-        //     }
-        // }
-        //
-        // public void PrintYZ()
-        // {
-        //     for (int x = 0; x < Width; x++)
-        //     {
-        //         for (int y = 0; y < Height; y++)
-        //         {
-        //             for (int z = 0; z < Depth; z++)
-        //             {
-        //                 Console.Write(_grid[y, x, z] + " ");
-        //             }
-        //             Console.WriteLine();
-        //         }
-        //         Console.WriteLine();
-        //     }
-        // }
-        //
         public string GridToString()
         {
             string s = "";
@@ -186,6 +151,8 @@ namespace XWFC
             Populate(defaultFillValue);
         }
 
+        public Grid(T[,,] grid, T defaultFilValue) : base(grid, defaultFilValue){}
+        
         public bool IsChosen(int x, int y, int z)
         {
             var choice = Get(x, y, z);

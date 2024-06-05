@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEngine;
 
 using System.Collections.Generic;
+using System.Text;
 using Newtonsoft.Json;
 
 namespace XWFC
@@ -70,11 +71,9 @@ namespace XWFC
             InitTileAdjacency();
             InferTileAdjacencyConstraints(TileAdjacencyConstraints);
             InferAtomAdjacencies();
-
-            
         }
         
-        public AdjacencyMatrix(TileSet tiles, Grid<(int tileId, int instanceId)> grid)
+        public AdjacencyMatrix(TileSet tiles, List<Grid<(int tileId, int instanceId)>> grids)
         {
             /*
              * Infer adjacency constraints from input.
@@ -84,9 +83,35 @@ namespace XWFC
             
             InnerAtomAdjacency();
 
-            var atomizedGrid = AtomizeInputGrid(grid);
-            
+            /*
+             * TODO: go over all grids.
+             */
+            Debug.Log("Atomized...");
+
+            foreach (var grid in grids)
+            {
+                var atomizedGrid = AtomizeInputGrid(grid);
+                AtomAdjacencyFromGrid(atomizedGrid);
+            }
+
+            var builder = new StringBuilder();
+            foreach (var (k,v) in AtomAdjacencyMatrix)
+            {
+                builder.Append($"key: {k}\n");
+                for (int i = 0; i < v.GetLength(0); i++)
+                {
+                    builder.Append($"value: {v}");
+                    for (int j = 0; j < v.GetLength(1); j++)
+                    {
+                        builder.Append($"{AtomAdjacencyMatrix[k][i,j]},");
+                    }
+
+                    builder.Append("\n");
+                }
+            }
+            Debug.Log($"{builder}");
             // Process atomized grid.
+            Debug.Log("Atom adjacency derived from grid.");
         }
 
         private void Init(TileSet tileSet, int offsetsDimensions)
@@ -166,21 +191,23 @@ namespace XWFC
                     {
                         var (tileId, instanceId) = grid.Get(x, y, z);
                         if (solvedTiles.Contains((tileId, instanceId))) continue;
+                        if (tileId == grid.DefaultFillValue.tileId) continue;
+                        
                         var coord = new Vector3(x, y, z);
                         
-                        // Try to place the atom mask over the current location to infer atom coordinates.
+                        // Try to find out which atom coordinate to assign current location,
+                        // such that all other cells with the same tile id and instance id are covered.
                         var atomCoords = TileSet[tileId].OrientedIndices[0];
                         for (int i = 0; i < atomCoords.Length; i++)
                         {
                             var atomCoord = atomCoords[i];
-                            var originTranslation = Vector3Util.Scale(atomCoord, -1);
-                            var origin = coord + originTranslation;
+                            var origin = coord - atomCoord;
 
                             var valid = true;
-                            // Check if all atoms beyond the current one are present.
-                            for (int j = i; j < atomCoords.Length; j++)
+                            // Check if all atoms are present, for all other locations within the grid.
+                            foreach (var jCoord in atomCoords)
                             {
-                                var jCoord = atomCoords[j];
+                                if (!grid.WithinBounds(origin + jCoord)) continue;
                                 var other = grid.Get(origin + jCoord);
                                 
                                 if (other.tileId == tileId && other.instanceId == instanceId) continue;
@@ -192,20 +219,61 @@ namespace XWFC
                             
                             if (!valid) continue;
                             
-                            // If the mask fits, then the atom ids can be assigned and the tile can be considered processed.
+                            // If the mask fits, then the atom ids can be assigned and the tile can be considered solved.
                             foreach (var aCoord in atomCoords)
                             {
                                 atomizedGrid.Set(origin + aCoord, AtomMapping.GetValue((tileId, aCoord, 0)));
                             }
                             solvedTiles.Add((tileId, instanceId));
                             
+                            // When a tile is solved and atomized, no need to consider the other atoms of the same tile.
+                            break;
+                            // It could be the case that there are multiple configurations of a tile that satisfy the input.
+                            // For this reason, consider all other possible atoms in the tile.
                         }
                     }
                 }
             }
+            Debug.Log(atomizedGrid.GridToString());
             return atomizedGrid;
         }
-        
+
+        private void AtomAdjacencyFromGrid(Grid<int> atomGrid, int defaultValue=-1)
+        {
+            var e = atomGrid.GetExtent();
+            var positiveOffsets = (from offset in Offsets where offset is { x: >= 0, y: >= 0, z: >= 0 } select offset).ToList();
+            for (int y = 0; y < e.y; y++)
+            {
+                for (int x = 0; x < e.x; x++)
+                {
+                    for (int z = 0; z < e.z; z++)
+                    {
+                        var coord = new Vector3(x, y, z);
+                        var atomId = atomGrid.Get(coord);
+                        
+                        if (!AtomMapping.ContainsValue(atomId)) continue;
+                        
+                        foreach (var offset in positiveOffsets)
+                        {
+                            var otherCoord = coord + offset;
+                            if (!atomGrid.WithinBounds(otherCoord)) continue;
+                            
+                            var otherId = atomGrid.Get(otherCoord);
+                            
+                            if (!AtomMapping.ContainsValue(otherId)) continue;
+                            
+                            AtomAdjacencyMatrix[offset][atomId, otherId] = true;
+                            AtomAdjacencyMatrixW[offset][atomId, otherId] += 1;
+
+                            // Adjacency constraints are symmetric.
+                            var complement = Vector3Util.Negate(offset);
+                            AtomAdjacencyMatrix[complement][otherId, atomId] = true;
+                            AtomAdjacencyMatrixW[complement][otherId, atomId] += 1;
+                        }
+                    }
+                }
+            }
+        }
         private static TileSet ToTileSet(Dictionary<int, (bool[,,] mask, Color color)> tiles)
         {
             var t = new TileSet();

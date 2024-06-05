@@ -42,9 +42,17 @@ namespace XWFC
             CleanState();
         }
 
-        public ExpressiveWFC(TileSet tileSet, Grid<(int tileId, int instanceId)> grid, Vector3 gridExtent)
+        public ExpressiveWFC(TileSet tileSet, Vector3 extent, List<Grid<(int tileId, int instanceId)>> learnGrids)
         {
-            
+            GridExtent = extent;
+            _tileSet = tileSet;
+            AdjMatrix = new AdjacencyMatrix(tileSet, learnGrids);
+            _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
+            _defaultWeights = ExpandDefaultWeights(null);
+            Offsets = OffsetFactory.GetOffsets(3);
+            CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
+            CleanState();
+
         }
 
         private Vector3 CenterCoord()
