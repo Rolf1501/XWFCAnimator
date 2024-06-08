@@ -95,17 +95,11 @@ public class TabbedMenu : MonoBehaviour
             Debug.Log("Reset!");
             XWFCAnimator.Instance.Reset();
         };
-
-        _updateAdjacencyButton.clicked += delegate
-        {
-            Debug.Log("Updated Adjacency Constraints!");
-            XWFCAnimator.Instance.UpdateAdjacencyConstraints(_adjacencyGridController.ToAdjacencySet());
-        };
     }
 
     private void Start()
     {
-        InitAdjacencyGrid();
+        // InitAdjacencyGrid();
         InitGridValues();
         InitTilesetList();
         InitConfig();
@@ -174,7 +168,6 @@ public class TabbedMenu : MonoBehaviour
 
     private void UpdateExtent()
     {
-        
         XWFCAnimator.Instance.UpdateExtent(new Vector3(_wSlider.value, _hSlider.value, _dSlider.value));
     }
 
@@ -254,6 +247,11 @@ public class TabbedMenu : MonoBehaviour
         _adjGrid = _root.Q<VisualElement>(_adjacencyGridName);
         InitAdjacencyDropDown();
         InitAdjacencyToggles(XWFCAnimator.Instance.GetTiles().Keys.ToList(), XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
+        _updateAdjacencyButton.clicked += delegate
+        {
+            Debug.Log("Updated Adjacency Constraints!");
+            XWFCAnimator.Instance.UpdateAdjacencyConstraints(_adjacencyGridController.ToAdjacencySet());
+        };
     }
     
     public static void SwitchClass(VisualElement element, string classRemove, string classAdd)

@@ -80,16 +80,16 @@ public class XWFCAnimator : MonoBehaviour
         );
         
         var tileJ = new Tile(
-            new Vector3(3, 1, 2),
+            new Vector3(2, 1, 3),
             new Color(0, 0, 240 / 255.0f),
-            new bool[,,] { { { true, true }, { false, true }, { false, true } } },
+            new bool[,,] { { { true, false, false }, { true, true, true } } },
             null,
             computeAtomEdges:true
         );
         
         var tileI = new Tile(
             new Vector3(4, 1, 1),
-            new Color(0, 240 / 255.0f, 240 / 255.0f),
+            new Color(120 / 255.0f, 120 / 255.0f, 1 / 255.0f),
             new bool[,,] { { { true }, { true }, { true }, { true } } },
             null,
             computeAtomEdges:true
@@ -119,7 +119,7 @@ public class XWFCAnimator : MonoBehaviour
             computeAtomEdges:true
         );
 
-        var tetrisTiles = new Tile[] { tileO, tileS, tileZ, tileL, tileI, tileJ, tileT };
+        var tetrisTiles = new Tile[] { tileL, tileT, tileJ, tileI, tileS, tileZ, tileO };
         
         // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, 0, .8f), null, null);
         
@@ -187,11 +187,174 @@ public class XWFCAnimator : MonoBehaviour
         
         InitXWFC();
 
+        var pattern = new List<(int, Vector3)>()
+        {
+            (3, new Vector3(0, 0, 1)),
+            (3, new Vector3(0, 0, 2)),
+            (3, new Vector3(3, 0, 3)),
+            (3, new Vector3(3, 0, 0)),
+            (3, new Vector3(6, 0, 1)),
+            (3, new Vector3(6, 0, 2)),
+            (6, new Vector3(4,0,1))
+        };
 
-        var inputTiles = new InputTiles();
+        /*
+         * House
+         */
+
+        var doorTile = new Tile(
+            new Vector3(3, 1, 5),
+            mask: null, 
+            color: new Color(0,0,0.8f,1), 
+            distinctOrientations: null, 
+            computeAtomEdges: true
+        );
+        
+        var brickTile = new Tile(
+            new Vector3(2,1,1), 
+            mask: null, 
+            color: new Color(0.8f,0,0,1), 
+            distinctOrientations: null, 
+            computeAtomEdges: true
+        );
+        
+        var halfBrickTile = new Tile(
+            new Vector3(1,1,1), 
+            mask: null, 
+            color: new Color(0.4f,0,0,1), 
+            distinctOrientations: null, 
+            computeAtomEdges: true
+        );
+        
+        var grassTile = new Tile(
+            new Vector3(1,1,1), 
+            mask: null, 
+            color: new Color(0,0.8f,0,1), 
+            distinctOrientations: null, 
+            computeAtomEdges: true
+        );
+        
+        var soilTile = new Tile(
+            new Vector3(1,1,1), 
+            mask: null, 
+            color: new Color(0.1f,0.1f,0.1f,1), 
+            distinctOrientations: null, 
+            computeAtomEdges: true
+        );
+
+        var windowTile = new Tile(
+            new Vector3(3, 1, 3),
+            mask: null,
+            color: new Color(0, 0, 0.8f),
+            distinctOrientations: null,
+            computeAtomEdges: true
+        );
+        
+        var doorBrickPattern = new List<(int, Vector3)>()
+        {
+            (0, new Vector3(2,0,0)),
+            
+            (1, new Vector3(0,0,1)),
+            (1, new Vector3(0,0,3)),
+            (1, new Vector3(0,0,5)),
+            
+            (1, new Vector3(2,0,5)),
+            (1, new Vector3(4,0,5)),
+            
+            (1, new Vector3(5,0,4)),
+            (1, new Vector3(5,0,2)),
+            (1, new Vector3(5,0,0)),
+            
+            (2, new Vector3(1,0,0)),
+            (2, new Vector3(1,0,2)),
+            (2, new Vector3(1,0,4)),
+            
+            (2, new Vector3(5,0,1)),
+            (2, new Vector3(5,0,3)),
+        };
+
+        var windowBrickPattern = new List<(int, Vector3)>()
+        {
+            (5, new Vector3(1, 0, 1)),
+
+            (2, new Vector3(0, 0, 1)),
+            (2, new Vector3(0, 0, 2)),
+            (2, new Vector3(0, 0, 3)),
+            
+            (2, new Vector3(4, 0, 1)),
+            (2, new Vector3(4, 0, 2)),
+            (2, new Vector3(4, 0, 3)),
+
+            (2, new Vector3(1, 0, 0)),
+            (2, new Vector3(2, 0, 0)),
+            (2, new Vector3(3, 0, 0)),
+            
+            (2, new Vector3(1, 0, 4)),
+            (2, new Vector3(2, 0, 4)),
+            (2, new Vector3(3, 0, 4)),
+        };
+
+        var doorGrassPattern = new List<(int, Vector3)>()
+        {
+            (0, new Vector3(0,0,1)),
+            (3, new Vector3(0,0,0)),
+            (3, new Vector3(1,0,0)),
+            (3, new Vector3(2,0,0)),
+        };
+
+        var grassBrickPattern = new List<(int, Vector3)>()
+        {
+            (1, new Vector3(0, 0, 1)),
+            (3, new Vector3(0, 0, 0)),
+            (3, new Vector3(1, 0, 0)),
+            
+            (2, new Vector3(2,0,1)),
+            (3, new Vector3(2, 0, 0)),
+        };
+
+        var brickPattern = new List<(int, Vector3)>()
+        {
+            (1, new Vector3(1,0,0)),
+            (1, new Vector3(0,0,1)),
+            (1, new Vector3(1,0,2)),
+            (2, new Vector3(0,0,0)),
+            (2, new Vector3(3,0,0)),
+            (2, new Vector3(4,0,0))
+        };
+
+        var grassSoilPattern = new List<(int, Vector3)>()
+        {
+            (4, new Vector3(0,0,0)),
+            (4, new Vector3(1,0,0)),
+            (4, new Vector3(1,0,1)),
+            (3, new Vector3(0,0,1)),
+        };
+
+        var patterns = new List<List<(int, Vector3)>>()
+        {
+            doorBrickPattern,
+            doorGrassPattern,
+            grassBrickPattern,
+            brickPattern,
+            grassSoilPattern,
+            windowBrickPattern,
+        };
+
+        var houseTiles = new Tile[] { doorTile, brickTile, halfBrickTile, grassTile, soilTile, windowTile };
+        
+        var activeTiles = houseTiles;
+        
+        var activeTileSet = new TileSet();
+        Enumerable.Range(0, activeTiles.Length).ToList().ForEach(i => activeTileSet[i] = activeTiles[i]);
+
+        // var activeTileSet = tetrisTiles;
+        
+        var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, activeTileSet, (-1,-1));
+        var inputTiles = tileIds.ToDictionary(i => i, i => (activeTileSet[i].Mask, activeTileSet[i].Color));
         var tiles = InputHandler.ToTileSet(inputTiles);
-        var grid = new Grid<(int tileId, int instanceId)>(extent, (-1, -1));
-        InitXWFCInput(tiles, grid);
+
+        InitXWFCInput(tiles, grids);
+        TileSet = _xwfc.AdjMatrix.TileSet;
         
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
@@ -218,19 +381,22 @@ public class XWFCAnimator : MonoBehaviour
             Debug.Log($"{k}: {v}");
         }
         
+        // _xwfc.CollapseAutomatic();
+        // Debug.Log(_xwfc.GridManager.Grid.GridToString());
+        
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
         
         // Set for keeping track of drawn terminals.
         _drawnTiles = new HashSet<GameObject>();
         
         DrawTiles();
-        if (!FindConfigFileNames().Any()) SaveConfig();
-        LoadConfig();
+        // if (!FindConfigFileNames().Any()) SaveConfig();
+        // LoadConfig();
     }
 
-    private void InitXWFCInput(TileSet tiles, Grid<(int tileId, int instanceId)> grid)
+    private void InitXWFCInput(TileSet tiles, List<Grid<(int tileId, int instanceId)>> inputGrids)
     {
-        _xwfc = new ExpressiveWFC(tiles, grid);
+        _xwfc = new ExpressiveWFC(tiles, extent, inputGrids);
     }
 
     private void InitXWFC()
