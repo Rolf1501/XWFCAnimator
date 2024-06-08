@@ -73,7 +73,7 @@ namespace XWFC
             InferAtomAdjacencies();
         }
         
-        public AdjacencyMatrix(TileSet tiles, List<Grid<(int tileId, int instanceId)>> grids)
+        public AdjacencyMatrix(TileSet tiles, List<Grid<List<(int tileId, int instanceId)>>> grids)
         {
             /*
              * Infer adjacency constraints from input.
@@ -172,7 +172,7 @@ namespace XWFC
             return mapping;
         }
 
-        private Grid<int> AtomizeInputGrid(Grid<(int tileId, int instanceId)> grid)
+        private Grid<int> AtomizeInputGrid(Grid<List<(int tileId, int instanceId)>> grid)
         {
             var e = grid.GetExtent();
             var solvedTiles = new HashSet<(int tileId, int instanceId)>();
@@ -189,9 +189,12 @@ namespace XWFC
                 {
                     for (int z = 0; z < e.z; z++)
                     {
-                        var (tileId, instanceId) = grid.Get(x, y, z);
+                        /*
+                         * TODO: support multiple tile ids per cell.
+                         */
+                        var (tileId, instanceId) = grid.Get(x, y, z)[0];
                         if (solvedTiles.Contains((tileId, instanceId))) continue;
-                        if (tileId == grid.DefaultFillValue.tileId) continue;
+                        if (tileId == grid.DefaultFillValue[0].tileId) continue;
                         
                         var coord = new Vector3(x, y, z);
                         
@@ -210,7 +213,7 @@ namespace XWFC
                                 if (!grid.WithinBounds(origin + jCoord)) continue;
                                 var other = grid.Get(origin + jCoord);
                                 
-                                if (other.tileId == tileId && other.instanceId == instanceId) continue;
+                                if (other[0].tileId == tileId && other[0].instanceId == instanceId) continue;
                             
                                 // Current mask placement does not fit.
                                 valid = false;

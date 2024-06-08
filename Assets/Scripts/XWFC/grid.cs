@@ -179,6 +179,46 @@ namespace XWFC
         }
     }
 
+    public class LearnGrid<T> : AbstractGrid<LearnData>
+    {
+        public int DefaultDatum;
+        public LearnGrid(int width, int height, int depth, LearnData defaultFillValue) : base(width, height, depth, defaultFillValue)
+        {
+        }
+
+        public LearnGrid(LearnData[,,] grid, LearnData defaultFillValue) : base(grid, defaultFillValue)
+        {
+        }
+    }
+
+    public class LearnDatum
+    {
+        public int TileId;
+        public int InstanceId;
+    
+        public LearnDatum(int tileId, int instanceId)
+        {
+            TileId = tileId;
+            InstanceId = instanceId;
+        }
+
+        
+    }
+
+    public class LearnData
+    {
+        private List<LearnDatum> _data;
+        public LearnData(List<LearnDatum> data)
+        {
+            _data = data;
+        }
+
+        public LearnData(int tileId, int instanceId)
+        {
+            _data = new List<LearnDatum> { new LearnDatum(tileId, instanceId) };
+        }
+    }
+
     public class GridManager
     {
         public int Width { get; }

@@ -6,14 +6,17 @@ using JetBrains.Annotations;
 using Numpy;
 using Newtonsoft.Json;
 using UnityEngine;
+using UnityEngine.PlayerLoop;
 
 namespace XWFC
 {
-    public class Tile //: JSONMeta
+    public class Tile
     {
         private Vector3 Extent { get; }
         public Color Color { get; }
         public bool[,,] Mask { get; }
+        
+        public string[,,] AtomValues { get; }
         public int[] DistinctOrientations { get; }
         private string Description { get; }
         public Dictionary<Vector3, Atom> AtomIndexToIdMapping { get; } = new();
@@ -26,7 +29,7 @@ namespace XWFC
         public int NAtoms { get; private set; }
 
         #nullable enable
-        public Tile(Vector3 extent, Color color, bool[,,]? mask, int[]? distinctOrientations,
+        public Tile(Vector3 extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
             string description = "", bool computeAtomEdges=false)
         {
             Extent = extent;
@@ -35,12 +38,45 @@ namespace XWFC
             Mask = mask ?? Util.Populate3D(x, y, z, true);
             DistinctOrientations = distinctOrientations ?? new int[] { 0 };
             Description = description;
+            Init(computeAtomEdges);
+        }
+
+        private void Init(bool computeAtomEdges)
+        {
             CalcOrientedMasks();
             CalcVoidMasks();
             if (computeAtomEdges)
             {
                 AtomEdges = new BorderOutline().GetEdgesPerAtom(Mask);
             }
+        }
+
+        public Tile(string[,,] atomValues, int[]? distinctOrientations = null, bool computeAtomEdges = false)
+        {
+            /*
+             * Constructor for creating a tile from a string array representation of a tile.
+             */
+            AtomValues = atomValues;
+            var (x, y, z) = (atomValues.GetLength(1), atomValues.GetLength(0), atomValues.GetLength(2));
+            Extent = new Vector3(x,y,z);
+            Mask = new bool[(int)Extent.y, (int)Extent.x, (int)Extent.z];
+            for (int i = 0; i < y; i++)
+            {
+                for (int j = 0; j < x; j++)
+                {
+                    for (int k = 0; k < z; k++)
+                    {
+                        if (!atomValues[i, j, k].Equals(""))
+                        {
+                            Mask[y, x, z] = true;
+                        }
+                    }
+                }
+            }
+            
+            DistinctOrientations = distinctOrientations ?? new int[] { 0 };
+            
+            Init(computeAtomEdges);
         }
 
         public Dictionary<string, string> ToJson()

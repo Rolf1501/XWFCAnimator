@@ -28,6 +28,9 @@ namespace XWFC
         public ExpressiveWFC(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
             Vector3 gridExtent, Dictionary<int, float>? defaultWeights = null)
         {
+            /*
+             * Constructor for XWFC with predefined adjacency constraints between NUTs.
+             */
             _tileSet = tileSet;
             GridExtent = gridExtent;
             
@@ -42,8 +45,13 @@ namespace XWFC
             CleanState();
         }
 
-        public ExpressiveWFC(TileSet tileSet, Vector3 extent, List<Grid<(int tileId, int instanceId)>> learnGrids)
+        public ExpressiveWFC(TileSet tileSet, Vector3 extent, List<Grid<List<(int tileId, int instanceId)>>> learnGrids)
         {
+            /*
+             * Constructor for XWFC with a list of grids with preset tile ids and instance ids to learn from.
+             * Note that each cell may contain multiple tiles as valid occupants, due to ambiguity.
+             * One layer of abstraction.
+             */
             GridExtent = extent;
             _tileSet = tileSet;
             AdjMatrix = new AdjacencyMatrix(tileSet, learnGrids);
@@ -52,7 +60,15 @@ namespace XWFC
             Offsets = OffsetFactory.GetOffsets(3);
             CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
             CleanState();
+        }
 
+        public ExpressiveWFC(TileSet tileSet, Vector3 extent, List<Grid<string>> learnGrids)
+        {
+            /*
+             * Constructor for XWFC with a list of grids containing string values to learn from.
+             * Zero layers of abstraction.
+             */
+            
         }
 
         private Vector3 CenterCoord()

@@ -58,6 +58,17 @@ public class XWFCAnimator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        var sprites = new List<int[,,]>()
+        {
+            new int[2,1,1]{{{0}},{{0}}}, // stacked 0 0
+            new int[2,1,1]{{{1}},{{1}}}, // stacked 1 1
+            new int[1,3,1]{{{1}, {0}, {1}}}, // row 1 0 1
+        };
+        var grid = new int[,,]
+        {
+            {{1}, {0}, {1}},
+            {{1}, {0}, {1}}
+        };
         TileSet = new TileSet();
 
         var defaultWeights = new Dictionary<int, float>();
@@ -140,50 +151,6 @@ public class XWFCAnimator : MonoBehaviour
         var BOTTOM = new Vector3(0, -1, 0);
 
         _adjacency = new HashSetAdjacency();
-        // _adjacency = new HashSetAdjacency(){
-        //     // 0-0
-        //     // new(0, new List<Relation>() { new(0, null) }, NORTH),
-        //     new(0, new List<Relation>() { new(0, null) }, EAST),
-        //     // new(0, new List<Relation>() { new(0, null) }, SOUTH),
-        //     new(0, new List<Relation>() { new(0, null) }, WEST),
-        //     new(0, new List<Relation>() { new(0, null) }, TOP),
-        //     new(0, new List<Relation>() { new(0, null) }, BOTTOM),
-        //     // 1-0
-        //     new(1, new List<Relation>() { new(0, null) }, NORTH),
-        //     // new(1, new List<Relation>() { new(0, null) }, EAST),
-        //     new(1, new List<Relation>() { new(0, null) }, SOUTH),
-        //     // new(1, new List<Relation>() { new(0, null) }, WEST),
-        //     new(1, new List<Relation>() { new(0, null) }, TOP),
-        //     new(1, new List<Relation>() { new(0, null) }, BOTTOM),
-        //     // 1-1
-        //     // new(1, new List<Relation>() { new(0, null) }, NORTH),
-        //     new(1, new List<Relation>() { new(0, null) }, EAST),
-        //     // new(1, new List<Relation>() { new(0, null) }, SOUTH),
-        //     new(1, new List<Relation>() { new(0, null) }, WEST),
-        //     new(1, new List<Relation>() { new(0, null) }, TOP),
-        //     new(1, new List<Relation>() { new(0, null) }, BOTTOM),
-        //     // 2-0
-        //     new(2, new List<Relation>() { new(0, null) }, NORTH),
-        //     new(2, new List<Relation>() { new(0, null) }, EAST),
-        //     new(2, new List<Relation>() { new(0, null) }, SOUTH),
-        //     new(2, new List<Relation>() { new(0, null) }, WEST),
-        //     new(2, new List<Relation>() { new(0, null) }, TOP),
-        //     new(2, new List<Relation>() { new(0, null) }, BOTTOM),
-        //     // 2-1
-        //     new(2, new List<Relation>() { new(1, null) }, NORTH),
-        //     new(2, new List<Relation>() { new(1, null) }, EAST),
-        //     new(2, new List<Relation>() { new(1, null) }, SOUTH),
-        //     new(2, new List<Relation>() { new(1, null) }, WEST),
-        //     new(2, new List<Relation>() { new(1, null) }, TOP),
-        //     new(2, new List<Relation>() { new(1, null) }, BOTTOM),
-        //     // 2-2
-        //     new(2, new List<Relation>() { new(2, null) }, NORTH),
-        //     new(2, new List<Relation>() { new(2, null) }, EAST),
-        //     new(2, new List<Relation>() { new(2, null) }, SOUTH),
-        //     new(2, new List<Relation>() { new(2, null) }, WEST),
-        //     new(2, new List<Relation>() { new(2, null) }, TOP),
-        //     new(2, new List<Relation>() { new(2, null) }, BOTTOM),
-        // };
         
         InitXWFC();
 
@@ -349,7 +316,7 @@ public class XWFCAnimator : MonoBehaviour
 
         // var activeTileSet = tetrisTiles;
         
-        var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, activeTileSet, (-1,-1));
+        var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, activeTileSet, new List<(int,int)>{(-1,-1)});
         var inputTiles = tileIds.ToDictionary(i => i, i => (activeTileSet[i].Mask, activeTileSet[i].Color));
         var tiles = InputHandler.ToTileSet(inputTiles);
 
@@ -394,7 +361,7 @@ public class XWFCAnimator : MonoBehaviour
         // LoadConfig();
     }
 
-    private void InitXWFCInput(TileSet tiles, List<Grid<(int tileId, int instanceId)>> inputGrids)
+    private void InitXWFCInput(TileSet tiles, List<Grid<List<(int tileId, int instanceId)>>> inputGrids)
     {
         _xwfc = new ExpressiveWFC(tiles, extent, inputGrids);
     }

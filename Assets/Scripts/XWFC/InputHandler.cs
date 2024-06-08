@@ -42,11 +42,11 @@ namespace XWFC
 
         }
 
-        public static (List<Grid<(int, int)>> grids, int[] tileIds) PatternsToGrids(
-            List<List<(int, Vector3)>> patterns, TileSet tileSet, (int, int) defaultFillValue)
+        public static (List<Grid<List<(int, int)>>> grids, int[] tileIds) PatternsToGrids(
+            List<List<(int, Vector3)>> patterns, TileSet tileSet, List<(int, int)> defaultFillValue)
         {
             var tileIds = new HashSet<int>();
-            var grids = new List<Grid<(int, int)>>();
+            var grids = new List<Grid<List<(int, int)>>>();
             foreach (var pattern in patterns)
             {
                 var (grid, ids) = ToInputGrid(pattern, tileSet, defaultFillValue);
@@ -60,7 +60,7 @@ namespace XWFC
             return (grids, tileIds.ToArray());
         }
 
-        public static (Grid<(int, int)> grid, HashSet<int> tileIds) ToInputGrid(List<(int, Vector3)> tileIdOrigins, TileSet tileSet, (int,int) defaultFillValue)
+        public static (Grid<List<(int tileId, int instanceId)>> placedTiles, HashSet<int> tileIds) ToInputGrid(List<(int, Vector3)> tileIdOrigins, TileSet tileSet, List<(int,int)> defaultFillValue)
         {
             var maxCoord = new Vector3();
             var tileIds = new HashSet<int>();
@@ -85,7 +85,7 @@ namespace XWFC
 
             maxCoord += new Vector3(1, 1, 1); // Account for index - length difference. 
 
-            var placedTiles = new Grid<(int tileId, int instanceId)>(maxCoord, defaultFillValue);
+            var placedTiles = new Grid<List<(int tileId, int instanceId)>>(maxCoord, defaultFillValue);
             
             var instanceIds = tileSet.Keys.ToDictionary(k => k, _ => 0);
             foreach (var (tileId, origin) in tileIdOrigins)
@@ -95,7 +95,7 @@ namespace XWFC
                 {
                     var value = placedTiles.Get(atomCoord + origin);
                     if (value != placedTiles.DefaultFillValue) throw new Exception($"Tiles may not overlap: {(tileId, origin)}, value: {value}");
-                    placedTiles.Set(atomCoord + origin, (tileId, instanceIds[tileId]));
+                    placedTiles.Set(atomCoord + origin, new List<(int tileId, int instanceId)>{(tileId, instanceIds[tileId])});
                 }
 
                 instanceIds[tileId] += 1;
