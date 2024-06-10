@@ -4,20 +4,18 @@ using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
 using Numpy;
-using Newtonsoft.Json;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 
 namespace XWFC
 {
     public class Tile
     {
-        private Vector3 Extent { get; }
-        public Color Color { get; }
+        public Vector3 Extent { get; }
+        public Color Color { get; private set; }
         public bool[,,] Mask { get; }
         
         public string[,,] AtomValues { get; }
-        public int[] DistinctOrientations { get; }
+        public int[] DistinctOrientations { get; private set; }
         private string Description { get; }
         public Dictionary<Vector3, Atom> AtomIndexToIdMapping { get; } = new();
         public Dictionary<int, bool[,,]> OrientedMask { get; } = new();
@@ -30,28 +28,17 @@ namespace XWFC
 
         #nullable enable
         public Tile(Vector3 extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
-            string description = "", bool computeAtomEdges=false)
+            string description = "", bool computeAtomEdges=true)
         {
             Extent = extent;
-            Color = color;
             var (x, y, z) = Vector3Util.CastInt(extent);
             Mask = mask ?? Util.Populate3D(x, y, z, true);
-            DistinctOrientations = distinctOrientations ?? new int[] { 0 };
+            
             Description = description;
-            Init(computeAtomEdges);
+            Init(computeAtomEdges, distinctOrientations, color);
         }
 
-        private void Init(bool computeAtomEdges)
-        {
-            CalcOrientedMasks();
-            CalcVoidMasks();
-            if (computeAtomEdges)
-            {
-                AtomEdges = new BorderOutline().GetEdgesPerAtom(Mask);
-            }
-        }
-
-        public Tile(string[,,] atomValues, int[]? distinctOrientations = null, bool computeAtomEdges = false)
+        public Tile(string[,,] atomValues, Color color, int[]? distinctOrientations = null, bool computeAtomEdges = true)
         {
             /*
              * Constructor for creating a tile from a string array representation of a tile.
@@ -59,7 +46,7 @@ namespace XWFC
             AtomValues = atomValues;
             var (x, y, z) = (atomValues.GetLength(1), atomValues.GetLength(0), atomValues.GetLength(2));
             Extent = new Vector3(x,y,z);
-            Mask = new bool[(int)Extent.y, (int)Extent.x, (int)Extent.z];
+            Mask = new bool[y,x,z];
             for (int i = 0; i < y; i++)
             {
                 for (int j = 0; j < x; j++)
@@ -74,9 +61,54 @@ namespace XWFC
                 }
             }
             
+            Init(computeAtomEdges, distinctOrientations, color);
+        }
+
+        public Tile(string uniformAtomValue, Vector3 extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
+            bool computeAtomEdges = true)
+        {
+            if (mask == null)
+            {
+                var (x, y, z) = Vector3Util.CastInt(extent);
+                AtomValues = Util.Populate3D(x, y, z, uniformAtomValue);
+                Mask = Util.Populate3D(x, y, z, true);
+                Extent = new Vector3(x, y, z);
+            }
+            else
+            {
+                var (x, y, z) = (Mask.GetLength(1), Mask.GetLength(0), Mask.GetLength(2));
+                Extent = new Vector3(x, y, z);
+                AtomValues = new string[y, x, z];
+                for (int i = 0; i < y; i++)
+                {
+                    for (int j = 0; j < x; j++)
+                    {
+                        for (int k = 0; k < z; k++)
+                        {
+                            AtomValues[y, x, z] = Mask[y, x, z] ? uniformAtomValue : "";
+                        }
+                    }
+                }
+            }
+            Init(computeAtomEdges, distinctOrientations, color);
+        }
+        
+        private void Init(bool computeAtomEdges, int[]? distinctOrientations, Color color)
+        {
             DistinctOrientations = distinctOrientations ?? new int[] { 0 };
-            
-            Init(computeAtomEdges);
+            Color = color;
+            CalcOrientedMasks();
+            CalcVoidMasks();
+            if (computeAtomEdges)
+            {
+                AtomEdges = new BorderOutline().GetEdgesPerAtom(Mask);
+            }
+        }
+
+        public string GetAtomValue(Vector3 coord)
+        {
+            var (x, y, z) = Vector3Util.CastInt(coord);
+            return WithinBounds(coord) ? AtomValues[y, x, z] : "";
         }
 
         public Dictionary<string, string> ToJson()

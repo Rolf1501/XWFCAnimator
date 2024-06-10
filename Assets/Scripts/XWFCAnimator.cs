@@ -170,51 +170,39 @@ public class XWFCAnimator : MonoBehaviour
          */
 
         var doorTile = new Tile(
-            new Vector3(3, 1, 5),
-            mask: null, 
-            color: new Color(0,0,0.8f,1), 
-            distinctOrientations: null, 
-            computeAtomEdges: true
+            "d", 
+            new Vector3(3, 1, 5), 
+            new Color(0, 0, 0.8f)
         );
         
         var brickTile = new Tile(
+            "b0",
             new Vector3(2,1,1), 
-            mask: null, 
-            color: new Color(0.8f,0,0,1), 
-            distinctOrientations: null, 
-            computeAtomEdges: true
+            color: new Color(0.8f,0,0,1)
         );
         
         var halfBrickTile = new Tile(
+            "b1",
             new Vector3(1,1,1), 
-            mask: null, 
-            color: new Color(0.4f,0,0,1), 
-            distinctOrientations: null, 
-            computeAtomEdges: true
+            color: new Color(0.4f,0,0.4f,1)
         );
         
         var grassTile = new Tile(
+            "g",
             new Vector3(1,1,1), 
-            mask: null, 
-            color: new Color(0,0.8f,0,1), 
-            distinctOrientations: null, 
-            computeAtomEdges: true
+            color: new Color(0,0.8f,0,1) 
         );
         
         var soilTile = new Tile(
+            "s",
             new Vector3(1,1,1), 
-            mask: null, 
-            color: new Color(0.1f,0.1f,0.1f,1), 
-            distinctOrientations: null, 
-            computeAtomEdges: true
+            color: new Color(0.1f,0.1f,0.1f,1)
         );
 
         var windowTile = new Tile(
+            "w",
             new Vector3(3, 1, 3),
-            mask: null,
-            color: new Color(0, 0, 0.8f),
-            distinctOrientations: null,
-            computeAtomEdges: true
+            color: new Color(0, 0, 0.8f)
         );
         
         var doorBrickPattern = new List<(int, Vector3)>()
@@ -316,11 +304,15 @@ public class XWFCAnimator : MonoBehaviour
 
         // var activeTileSet = tetrisTiles;
         
-        var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, activeTileSet, new List<(int,int)>{(-1,-1)});
-        var inputTiles = tileIds.ToDictionary(i => i, i => (activeTileSet[i].Mask, activeTileSet[i].Color));
-        var tiles = InputHandler.ToTileSet(inputTiles);
-
-        InitXWFCInput(tiles, grids);
+        var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, activeTileSet, "");
+        var key = 0;
+        foreach (var tile in activeTiles)
+        {
+            activeTileSet[key] = tile;
+            key++;
+        }
+        
+        InitXWFCInput(activeTileSet, grids);
         TileSet = _xwfc.AdjMatrix.TileSet;
         
         // Grid for keeping track of drawn atoms.
@@ -330,6 +322,12 @@ public class XWFCAnimator : MonoBehaviour
         {
             var x = _xwfc.AdjMatrix.AtomAdjacencyMatrix[o];
             var s = "" + o + "\n";
+            var ss = "\t";
+            for (int k = 0; k < x.GetLength(0); k++)
+            {
+                ss += k + "\t";
+            }
+            s += ss + "\n";
             for (var i = 0; i < x.GetLength(0);i++)
             {
                 s += $"{i}\t";
@@ -361,7 +359,7 @@ public class XWFCAnimator : MonoBehaviour
         // LoadConfig();
     }
 
-    private void InitXWFCInput(TileSet tiles, List<Grid<List<(int tileId, int instanceId)>>> inputGrids)
+    private void InitXWFCInput(TileSet tiles, List<InputGrid> inputGrids)
     {
         _xwfc = new ExpressiveWFC(tiles, extent, inputGrids);
     }

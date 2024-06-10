@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace XWFC
@@ -21,8 +22,14 @@ namespace XWFC
             DefaultFillValue = defaultFillValue;
             _grid = new T[Height, Width, Depth];
         }
+
+        protected AbstractGrid(Vector3 extent, T defaultFillValue)
+        {
+            (Width, Height, Depth) = Vector3Util.CastInt(extent);
+            DefaultFillValue = defaultFillValue;
+            _grid = new T[Height, Width, Depth];
+        }
         
-                
         protected AbstractGrid(T[,,] grid, T defaultFillValue)
         {
             Height = grid.GetLength(0);
@@ -130,7 +137,7 @@ namespace XWFC
                     s += "[";
                     for (int z = 0; z < _grid.GetLength(2); z++)
                     {
-                        s += _grid[y, x, z] + ", ";
+                        s += "(" + string.Join(",", _grid[y, x, z]) + "), ";
                     }
                     s += "]\n";
                 }
@@ -178,44 +185,78 @@ namespace XWFC
             return copy;
         }
     }
-
-    public class LearnGrid<T> : AbstractGrid<LearnData>
-    {
-        public int DefaultDatum;
-        public LearnGrid(int width, int height, int depth, LearnData defaultFillValue) : base(width, height, depth, defaultFillValue)
-        {
-        }
-
-        public LearnGrid(LearnData[,,] grid, LearnData defaultFillValue) : base(grid, defaultFillValue)
-        {
-        }
-    }
-
-    public class LearnDatum
-    {
-        public int TileId;
-        public int InstanceId;
     
-        public LearnDatum(int tileId, int instanceId)
+    public class InputGrid : AbstractGrid<string>
+    {
+        public InputGrid(int width, int height, int depth, string defaultFillValue="") : base(width, height, depth, defaultFillValue)
         {
-            TileId = tileId;
-            InstanceId = instanceId;
+            Populate(defaultFillValue);
         }
 
-        
+        public InputGrid(Vector3 extent, string defaultFillValue = "") : base(extent, defaultFillValue)
+        {
+            Populate(defaultFillValue);
+        }
+
+        public InputGrid(string[,,] grid, string defaultFillValue) : base(grid, defaultFillValue)
+        {
+            Populate(defaultFillValue);
+        }
     }
 
-    public class LearnData
+    public class AtomGrid : AbstractGrid<List<int>>
     {
-        private List<LearnDatum> _data;
-        public LearnData(List<LearnDatum> data)
+        public AtomGrid(int width, int height, int depth) : base(width, height, depth, new List<int>())
         {
-            _data = data;
+            Populate();
         }
 
-        public LearnData(int tileId, int instanceId)
+        public AtomGrid(Vector3 extent) : base(extent, new List<int>())
         {
-            _data = new List<LearnDatum> { new LearnDatum(tileId, instanceId) };
+            Populate();
+        }
+
+        public AtomGrid(List<int>[,,] grid) : base(grid, new List<int>())
+        {
+            Populate();
+        }
+
+        private void Populate()
+        {
+            var (x,y,z) = Vector3Util.CastInt(GetExtent());
+            for (int i = 0; i < x; i++)
+            {
+                for (int j = 0; j < y; j++)
+                {
+                    for (int k = 0; k < z; k++)
+                    {
+                        Set(i, j, k, new List<int>());
+                    }
+                }
+            }
+        }
+
+        public override string ToString()
+        {
+            var grid = GetGrid();
+            var s = new StringBuilder();
+            for (int y = 0; y < grid.GetLength(0); y++)
+            {
+                s.Append("[\n");
+                for (int x = 0; x < grid.GetLength(1); x++)
+                {
+                    s.Append("[");
+                    for (int z = 0; z < grid.GetLength(2); z++)
+                    {
+                        var ss = grid[y, x, z].Aggregate("", (current, item) => current + ("," + item));
+                        s.Append("(" + ss + "), ");
+                    }
+                    s.Append("]\n");
+                }
+                s.Append("\n]\n");
+            }
+
+            return s.ToString();
         }
     }
 

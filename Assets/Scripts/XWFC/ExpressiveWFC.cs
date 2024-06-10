@@ -45,7 +45,7 @@ namespace XWFC
             CleanState();
         }
 
-        public ExpressiveWFC(TileSet tileSet, Vector3 extent, List<Grid<List<(int tileId, int instanceId)>>> learnGrids)
+        public ExpressiveWFC(TileSet tileSet, Vector3 extent, List<InputGrid> inputGrids)
         {
             /*
              * Constructor for XWFC with a list of grids with preset tile ids and instance ids to learn from.
@@ -54,7 +54,7 @@ namespace XWFC
              */
             GridExtent = extent;
             _tileSet = tileSet;
-            AdjMatrix = new AdjacencyMatrix(tileSet, learnGrids);
+            AdjMatrix = new AdjacencyMatrix(tileSet, inputGrids);
             _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
             _defaultWeights = ExpandDefaultWeights(null);
             Offsets = OffsetFactory.GetOffsets(3);
