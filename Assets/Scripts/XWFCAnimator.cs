@@ -58,17 +58,6 @@ public class XWFCAnimator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        var sprites = new List<int[,,]>()
-        {
-            new int[2,1,1]{{{0}},{{0}}}, // stacked 0 0
-            new int[2,1,1]{{{1}},{{1}}}, // stacked 1 1
-            new int[1,3,1]{{{1}, {0}, {1}}}, // row 1 0 1
-        };
-        var grid = new int[,,]
-        {
-            {{1}, {0}, {1}},
-            {{1}, {0}, {1}}
-        };
         TileSet = new TileSet();
 
         var defaultWeights = new Dictionary<int, float>();
@@ -230,23 +219,21 @@ public class XWFCAnimator : MonoBehaviour
 
         var windowBrickPattern = new List<(int, Vector3)>()
         {
-            (5, new Vector3(1, 0, 1)),
+            (5, new Vector3(2, 0, 1)),
 
-            (2, new Vector3(0, 0, 1)),
-            (2, new Vector3(0, 0, 2)),
-            (2, new Vector3(0, 0, 3)),
+            (2, new Vector3(1, 0, 1)),
+            (1, new Vector3(0, 0, 2)),
+            (2, new Vector3(1, 0, 3)),
             
-            (2, new Vector3(4, 0, 1)),
-            (2, new Vector3(4, 0, 2)),
-            (2, new Vector3(4, 0, 3)),
+            (2, new Vector3(5, 0, 1)),
+            (1, new Vector3(5, 0, 2)),
+            (2, new Vector3(5, 0, 3)),
 
-            (2, new Vector3(1, 0, 0)),
-            (2, new Vector3(2, 0, 0)),
-            (2, new Vector3(3, 0, 0)),
+            (1, new Vector3(2, 0, 0)),
+            (2, new Vector3(4, 0, 0)),
             
-            (2, new Vector3(1, 0, 4)),
             (2, new Vector3(2, 0, 4)),
-            (2, new Vector3(3, 0, 4)),
+            (1, new Vector3(3, 0, 4)),
         };
 
         var doorGrassPattern = new List<(int, Vector3)>()
@@ -274,7 +261,7 @@ public class XWFCAnimator : MonoBehaviour
             (1, new Vector3(1,0,2)),
             (2, new Vector3(0,0,0)),
             (2, new Vector3(3,0,0)),
-            (2, new Vector3(4,0,0))
+            // (2, new Vector3(4,0,0))
         };
 
         var grassSoilPattern = new List<(int, Vector3)>()
