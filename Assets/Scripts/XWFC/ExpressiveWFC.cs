@@ -36,7 +36,7 @@ namespace XWFC
             AdjMatrix = new AdjacencyMatrix(adjacencyConstraints, _tileSet);
             
             _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
-            _defaultWeights = ExpandDefaultWeights(defaultWeights);
+            _defaultWeights = AdjMatrix.TileWeigths;
             
             Offsets = OffsetFactory.GetOffsets(3);
             
@@ -44,7 +44,7 @@ namespace XWFC
             CleanState();
         }
 
-        public ExpressiveWFC(TileSet tileSet, Vector3 extent, List<InputGrid> inputGrids)
+        public ExpressiveWFC(TileSet tileSet, Vector3 extent, List<InputGrid> inputGrids, Dictionary<int, float>? defaultWeights = null)
         {
             /*
              * Constructor for XWFC with a list of grids with preset tile ids and instance ids to learn from.
@@ -53,21 +53,12 @@ namespace XWFC
              */
             GridExtent = extent;
             _tileSet = tileSet;
-            AdjMatrix = new AdjacencyMatrix(tileSet, inputGrids);
+            AdjMatrix = new AdjacencyMatrix(tileSet, inputGrids, defaultWeights);
             _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
-            _defaultWeights = ExpandDefaultWeights(null);
+            _defaultWeights = AdjMatrix.TileWeigths;
             Offsets = OffsetFactory.GetOffsets(3);
             CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
             CleanState();
-        }
-
-        public ExpressiveWFC(TileSet tileSet, Vector3 extent, List<Grid<string>> learnGrids)
-        {
-            /*
-             * Constructor for XWFC with a list of grids containing string values to learn from.
-             * Zero layers of abstraction.
-             */
-            
         }
 
         private Vector3 CenterCoord()
@@ -95,36 +86,7 @@ namespace XWFC
             GridManager.InitChoiceWeights(defaultWeights);
             _startCoord = CenterCoord();
         }
-
-        private Dictionary<int, float> ExpandDefaultWeights(Dictionary<int, float>? defaultWeights)
-        {
-            /*
-             * Expands the default weights when the weights are specified per tile. Returns the default weights instead.
-             */
-
-            // If the number of weights is neither equal to the number of atoms or the number of terminals, set all weights of all atoms to 1.
-            if (defaultWeights == null || defaultWeights.Count != _tileSet.Count)
-            {
-                return Enumerable.Range(0, AdjMatrix.GetNAtoms()).ToDictionary(k => k, v => 1f);
-            }
-
-            // No need to expand if weights are specified per atom already.
-            if (defaultWeights.Count == AdjMatrix.GetNAtoms()) return defaultWeights;
-
-            // Otherwise, expand the weights of the terminals to atoms. 
-            var aug = new Dictionary<int, float>();
-            foreach (var (k, v) in defaultWeights)
-            {
-                var (start, end) = AdjMatrix.TileAtomRangeMapping[k];
-                for (int i = start; i < end; i++)
-                {
-                    aug[i] = v;
-                }
-            }
-
-            return aug;
-        }
-
+        
         private static float CalcEntropy(int nChoices)
         {
             /*
@@ -335,7 +297,6 @@ namespace XWFC
                 var p = _propQueue.Dequeue();
                 var (cs, coord) = (p.Choices, p.Coord);
                 
-
                 foreach (Vector3 offset in Offsets)
                 {
                     Vector3 n = coord + offset;
@@ -393,7 +354,6 @@ namespace XWFC
 
                     if (!GridManager.Grid.IsChosen(n))
                         _collapseQueue.Insert(n, GridManager.Entropy.Get(n));
-                        // _collapseQueue.Enqueue(n, GridManager.Entropy.Get(n));
                 }
             }
         }
@@ -401,7 +361,6 @@ namespace XWFC
         public bool IsDone()
         {
             return _collapseQueue.IsDone();
-            return _progress >= 100;
         }
 
         public void UpdateExtent(Vector3 extent)

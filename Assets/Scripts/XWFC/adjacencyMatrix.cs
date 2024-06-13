@@ -60,6 +60,8 @@ namespace XWFC
         private Dictionary<Vector3, float[,]> AtomAdjacencyMatrixW;
         public Dictionary<int, (int, int)> TileAtomRangeMapping { get; private set; } // Reserves an index range for the atoms of the tile.
 
+        public Dictionary<int, float> TileWeigths;
+        
         public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, int offsetsDimensions = 3)
         {
             
@@ -73,12 +75,13 @@ namespace XWFC
             InferAtomAdjacencies();
         }
         
-        public AdjacencyMatrix(TileSet tiles, List<InputGrid> grids)
+        public AdjacencyMatrix(TileSet tiles, List<InputGrid> grids, Dictionary<int, float> tileWeights)
         {
             /*
              * Infer adjacency constraints from input.
              */
             var offsetDimensions = 3;
+            TileWeigths = ExpandDefaultWeights(tileWeights);
             Init(tiles, offsetDimensions);
             
             InnerAtomAdjacency();
@@ -112,6 +115,35 @@ namespace XWFC
             Debug.Log($"{builder}");
             // Process atomized grid.
             Debug.Log("Atom adjacency derived from grid.");
+        }
+        
+        private Dictionary<int, float> ExpandDefaultWeights(Dictionary<int, float>? defaultWeights)
+        {
+            /*
+             * Expands the default weights when the weights are specified per tile. Returns the default weights instead.
+             */
+
+            // If the number of weights is neither equal to the number of atoms or the number of terminals, set all weights of all atoms to 1.
+            if (defaultWeights == null || defaultWeights.Count != TileSet.Count)
+            {
+                return Enumerable.Range(0, GetNAtoms()).ToDictionary(k => k, v => 1f);
+            }
+
+            // No need to expand if weights are specified per atom already.
+            if (defaultWeights.Count == GetNAtoms()) return defaultWeights;
+
+            // Otherwise, expand the weights of the terminals to atoms. 
+            var aug = new Dictionary<int, float>();
+            foreach (var (k, v) in defaultWeights)
+            {
+                var (start, end) = TileAtomRangeMapping[k];
+                for (int i = start; i < end; i++)
+                {
+                    aug[i] = v;
+                }
+            }
+
+            return aug;
         }
 
         private void Init(TileSet tileSet, int offsetsDimensions)
@@ -312,12 +344,14 @@ namespace XWFC
         private void SetAtomAdjacency(int thisAtomId, int thatAtomId, Vector3 offset)
         {
             AtomAdjacencyMatrix[offset][thisAtomId, thatAtomId] = true;
-            AtomAdjacencyMatrixW[offset][thisAtomId, thatAtomId] += 1;
+            AtomAdjacencyMatrixW[offset][thisAtomId, thatAtomId] = 1;
+            // AtomAdjacencyMatrixW[offset][thisAtomId, thatAtomId] += 1;
 
             // Adjacency constraints are symmetric.
             var complement = Vector3Util.Negate(offset);
             AtomAdjacencyMatrix[complement][thatAtomId, thisAtomId] = true;
-            AtomAdjacencyMatrixW[complement][thatAtomId, thisAtomId] += 1;
+            AtomAdjacencyMatrixW[complement][thatAtomId, thisAtomId] = 1;
+            // AtomAdjacencyMatrixW[complement][thatAtomId, thisAtomId] += 1;
         }
         private static TileSet ToTileSet(Dictionary<int, (bool[,,] mask, Color color)> tiles)
         {

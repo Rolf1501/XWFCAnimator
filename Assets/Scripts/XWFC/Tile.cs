@@ -65,8 +65,9 @@ namespace XWFC
         }
 
         public Tile(string uniformAtomValue, Vector3 extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
-            bool computeAtomEdges = true)
+            bool computeAtomEdges = true, string description="")
         {
+            Description = description;
             if (mask == null)
             {
                 var (x, y, z) = Vector3Util.CastInt(extent);

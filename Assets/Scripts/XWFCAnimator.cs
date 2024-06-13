@@ -5,9 +5,11 @@ using System.Linq;
 using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 using XWFC;
 using Canvas = UnityEngine.Canvas;
+using Component = XWFC.Component;
 using Random = System.Random;
 using Vector3 = UnityEngine.Vector3;
 
@@ -21,7 +23,7 @@ public class XWFCAnimator : MonoBehaviour
     public Vector3 extent;
     public float stepSize;
     public TileSet TileSet;
-    public TileSet CompleteTerminalSet = new();
+    public TileSet CompleteTileSet = new();
     public Dictionary<int, Vector3> drawnTilePositions = new();
     public float delay;
 
@@ -60,53 +62,26 @@ public class XWFCAnimator : MonoBehaviour
     {
         TileSet = new TileSet();
 
-        var defaultWeights = new Dictionary<int, float>();
-
-        var borderOutline = new BorderOutline();
-
-        var tetrisTiles = GetTetrisTiles();
-        
-        // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, 0, .8f), null, null);
-        
-        for(int i = 0; i < tetrisTiles.Length; i++)
-        {
-            CompleteTerminalSet.Add(i, tetrisTiles[i]);
-        }
-        
-        TileSet.Add(0, tetrisTiles[0]);
-        TileSet.Add(1, tetrisTiles[1]);
-        TileSet.Add(2, tetrisTiles[2]);
-        
-        var NORTH = new Vector3(0, 0, 1);
-        var SOUTH = new Vector3(0, 0, -1);
-        var EAST = new Vector3(1, 0, 0);
-        var WEST = new Vector3(-1, 0, 0);
-        var TOP = new Vector3(0, 1, 0);
-        var BOTTOM = new Vector3(0, -1, 0);
-
         _adjacency = new HashSetAdjacency();
         
         InitXWFC();
 
-        var houseTiles = GetHouseTiles();
+        var houseDetails = GetHouseTiles();
+        var houseComponents = GetHouseComponents();
+
+        var componentManager = new ComponentManager();
+        componentManager.AddComponents(houseComponents);
         
-        var activeTiles = houseTiles;
+        var (activeTiles, activeWeights) = houseDetails;
         
-        var activeTileSet = new TileSet();
-        Enumerable.Range(0, activeTiles.Length).ToList().ForEach(i => activeTileSet[i] = activeTiles[i]);
+        var activeTileSet = ToActiveTileSet(activeTiles);
 
         // var activeTileSet = tetrisTiles;
         var patterns = GetHousePatterns();
         
         var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, activeTileSet, "");
-        var key = 0;
-        foreach (var tile in activeTiles)
-        {
-            activeTileSet[key] = tile;
-            key++;
-        }
         
-        InitXWFCInput(activeTileSet, grids);
+        InitXWFCInput(activeTileSet, grids, activeWeights);
         TileSet = _xwfc.AdjMatrix.TileSet;
         
         // Grid for keeping track of drawn atoms.
@@ -124,6 +99,31 @@ public class XWFCAnimator : MonoBehaviour
         // LoadConfig();
     }
 
+    private TileSet ToActiveTileSet(Tile[] activeTiles)
+    {
+        var activeTileSet = new TileSet();
+        var key = 0;
+        foreach (var tile in activeTiles)
+        {
+            activeTileSet[key] = tile;
+            CompleteTileSet[key] = tile;
+            key++;
+        }
+        Enumerable.Range(0, activeTiles.Length).ToList().ForEach(i => activeTileSet[i] = activeTiles[i]);
+        return activeTileSet;
+    }
+
+    private Component[] GetHouseComponents()
+    {
+        var baseExtent = new Vector3(30, 20, 1);
+        var floorExtent = new Vector3(20, 20, 1);
+        var baseComponent = new Component(new Vector3(0, 0, 0), baseExtent, TileSet, new InputGrid[1]);
+        var floor = new Component(baseExtent, floorExtent, TileSet, new InputGrid[1]);
+        var roof = new Component(floor.Source + floor.Extent, floorExtent, TileSet, new InputGrid[1]);
+        var components = new Component[3] { baseComponent, floor, roof };
+
+        return components;
+    }
     private void PrintAdjacencyData()
     {
         foreach (var o in _xwfc.Offsets)
@@ -155,7 +155,7 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
 
-    private Tile[] GetHouseTiles()
+    private (Tile[] houseTiles, float[] weights) GetHouseTiles()
     {
         var doorTile = new Tile(
             "d", 
@@ -184,7 +184,8 @@ public class XWFCAnimator : MonoBehaviour
         var soilTile = new Tile(
             "s",
             new Vector3(1,1,1), 
-            color: new Color(0.1f,0.1f,0.1f,1)
+            color: new Color(0.1f,0.1f,0.1f,1),
+            computeAtomEdges: false
         );
 
         var windowTile = new Tile(
@@ -192,9 +193,18 @@ public class XWFCAnimator : MonoBehaviour
             new Vector3(3, 1, 3),
             color: new Color(0, 0, 0.8f)
         );
+
+        var emptyTile = new Tile(
+            ".",
+            new Vector3(1, 1, 1),
+            new Color(0, 0.2f, 0.5f, 0.2f),
+            description: "empty",
+            computeAtomEdges:false
+        );
         
-        var houseTiles = new Tile[] { doorTile, brickTile, halfBrickTile, grassTile, soilTile, windowTile };
-        return houseTiles;
+        var houseTiles = new Tile[] { doorTile, brickTile, halfBrickTile, grassTile, soilTile, windowTile, emptyTile };
+        var weights = new float[] { 1, 1, 1, 1, 1, 1, 2f};
+        return (houseTiles, weights);
     }
     private List<List<(int, Vector3)>> GetHousePatterns()
     {
@@ -265,7 +275,6 @@ public class XWFCAnimator : MonoBehaviour
             (1, new Vector3(1,0,2)),
             (2, new Vector3(0,0,0)),
             (2, new Vector3(3,0,0)),
-            // (2, new Vector3(4,0,0))
         };
 
         var grassSoilPattern = new List<(int, Vector3)>()
@@ -276,6 +285,37 @@ public class XWFCAnimator : MonoBehaviour
             (3, new Vector3(0,0,1)),
         };
 
+        var emptyGrassPattern = new List<(int, Vector3)>()
+        {
+            (6, new Vector3(0, 0, 1)),
+            (4, new Vector3(0, 0, 0))
+        };
+
+        var emptyBrickPattern = new List<(int, Vector3)>()
+        {
+            (1, new Vector3(1, 0, 0)),
+            (6, new Vector3(0, 0, 0)),
+            (6, new Vector3(3, 0, 0)),
+            (6, new Vector3(1, 0, 1)),
+            (6, new Vector3(1, 0, 2)),
+        };
+        
+        var emptyHalfBrickPattern = new List<(int, Vector3)>()
+        {
+            (2, new Vector3(1, 0, 0)),
+            (6, new Vector3(0, 0, 0)),
+            (6, new Vector3(2, 0, 0)),
+            (6, new Vector3(1, 0, 1)),
+        };
+
+        var emptyEmptyPattern = new List<(int, Vector3)>()
+        {
+            (6, new Vector3(0,0,0)),
+            (6, new Vector3(0,0,1)),
+            (6, new Vector3(1,0,0)),
+            (6, new Vector3(1,0,1))
+        };
+
         var patterns = new List<List<(int, Vector3)>>()
         {
             doorBrickPattern,
@@ -284,6 +324,10 @@ public class XWFCAnimator : MonoBehaviour
             brickPattern,
             grassSoilPattern,
             windowBrickPattern,
+            emptyEmptyPattern,
+            emptyBrickPattern,
+            emptyHalfBrickPattern,
+            emptyGrassPattern,
         };
         return patterns;
     }
@@ -348,9 +392,16 @@ public class XWFCAnimator : MonoBehaviour
         return tetrisTiles;
     }
 
-    private void InitXWFCInput(TileSet tiles, List<InputGrid> inputGrids)
+    private void InitXWFCInput(TileSet tiles, List<InputGrid> inputGrids, float[] activeWeights)
     {
-        _xwfc = new ExpressiveWFC(tiles, extent, inputGrids);
+        var weights = new Dictionary<int, float>();
+        int i = 0;
+        foreach (var tilesKey in tiles.Keys)
+        {
+            weights[tilesKey] = activeWeights[i];
+            i++;
+        }
+        _xwfc = new ExpressiveWFC(tiles, extent, inputGrids, weights);
     }
 
     private void InitXWFC()
@@ -407,7 +458,7 @@ public class XWFCAnimator : MonoBehaviour
         // Draw in z-axis.
         var start = new Vector3(-100,-100,-5);
         var gap = new Vector3(5, 0, 0);
-        foreach (var (key, value) in CompleteTerminalSet)
+        foreach (var (key, value) in CompleteTileSet)
         {
             var maxIndex = new Vector3();
             bool labeled = false;
@@ -707,7 +758,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void UpdateColorFromTerminal(GameObject obj, int tileId)
     {
-        obj.GetComponent<Renderer>().material.color = CompleteTerminalSet[tileId].Color;
+        obj.GetComponent<Renderer>().material.color = CompleteTileSet[tileId].Color;
     }
 
     private Color GetTerminalColorFromAtom(int atomId)
