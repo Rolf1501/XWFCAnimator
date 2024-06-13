@@ -17,7 +17,6 @@ namespace XWFC
         public GridManager GridManager;
         private readonly float _maxEntropy;
         private CollapsePriorityQueue _collapseQueue;
-        // private CollapseQueue _collapseQueue;
         public readonly Vector3[] Offsets;
         private Queue<Propagation> _propQueue = new();
         private SavePointManager _savePointManager;
