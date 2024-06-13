@@ -63,63 +63,8 @@ public class XWFCAnimator : MonoBehaviour
         var defaultWeights = new Dictionary<int, float>();
 
         var borderOutline = new BorderOutline();
-        
-        var tileL = new Tile(
-            new Vector3(2, 1, 3),
-            new Color(240 / 255.0f, 160 / 255.0f, 0),
-            new bool[,,] { { { true, true, true }, { true, false, false } } },
-            null,
-            computeAtomEdges:true
-        );
-        var tileT = new Tile(
-            new Vector3(2, 1, 3),
-            new Color(160 / 255.0f, 0, 240/255.0f),
-            new bool[,,] { { { false, true, false }, { true, true, true }} },
-            null,
-            computeAtomEdges:true
-        );
-        
-        var tileJ = new Tile(
-            new Vector3(2, 1, 3),
-            new Color(0, 0, 240 / 255.0f),
-            new bool[,,] { { { true, false, false }, { true, true, true } } },
-            null,
-            computeAtomEdges:true
-        );
-        
-        var tileI = new Tile(
-            new Vector3(4, 1, 1),
-            new Color(120 / 255.0f, 120 / 255.0f, 1 / 255.0f),
-            new bool[,,] { { { true }, { true }, { true }, { true } } },
-            null,
-            computeAtomEdges:true
-        );
-        
-        var tileS = new Tile(
-            new Vector3(2, 1, 3),
-            new Color(0, 240 / 255.0f, 0),
-            new bool[,,] { { { true, true, false }, { false, true, true }} },
-            null,
-            computeAtomEdges:true
-        );
-        var tileZ = new Tile(
-            new Vector3(2, 1, 3),
-            new Color(240 / 255.0f, 0, 0),
-            new bool[,,] { { { false, true, true }, { true, true, false }} },
-            null,
-            computeAtomEdges:true
-        );
-        var tileO = new Tile(
-            new Vector3(2, 1, 2),
-            new Color(0, 240 / 255.0f, 240 / 255.0f),
 
-            // new Color(240 / 255.0f, 240 / 255.0f, 0),
-            new bool[,,] { { { true, true }, { true, true }} },
-            null,
-            computeAtomEdges:true
-        );
-
-        var tetrisTiles = new Tile[] { tileL, tileT, tileJ, tileI, tileS, tileZ, tileO };
+        var tetrisTiles = GetTetrisTiles();
         
         // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, 0, .8f), null, null);
         
@@ -143,21 +88,75 @@ public class XWFCAnimator : MonoBehaviour
         
         InitXWFC();
 
-        var pattern = new List<(int, Vector3)>()
+        var houseTiles = GetHouseTiles();
+        
+        var activeTiles = houseTiles;
+        
+        var activeTileSet = new TileSet();
+        Enumerable.Range(0, activeTiles.Length).ToList().ForEach(i => activeTileSet[i] = activeTiles[i]);
+
+        // var activeTileSet = tetrisTiles;
+        var patterns = GetHousePatterns();
+        
+        var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, activeTileSet, "");
+        var key = 0;
+        foreach (var tile in activeTiles)
         {
-            (3, new Vector3(0, 0, 1)),
-            (3, new Vector3(0, 0, 2)),
-            (3, new Vector3(3, 0, 3)),
-            (3, new Vector3(3, 0, 0)),
-            (3, new Vector3(6, 0, 1)),
-            (3, new Vector3(6, 0, 2)),
-            (6, new Vector3(4,0,1))
-        };
+            activeTileSet[key] = tile;
+            key++;
+        }
+        
+        InitXWFCInput(activeTileSet, grids);
+        TileSet = _xwfc.AdjMatrix.TileSet;
+        
+        // Grid for keeping track of drawn atoms.
+        _drawnGrid = InitDrawGrid();
+        
+        PrintAdjacencyData();
 
-        /*
-         * House
-         */
+        _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
+        
+        // Set for keeping track of drawn terminals.
+        _drawnTiles = new HashSet<GameObject>();
+        
+        DrawTiles();
+        // if (!FindConfigFileNames().Any()) SaveConfig();
+        // LoadConfig();
+    }
 
+    private void PrintAdjacencyData()
+    {
+        foreach (var o in _xwfc.Offsets)
+        {
+            var x = _xwfc.AdjMatrix.AtomAdjacencyMatrix[o];
+            var s = "" + o + "\n";
+            var ss = "\t";
+            for (int k = 0; k < x.GetLength(0); k++)
+            {
+                ss += k + "\t";
+            }
+            s += ss + "\n";
+            for (var i = 0; i < x.GetLength(0);i++)
+            {
+                s += $"{i}\t";
+                for (var j = 0; j < x.GetLength(1); j++)
+                {
+                    s += x[i, j] + "\t";
+                }
+                s += "\n";
+            }
+            Debug.Log(s);
+        
+        }
+        
+        foreach (var (k,v) in _xwfc.AdjMatrix.AtomMapping.Dict)
+        {
+            Debug.Log($"{k}: {v}");
+        }
+    }
+
+    private Tile[] GetHouseTiles()
+    {
         var doorTile = new Tile(
             "d", 
             new Vector3(3, 1, 5), 
@@ -194,6 +193,11 @@ public class XWFCAnimator : MonoBehaviour
             color: new Color(0, 0, 0.8f)
         );
         
+        var houseTiles = new Tile[] { doorTile, brickTile, halfBrickTile, grassTile, soilTile, windowTile };
+        return houseTiles;
+    }
+    private List<List<(int, Vector3)>> GetHousePatterns()
+    {
         var doorBrickPattern = new List<(int, Vector3)>()
         {
             (0, new Vector3(2,0,0)),
@@ -281,69 +285,67 @@ public class XWFCAnimator : MonoBehaviour
             grassSoilPattern,
             windowBrickPattern,
         };
+        return patterns;
+    }
+    private Tile[] GetTetrisTiles()
+    {
+        var tileL = new Tile(
+            new Vector3(2, 1, 3),
+            new Color(240 / 255.0f, 160 / 255.0f, 0),
+            new bool[,,] { { { true, true, true }, { true, false, false } } },
+            null,
+            computeAtomEdges:true
+        );
+        var tileT = new Tile(
+            new Vector3(2, 1, 3),
+            new Color(160 / 255.0f, 0, 240/255.0f),
+            new bool[,,] { { { false, true, false }, { true, true, true }} },
+            null,
+            computeAtomEdges:true
+        );
+        
+        var tileJ = new Tile(
+            new Vector3(2, 1, 3),
+            new Color(0, 0, 240 / 255.0f),
+            new bool[,,] { { { true, false, false }, { true, true, true } } },
+            null,
+            computeAtomEdges:true
+        );
+        
+        var tileI = new Tile(
+            new Vector3(4, 1, 1),
+            new Color(120 / 255.0f, 120 / 255.0f, 1 / 255.0f),
+            new bool[,,] { { { true }, { true }, { true }, { true } } },
+            null,
+            computeAtomEdges:true
+        );
+        
+        var tileS = new Tile(
+            new Vector3(2, 1, 3),
+            new Color(0, 240 / 255.0f, 0),
+            new bool[,,] { { { true, true, false }, { false, true, true }} },
+            null,
+            computeAtomEdges:true
+        );
+        var tileZ = new Tile(
+            new Vector3(2, 1, 3),
+            new Color(240 / 255.0f, 0, 0),
+            new bool[,,] { { { false, true, true }, { true, true, false }} },
+            null,
+            computeAtomEdges:true
+        );
+        var tileO = new Tile(
+            new Vector3(2, 1, 2),
+            new Color(0, 240 / 255.0f, 240 / 255.0f),
 
-        var houseTiles = new Tile[] { doorTile, brickTile, halfBrickTile, grassTile, soilTile, windowTile };
-        
-        var activeTiles = houseTiles;
-        
-        var activeTileSet = new TileSet();
-        Enumerable.Range(0, activeTiles.Length).ToList().ForEach(i => activeTileSet[i] = activeTiles[i]);
+            // new Color(240 / 255.0f, 240 / 255.0f, 0),
+            new bool[,,] { { { true, true }, { true, true }} },
+            null,
+            computeAtomEdges:true
+        );
 
-        // var activeTileSet = tetrisTiles;
-        
-        var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, activeTileSet, "");
-        var key = 0;
-        foreach (var tile in activeTiles)
-        {
-            activeTileSet[key] = tile;
-            key++;
-        }
-        
-        InitXWFCInput(activeTileSet, grids);
-        TileSet = _xwfc.AdjMatrix.TileSet;
-        
-        // Grid for keeping track of drawn atoms.
-        _drawnGrid = InitDrawGrid();
-        
-        foreach (var o in _xwfc.Offsets)
-        {
-            var x = _xwfc.AdjMatrix.AtomAdjacencyMatrix[o];
-            var s = "" + o + "\n";
-            var ss = "\t";
-            for (int k = 0; k < x.GetLength(0); k++)
-            {
-                ss += k + "\t";
-            }
-            s += ss + "\n";
-            for (var i = 0; i < x.GetLength(0);i++)
-            {
-                s += $"{i}\t";
-                for (var j = 0; j < x.GetLength(1); j++)
-                {
-                    s += x[i, j] + "\t";
-                }
-                s += "\n";
-            }
-            Debug.Log(s);
-        
-        }
-        
-        foreach (var (k,v) in _xwfc.AdjMatrix.AtomMapping.Dict)
-        {
-            Debug.Log($"{k}: {v}");
-        }
-        
-        // _xwfc.CollapseAutomatic();
-        // Debug.Log(_xwfc.GridManager.Grid.GridToString());
-        
-        _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
-        
-        // Set for keeping track of drawn terminals.
-        _drawnTiles = new HashSet<GameObject>();
-        
-        DrawTiles();
-        // if (!FindConfigFileNames().Any()) SaveConfig();
-        // LoadConfig();
+        var tetrisTiles = new Tile[] { tileL, tileT, tileJ, tileI, tileS, tileZ, tileO };
+        return tetrisTiles;
     }
 
     private void InitXWFCInput(TileSet tiles, List<InputGrid> inputGrids)
