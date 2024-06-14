@@ -262,7 +262,7 @@ public class TabbedMenu : MonoBehaviour
 
     private void InitTilesetList()
     {
-        var tiles = XWFCAnimator.Instance.CompleteTerminalSet;
+        var tiles = XWFCAnimator.Instance.CompleteTileSet;
         _tilesetListContainer = _root.Q<VisualElement>(_tilesetListName);
         _tilesetListContainer.AddToClassList("tile-entry-container");
 
@@ -297,7 +297,7 @@ public class TabbedMenu : MonoBehaviour
 
     private void OnTileSetChange(HashSetAdjacency adjacency)
     {
-        var tileDict = _activeTiles.ToDictionary(tileId => tileId, tileId => XWFCAnimator.Instance.CompleteTerminalSet[tileId]);
+        var tileDict = _activeTiles.ToDictionary(tileId => tileId, tileId => XWFCAnimator.Instance.CompleteTileSet[tileId]);
         Debug.Log("Tried updating tileset...");
         InitAdjacencyToggles(tileDict.Keys.ToList(), adjacency, OffsetFactory.GetOffsets());
         if (adjacency.Count == 0) _adjacencyGridController.Populate(true);

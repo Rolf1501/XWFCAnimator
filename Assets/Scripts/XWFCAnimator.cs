@@ -324,10 +324,10 @@ public class XWFCAnimator : MonoBehaviour
             brickPattern,
             grassSoilPattern,
             windowBrickPattern,
-            emptyEmptyPattern,
-            emptyBrickPattern,
-            emptyHalfBrickPattern,
-            emptyGrassPattern,
+            // emptyEmptyPattern,
+            // emptyBrickPattern,
+            // emptyHalfBrickPattern,
+            // emptyGrassPattern,
         };
         return patterns;
     }

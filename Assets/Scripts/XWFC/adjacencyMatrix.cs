@@ -4,6 +4,7 @@ using UnityEngine;
 
 using System.Collections.Generic;
 using System.Text;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace XWFC
@@ -62,27 +63,27 @@ namespace XWFC
 
         public Dictionary<int, float> TileWeigths;
         
-        public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, int offsetsDimensions = 3)
+        public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, [CanBeNull] Dictionary<int, float> defaultWeights, int offsetsDimensions = 3)
         {
             
             Init(tileSet, offsetsDimensions);
-            
+
+            TileWeigths = ExpandDefaultWeights(defaultWeights);
             TileAdjacencyConstraints = tileAdjacencyConstraints;
             
-
             InitTileAdjacency();
             InferTileAdjacencyConstraints(TileAdjacencyConstraints);
             InferAtomAdjacencies();
         }
         
-        public AdjacencyMatrix(TileSet tiles, List<InputGrid> grids, Dictionary<int, float> tileWeights)
+        public AdjacencyMatrix(TileSet tiles, List<InputGrid> grids, [CanBeNull] Dictionary<int, float> tileWeights)
         {
             /*
              * Infer adjacency constraints from input.
              */
             var offsetDimensions = 3;
-            TileWeigths = ExpandDefaultWeights(tileWeights);
             Init(tiles, offsetDimensions);
+            TileWeigths = ExpandDefaultWeights(tileWeights);
             
             InnerAtomAdjacency();
 
@@ -117,7 +118,7 @@ namespace XWFC
             Debug.Log("Atom adjacency derived from grid.");
         }
         
-        private Dictionary<int, float> ExpandDefaultWeights(Dictionary<int, float>? defaultWeights)
+        private Dictionary<int, float> ExpandDefaultWeights([CanBeNull] Dictionary<int, float> defaultWeights)
         {
             /*
              * Expands the default weights when the weights are specified per tile. Returns the default weights instead.
@@ -880,7 +881,7 @@ namespace XWFC
             var adjConstraintsString = dict["tileAdjacencyConstraints"];
             var adjConstraints = HashSetAdjacency.FromJson(adjConstraintsString);
 
-            return new AdjacencyMatrix(adjConstraints, tileset);
+            return new AdjacencyMatrix(adjConstraints, tileset, null);
         }
     }
 }

@@ -48,6 +48,7 @@
     <Compile Include="Assets\Scripts\XWFC\adjacencyMatrix.cs" />
     <Compile Include="Assets\Scripts\BorderOutline.cs" />
     <Compile Include="Assets\Scripts\XWFC\grid.cs" />
+    <Compile Include="Assets\Scripts\XWFC\Component.cs" />
     <Compile Include="Assets\Scripts\CameraMovement.cs" />
     <Compile Include="Assets\Scripts\XWFC\util.cs" />
     <Compile Include="Assets\TabbedMenu\TabbedMenu.cs" />
@@ -67,6 +68,7 @@
     <Compile Include="Assets\Scripts\XWFCRunner.cs" />
     <Compile Include="Assets\Scripts\XWFC\ExpressiveWFC.cs" />
     <Compile Include="Assets\Scripts\XWFC\relation.cs" />
+    <Compile Include="Assets\Scripts\XWFC\ComponentManager.cs" />
     <Compile Include="Assets\Scripts\XWFC\atom.cs" />
     <Compile Include="Assets\Scripts\FileUtil.cs" />
     <Compile Include="Assets\Scripts\XWFC\offset.cs" />
