@@ -115,11 +115,11 @@ public class XWFCAnimator : MonoBehaviour
 
     private Component[] GetHouseComponents()
     {
-        var baseExtent = new Vector3(30, 20, 1);
-        var floorExtent = new Vector3(20, 20, 1);
-        var baseComponent = new Component(new Vector3(0, 0, 0), baseExtent, TileSet, new InputGrid[1]);
+        var baseExtent = new Vector3Int(30, 20, 1);
+        var floorExtent = new Vector3Int(20, 20, 1);
+        var baseComponent = new Component(new Vector3Int(0, 0, 0), baseExtent, TileSet, new InputGrid[1]);
         var floor = new Component(baseExtent, floorExtent, TileSet, new InputGrid[1]);
-        var roof = new Component(floor.Source + floor.Extent, floorExtent, TileSet, new InputGrid[1]);
+        var roof = new Component(floor.Origin + floor.Extent, floorExtent, TileSet, new InputGrid[1]);
         var components = new Component[3] { baseComponent, floor, roof };
 
         return components;
