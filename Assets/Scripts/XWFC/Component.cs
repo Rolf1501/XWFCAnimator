@@ -4,6 +4,10 @@ namespace XWFC
 {
     public class Component
     {
+        /*
+         * Class for representing components.
+         * Components are essentially AABB with additional information used for running XWFC on them. 
+         */
         public Vector3Int Origin;
         public Vector3Int Extent;
         public TileSet Tiles;
@@ -34,9 +38,9 @@ namespace XWFC
             return new Range(Origin.z, Origin.z + Extent.z);
         }
 
-        public (Range xRange, Range yRange, Range zRange) Ranges()
+        public Range3D Ranges()
         {
-            return (XRange(), YRange(), ZRange());
+            return new Range3D(XRange(), YRange(), ZRange());
         }
     }
 }

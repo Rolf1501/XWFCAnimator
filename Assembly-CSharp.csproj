@@ -55,7 +55,6 @@
     <Compile Include="Assets\Scripts\Auxiliary.cs" />
     <Compile Include="Assets\Scripts\XWFC\collapseQueue.cs" />
     <Compile Include="Assets\Scripts\XWFC\TileSet.cs" />
-    <Compile Include="Assets\Scripts\XWFC\RangeUtil.cs" />
     <Compile Include="Assets\Scripts\XWFCAnimator.cs" />
     <Compile Include="Assets\Scripts\TileTexture.cs" />
     <Compile Include="Assets\Scripts\XWFC\adjacency.cs" />
@@ -65,6 +64,7 @@
     <Compile Include="Assets\Scripts\XWFC\voidMaskAdjacencyData.cs" />
     <Compile Include="Assets\TabbedMenu\TabbedMenuController.cs" />
     <Compile Include="Assets\Scripts\XWFC\Tile.cs" />
+    <Compile Include="Assets\Scripts\XWFC\Ranges.cs" />
     <Compile Include="Assets\Scripts\StringUtil.cs" />
     <Compile Include="Assets\Scripts\XWFCRunner.cs" />
     <Compile Include="Assets\Scripts\XWFC\ExpressiveWFC.cs" />

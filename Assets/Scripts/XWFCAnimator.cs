@@ -71,6 +71,7 @@ public class XWFCAnimator : MonoBehaviour
 
         var componentManager = new ComponentManager();
         componentManager.AddComponents(houseComponents);
+        componentManager.ComputeIntersections();
         
         var (activeTiles, activeWeights) = houseDetails;
         
@@ -115,11 +116,20 @@ public class XWFCAnimator : MonoBehaviour
 
     private Component[] GetHouseComponents()
     {
+        // Three components stacked in the y-direction.
         var baseExtent = new Vector3Int(30, 20, 1);
         var floorExtent = new Vector3Int(20, 20, 1);
-        var baseComponent = new Component(new Vector3Int(0, 0, 0), baseExtent, TileSet, new InputGrid[1]);
-        var floor = new Component(baseExtent, floorExtent, TileSet, new InputGrid[1]);
-        var roof = new Component(floor.Origin + floor.Extent, floorExtent, TileSet, new InputGrid[1]);
+        var roofExtent = new Vector3Int(20, 20, 1);
+
+        var baseOrigin = new Vector3Int(0,0,0);
+        var floorOrigin = baseOrigin;
+        floorOrigin.y += baseExtent.y;
+        var roofOrigin = floorOrigin;
+        roofOrigin.y += floorExtent.y;
+        
+        var baseComponent = new Component(baseOrigin, baseExtent, TileSet, new InputGrid[1]);
+        var floor = new Component(floorOrigin, floorExtent, TileSet, new InputGrid[1]);
+        var roof = new Component(roofOrigin, roofExtent, TileSet, new InputGrid[1]);
         var components = new Component[3] { baseComponent, floor, roof };
 
         return components;

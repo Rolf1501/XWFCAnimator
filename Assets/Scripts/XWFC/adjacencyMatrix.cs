@@ -539,7 +539,7 @@ namespace XWFC
             {
                 for (int j = 0; j < Range2D.GetXLength(); j++)
                 {
-                    output[i, j] = matrix[Range2D.YStart + i, Range2D.XStart + j];
+                    output[i, j] = matrix[Range2D.YRange.Start + i, Range2D.XRange.Start + j];
                 }
             }
 
@@ -795,33 +795,7 @@ namespace XWFC
             return TileSet[AtomMapping.Get(atomId).Item1];
         }
     }
-
-    public record Range2D
-    {
-        public int XStart { get; }
-        public int XEnd { get; }
-        public int YStart { get; }
-        public int YEnd { get; }
-
-        public Range2D(int xStart, int xEnd, int yStart, int yEnd)
-        {
-            XStart = xStart;
-            XEnd = xEnd;
-            YStart = yStart;
-            YEnd = yEnd;
-            if (XStart > XEnd || YStart > YEnd) throw new Exception("Range2D start must not be larger than end.");
-        }
-
-        public int GetYLength()
-        {
-            return YEnd - YStart;
-        }
-        
-        public int GetXLength()
-        {
-            return XEnd - XStart;
-        }
-    }
+    
     public record VmData
     {
         public int Orientation { get; }

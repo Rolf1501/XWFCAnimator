@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace XWFC
 {
     public class ComponentManager
     {
         public Dictionary<int, Component> Components;
+        public Dictionary<int, List<(int componentId, Range3D range)>> Intersections;
 
         public ComponentManager()
         {
             Components = new Dictionary<int, Component>();
+            Intersections = new Dictionary<int, List<(int componentId, Range3D range)>>();
         }
 
         public void SeedComponentGrid(ref Component component)
@@ -34,62 +37,75 @@ namespace XWFC
             }
         }
 
-        public void GetAdjacentComponents(int componentId)
+        public void ComputeIntersections()
         {
-            /*
-             * Given a component C0, find all other components whose face(s) touch or intersect with C0.
-             * To specify the location of other components relative to the source,
-             * vectors are used to describe the relative direction from source to other component origin.
-             */
-            if (!Components.ContainsKey(componentId)) return;
-            
-            var sourceComponent = Components[componentId];
-            foreach (var (id, component) in Components)
+            var intersections = new Dictionary<int, List<(int id, Range3D ranges)>>();
+            foreach (var componentsKey in Components.Keys)
             {
-                if (id == componentId) continue;
-                // Find location relative to source.
-                var translation = component.Origin - sourceComponent.Origin;
-                // There's an intersection if either:
-                // a) translation is negative and other origin + other extent >= source origin
-                // b) translation is positive and other origin <= source origin + source extent
-                
+                intersections[componentsKey] = new List<(int id, Range3D ranges)>();
             }
+            
+            /*
+             * For all unique component pairs, compute and store potential intersection. 
+             */
+            for (int i = 0; i < Components.Keys.Count; i++)
+            {
+                var source = Components[i];
+                for (int j = i + 1; j < Components.Keys.Count; j++)
+                {
+                    var other = Components[j];
+                    var (intersects, ranges) = Intersect3D(source, other);
+                    
+                    if (!intersects) continue;
+                    
+                    // Intersection is a bidirectional relation.
+                    intersections[i].Add((j, ranges));
+                    intersections[j].Add((i, ranges));
+                }
+            }
+
+            Intersections = intersections;
         }
 
-        private bool IntersectingDimensions(Component source, Component other)
+        private (bool intersects, Range3D ranges) Intersect3D(Component source, Component other)
         {
             /*
-             * If, for all dimensions, a component A's dimensional ranges intersect with all dimensional ranges of B, then A and B touch.
-             * Each dimensional range denotes the d_min and d_max for each x, y and z and is derived from a components source and extent.
-             * This can be precomputed.
+             * Intersection 3D makes use of Components being represented as AABBs.
+             * Two AABBs are intersecting iff all their axis projections overlap.
              */
-            var (xRangeSource, yRangeSource, zRangeSource) = source.Ranges();
-            var (xRangeOther, yRangeOther, zRangeOther) = other.Ranges();
+            var noIntersect = (false, new Range3D());
+            var sourceRanges = source.Ranges();
+            var otherRanges = other.Ranges();
 
-            var (xIntersects, xRange) = RangeIntersection(xRangeSource, xRangeOther);
-            var (yIntersects, yRange) = RangeIntersection(yRangeSource, yRangeOther);
-            var (zIntersects, zRange) = RangeIntersection(zRangeSource, zRangeOther);
+            var (xIntersects, xRange) = RangeIntersection(sourceRanges.XRange, otherRanges.XRange);
+            var (yIntersects, yRange) = RangeIntersection(sourceRanges.YRange, otherRanges.YRange);
+            var (zIntersects, zRange) = RangeIntersection(sourceRanges.ZRange, otherRanges.ZRange);
             
-            if (!(xIntersects && yIntersects && zIntersects)) return false;
-            return true;
+            if (!(xIntersects && yIntersects && zIntersects)) return noIntersect;
+            
+            // If all ranges only overlap just barely, then it is not a true overlap. Corner adjacency is not considered adjacent.
+            if (xRange.Start == xRange.End && yRange.Start == yRange.End && zRange.Start == zRange.End) return noIntersect;
+            
+            return (true, new Range3D(xRange, yRange, zRange));
         }
 
         private (bool intersects, Range) RangeIntersection(Range rangeSource, Range rangeOther)
         {
             // If two ranges intersect, the region of intersection is given by the maximum of the minima and the minimum of the maxima.
-            return Intersects(rangeSource, rangeOther)
+            return Intersect1D(rangeSource, rangeOther)
                 ? (true, new Range(Math.Max(rangeSource.Start, rangeOther.Start), Math.Min(rangeSource.End, rangeOther.End)))
                 : (false, new Range());
         }
 
-        private bool Intersects(Range rangeSource, Range rangeOther)
+        private static bool Intersect1D(Range r0, Range r1)
         {
             /*
-             * If the maximum of the range with the smallest min is equal to or larger than the largest min, then two ranges intersect.
-             * Note the >= sign for the latter part. If two ranges touch, they should be considered intersecting.
+             * Two regions intersect if there exists a number N in both ranges.
+             * This means that r0_start <= N <= r0_end and r1_start <= N <= r1_end.
+             * Here follows that r0_start <= r1_end and r1_start <= r0_end.
+             * Note the <= sign. If two ranges touch, they should be considered intersecting.
              */
-            return (rangeSource.Start < rangeOther.Start && rangeSource.End >= rangeOther.Start) || 
-                   (rangeSource.Start >= rangeOther.Start && rangeOther.End >= rangeSource.Start);
+            return r0.Start <= r1.End && r1.Start <= r0.End;
         }
     }
 }
