@@ -23,6 +23,37 @@ namespace XWFC
         {
             return v0.x < v1.x || v0.y < v1.y || v0.z < v1.z;
         }
+
+        public static Vector3 Div(Vector3 v0, Vector3 v1)
+        {
+            if (v0.x != 0 && v0.y != 0 && v0.z != 0 && v1.x != 0 && v1.y != 0 && v1.z != 0)
+            {
+                return new Vector3(v0.x / v1.x, v0.y / v1.y, v0.z / v1.z);
+            }
+
+            return v0;
+        }
+
+        public static Vector3 Scale(Vector3 v, float scalar)
+        {
+            return new Vector3(v.x * scalar, v.y * scalar, v.z * scalar);
+        }
+
+        public static string Vector3ToString(Vector3 v)
+        {
+            return $"<{v.x},{v.y},{v.z}>";
+        }
+
+        public static Vector3 Vector3FromString(string v)
+        {
+            var trimmed = v.Trim(new char[] { '<', '>' });
+            var split = trimmed.Split(",");
+            return split.Length switch
+            {
+                3 => new Vector3(float.Parse(split[0]), float.Parse(split[1]), float.Parse(split[2])),
+                _ => new Vector3()
+            };
+        }
     }
     
     public static class Util
@@ -43,6 +74,26 @@ namespace XWFC
 
             return output;
         }
+    }
 
+    public static class ColorUtil
+    {
+        public static string ColorToString(Color c)
+        {
+            return $"<{c.r},{c.g},{c.b},{c.a}>";
+        }
+
+        public static Color ColorFromString(string c)
+        {
+            var trimmed = c.Trim(new char[] { '<', '>' });
+            var split = trimmed.Split(",");
+            return split.Length switch
+            {
+                4 => new Color(float.Parse(split[0]), float.Parse(split[1]), float.Parse(split[2]),
+                    float.Parse(split[3])),
+                3 => new Color(float.Parse(split[0]), float.Parse(split[1]), float.Parse(split[2]), 1.0f),
+                _ => new Color()
+            };
+        }
     }
 }

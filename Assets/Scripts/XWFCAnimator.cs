@@ -1,17 +1,24 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
+
 using UnityEngine.Networking;
+
 using Debug = UnityEngine.Debug;
 using XWFC;
 using Canvas = UnityEngine.Canvas;
+using Random = System.Random;
 using Vector3 = UnityEngine.Vector3;
 
 public class XWFCAnimator : MonoBehaviour
 {
     [SerializeField] private GameObject unitTilePrefab;
+    [SerializeField] private GameObject edgePrefab;
     [SerializeField] private Canvas tileLabelPrefab;
     public Vector3Int extent;
     public float stepSize;
@@ -60,24 +67,76 @@ public class XWFCAnimator : MonoBehaviour
         TileSet = new TileSet();
 
         var defaultWeights = new Dictionary<int, float>();
+
+        var borderOutline = new BorderOutline();
         
-        var t0 = new Terminal(
-            new Vector3(2,1, 2), 
-            new Color(.8f, 0, .2f) ,
+        var tileL = new Tile(
+            new Vector3(2, 1, 3),
+            new Color(240 / 255.0f, 160 / 255.0f, 0),
+            new bool[,,] { { { true, true, true }, { true, false, false } } },
             null,
-            null
-            );
-        var t1 = new Terminal(new Vector3(2, 1, 2), new Color(.2f, 0, .8f), new bool[,,]{ { {true, true}, {true, false} } }, null);
-        var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, .4f, .3f), null, null);
+            computeAtomEdges:true
+        );
+        var tileT = new Tile(
+            new Vector3(2, 1, 3),
+            new Color(160 / 255.0f, 0, 240/255.0f),
+            new bool[,,] { { { false, true, false }, { true, true, true }} },
+            null,
+            computeAtomEdges:true
+        );
+        
+        var tileJ = new Tile(
+            new Vector3(2, 1, 3),
+            new Color(0, 0, 240 / 255.0f),
+            new bool[,,] { { { true, false, false }, { true, true, true } } },
+            null,
+            computeAtomEdges:true
+        );
+        
+        var tileI = new Tile(
+            new Vector3(4, 1, 1),
+            new Color(120 / 255.0f, 120 / 255.0f, 1 / 255.0f),
+            new bool[,,] { { { true }, { true }, { true }, { true } } },
+            null,
+            computeAtomEdges:true
+        );
+        
+        var tileS = new Tile(
+            new Vector3(2, 1, 3),
+            new Color(0, 240 / 255.0f, 0),
+            new bool[,,] { { { true, true, false }, { false, true, true }} },
+            null,
+            computeAtomEdges:true
+        );
+        var tileZ = new Tile(
+            new Vector3(2, 1, 3),
+            new Color(240 / 255.0f, 0, 0),
+            new bool[,,] { { { false, true, true }, { true, true, false }} },
+            null,
+            computeAtomEdges:true
+        );
+        var tileO = new Tile(
+            new Vector3(2, 1, 2),
+            new Color(0, 240 / 255.0f, 240 / 255.0f),
+
+            // new Color(240 / 255.0f, 240 / 255.0f, 0),
+            new bool[,,] { { { true, true }, { true, true }} },
+            null,
+            computeAtomEdges:true
+        );
+
+        var tetrisTiles = new Tile[] { tileL, tileT, tileJ, tileI, tileS, tileZ, tileO };
+        
         // var t2 = new Terminal(new Vector3(2,1,1), new Color(.2f, 0, .8f), null, null);
         
-        TileSet.Add(0, t0);
-        TileSet.Add(1, t1);
-        TileSet.Add(2, t2);
+        for(int i = 0; i < tetrisTiles.Length; i++)
+        {
+            CompleteTerminalSet.Add(i, tetrisTiles[i]);
+        }
         
-        CompleteTerminalSet.Add(0, t0);
-        CompleteTerminalSet.Add(1, t1);
-        CompleteTerminalSet.Add(2, t2);
+        TileSet.Add(0, tetrisTiles[0]);
+        TileSet.Add(1, tetrisTiles[1]);
+        TileSet.Add(2, tetrisTiles[2]);
         
         var NORTH = new Vector3(0, 0, 1);
         var SOUTH = new Vector3(0, 0, -1);
@@ -85,46 +144,169 @@ public class XWFCAnimator : MonoBehaviour
         var WEST = new Vector3(-1, 0, 0);
         var TOP = new Vector3(0, 1, 0);
         var BOTTOM = new Vector3(0, -1, 0);
-        
-        _adjacency = new HashSetAdjacency(){
-            // 0-0
-            new(0, new List<Relation>() { new(0, null) }, NORTH),
-            new(0, new List<Relation>() { new(0, null) }, EAST),
-            new(0, new List<Relation>() { new(0, null) }, SOUTH),
-            new(0, new List<Relation>() { new(0, null) }, WEST),
-            new(0, new List<Relation>() { new(0, null) }, TOP),
-            new(0, new List<Relation>() { new(0, null) }, BOTTOM),
-            // 1-0
-            new(1, new List<Relation>() { new(0, null) }, NORTH),
-            new(1, new List<Relation>() { new(0, null) }, EAST),
-            new(1, new List<Relation>() { new(0, null) }, SOUTH),
-            new(1, new List<Relation>() { new(0, null) }, WEST),
-            new(1, new List<Relation>() { new(0, null) }, TOP),
-            new(1, new List<Relation>() { new(0, null) }, BOTTOM),
-            // 2-0
-            new(2, new List<Relation>() { new(0, null) }, NORTH),
-            new(2, new List<Relation>() { new(0, null) }, EAST),
-            new(2, new List<Relation>() { new(0, null) }, SOUTH),
-            new(2, new List<Relation>() { new(0, null) }, WEST),
-            new(2, new List<Relation>() { new(0, null) }, TOP),
-            new(2, new List<Relation>() { new(0, null) }, BOTTOM),
-            // 2-1
-            new(2, new List<Relation>() { new(1, null) }, NORTH),
-            new(2, new List<Relation>() { new(1, null) }, EAST),
-            new(2, new List<Relation>() { new(1, null) }, SOUTH),
-            new(2, new List<Relation>() { new(1, null) }, WEST),
-            new(2, new List<Relation>() { new(1, null) }, TOP),
-            new(2, new List<Relation>() { new(1, null) }, BOTTOM),
-            // 2-2
-            new(2, new List<Relation>() { new(2, null) }, NORTH),
-            new(2, new List<Relation>() { new(2, null) }, EAST),
-            new(2, new List<Relation>() { new(2, null) }, SOUTH),
-            new(2, new List<Relation>() { new(2, null) }, WEST),
-            new(2, new List<Relation>() { new(2, null) }, TOP),
-            new(2, new List<Relation>() { new(2, null) }, BOTTOM),
-        };
+
+        _adjacency = new HashSetAdjacency();
         
         InitXWFC();
+
+        var pattern = new List<(int, Vector3)>()
+        {
+            (3, new Vector3(0, 0, 1)),
+            (3, new Vector3(0, 0, 2)),
+            (3, new Vector3(3, 0, 3)),
+            (3, new Vector3(3, 0, 0)),
+            (3, new Vector3(6, 0, 1)),
+            (3, new Vector3(6, 0, 2)),
+            (6, new Vector3(4,0,1))
+        };
+
+        /*
+         * House
+         */
+
+        var doorTile = new Tile(
+            "d", 
+            new Vector3(3, 1, 5), 
+            new Color(0, 0, 0.8f)
+        );
+        
+        var brickTile = new Tile(
+            "b0",
+            new Vector3(2,1,1), 
+            color: new Color(0.8f,0,0,1)
+        );
+        
+        var halfBrickTile = new Tile(
+            "b1",
+            new Vector3(1,1,1), 
+            color: new Color(0.4f,0,0.4f,1)
+        );
+        
+        var grassTile = new Tile(
+            "g",
+            new Vector3(1,1,1), 
+            color: new Color(0,0.8f,0,1) 
+        );
+        
+        var soilTile = new Tile(
+            "s",
+            new Vector3(1,1,1), 
+            color: new Color(0.1f,0.1f,0.1f,1)
+        );
+
+        var windowTile = new Tile(
+            "w",
+            new Vector3(3, 1, 3),
+            color: new Color(0, 0, 0.8f)
+        );
+        
+        var doorBrickPattern = new List<(int, Vector3)>()
+        {
+            (0, new Vector3(2,0,0)),
+            
+            (1, new Vector3(0,0,1)),
+            (1, new Vector3(0,0,3)),
+            (1, new Vector3(0,0,5)),
+            
+            (1, new Vector3(2,0,5)),
+            (1, new Vector3(4,0,5)),
+            
+            (1, new Vector3(5,0,4)),
+            (1, new Vector3(5,0,2)),
+            (1, new Vector3(5,0,0)),
+            
+            (2, new Vector3(1,0,0)),
+            (2, new Vector3(1,0,2)),
+            (2, new Vector3(1,0,4)),
+            
+            (2, new Vector3(5,0,1)),
+            (2, new Vector3(5,0,3)),
+        };
+
+        var windowBrickPattern = new List<(int, Vector3)>()
+        {
+            (5, new Vector3(2, 0, 1)),
+
+            (2, new Vector3(1, 0, 1)),
+            (1, new Vector3(0, 0, 2)),
+            (2, new Vector3(1, 0, 3)),
+            
+            (2, new Vector3(5, 0, 1)),
+            (1, new Vector3(5, 0, 2)),
+            (2, new Vector3(5, 0, 3)),
+
+            (1, new Vector3(2, 0, 0)),
+            (2, new Vector3(4, 0, 0)),
+            
+            (2, new Vector3(2, 0, 4)),
+            (1, new Vector3(3, 0, 4)),
+        };
+
+        var doorGrassPattern = new List<(int, Vector3)>()
+        {
+            (0, new Vector3(0,0,1)),
+            (3, new Vector3(0,0,0)),
+            (3, new Vector3(1,0,0)),
+            (3, new Vector3(2,0,0)),
+        };
+
+        var grassBrickPattern = new List<(int, Vector3)>()
+        {
+            (1, new Vector3(0, 0, 1)),
+            (3, new Vector3(0, 0, 0)),
+            (3, new Vector3(1, 0, 0)),
+            
+            (2, new Vector3(2,0,1)),
+            (3, new Vector3(2, 0, 0)),
+        };
+
+        var brickPattern = new List<(int, Vector3)>()
+        {
+            (1, new Vector3(1,0,0)),
+            (1, new Vector3(0,0,1)),
+            (1, new Vector3(1,0,2)),
+            (2, new Vector3(0,0,0)),
+            (2, new Vector3(3,0,0)),
+            // (2, new Vector3(4,0,0))
+        };
+
+        var grassSoilPattern = new List<(int, Vector3)>()
+        {
+            (4, new Vector3(0,0,0)),
+            (4, new Vector3(1,0,0)),
+            (4, new Vector3(1,0,1)),
+            (3, new Vector3(0,0,1)),
+        };
+
+        var patterns = new List<List<(int, Vector3)>>()
+        {
+            doorBrickPattern,
+            doorGrassPattern,
+            grassBrickPattern,
+            brickPattern,
+            grassSoilPattern,
+            windowBrickPattern,
+        };
+
+        var houseTiles = new Tile[] { doorTile, brickTile, halfBrickTile, grassTile, soilTile, windowTile };
+        
+        var activeTiles = houseTiles;
+        
+        var activeTileSet = new TileSet();
+        Enumerable.Range(0, activeTiles.Length).ToList().ForEach(i => activeTileSet[i] = activeTiles[i]);
+
+        // var activeTileSet = tetrisTiles;
+        
+        var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, activeTileSet, "");
+        var key = 0;
+        foreach (var tile in activeTiles)
+        {
+            activeTileSet[key] = tile;
+            key++;
+        }
+        
+        InitXWFCInput(activeTileSet, grids);
+        TileSet = _xwfc.AdjMatrix.TileSet;
         
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
@@ -133,6 +315,12 @@ public class XWFCAnimator : MonoBehaviour
         {
             var x = _xwfc.AdjMatrix.AtomAdjacencyMatrix[o];
             var s = "" + o + "\n";
+            var ss = "\t";
+            for (int k = 0; k < x.GetLength(0); k++)
+            {
+                ss += k + "\t";
+            }
+            s += ss + "\n";
             for (var i = 0; i < x.GetLength(0);i++)
             {
                 s += $"{i}\t";
@@ -148,21 +336,42 @@ public class XWFCAnimator : MonoBehaviour
         
         foreach (var (k,v) in _xwfc.AdjMatrix.AtomMapping.Dict)
         {
-            Debug.Log(k.ToString() +  v.ToString());
+            Debug.Log($"{k}: {v}");
         }
+        
+        // _xwfc.CollapseAutomatic();
+        // Debug.Log(_xwfc.GridManager.Grid.GridToString());
         
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
         
         // Set for keeping track of drawn terminals.
         _drawnTiles = new HashSet<GameObject>();
+
         DrawTiles();
-        
+        // if (!FindConfigFileNames().Any()) SaveConfig();
+        // LoadConfig();
+    }
+
+    private void InitXWFCInput(TileSet tiles, List<InputGrid> inputGrids)
+    {
+        _xwfc = new ExpressiveWFC(tiles, extent, inputGrids);
     }
 
     
     private void InitXWFC()
     {
-        _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent, writeResults:WriteResults, allowBacktracking:AllowBacktracking);
+        try
+        {
+            _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent, writeResults:WriteResults, allowBacktracking:AllowBacktracking);
+            //_xwfc = new ExpressiveWFC(TileSet, _adjacency, extent);
+
+        }
+        catch (Exception exception)
+        {
+            var s = exception.ToString();
+            Debug.Log(s);
+            Debug.Log("Ran into an error...");
+        }
         Debug.Log("Initialized XWFC");
     }
 
@@ -202,9 +411,9 @@ public class XWFCAnimator : MonoBehaviour
     public void DrawTiles()
     {
         // Draw in z-axis.
-        var start = new Vector3(0,0,-5);
-        var gap = new Vector3(2, 0, 0);
-        foreach (var (key, value) in TileSet)
+        var start = new Vector3(-100,-100,-5);
+        var gap = new Vector3(5, 0, 0);
+        foreach (var (key, value) in CompleteTerminalSet)
         {
             var maxIndex = new Vector3();
             bool labeled = false;
@@ -259,7 +468,7 @@ public class XWFCAnimator : MonoBehaviour
         return _xwfc.Offsets;
     }
 
-    public Dictionary<int, Terminal> GetTiles()
+    public Dictionary<int, Tile> GetTiles()
     {
         return TileSet;
     }
@@ -312,7 +521,8 @@ public class XWFCAnimator : MonoBehaviour
                 affectedCells.UnionWith(cells);
                 _iterationsDone++;
             }
-            Draw(affectedCells);
+            
+            Draw();
         }
         
         if (!MayCollapse())
@@ -370,7 +580,7 @@ public class XWFCAnimator : MonoBehaviour
          * Returns the set of affected cells.
          */
         var affectedCells = CollapseOnce();
-        Draw(affectedCells);
+        Draw();
         return affectedCells;
     }
 
@@ -393,50 +603,117 @@ public class XWFCAnimator : MonoBehaviour
         return _iterationsDone < stepSize || stepSize < 0;
     }
 
-    private void Draw(HashSet<Occupation> affectedCells)
+    private void Draw()
     {
-        foreach (var occupation in affectedCells)
+        var grid = _xwfc.GridManager.Grid;
+        var gridExtent = grid.GetExtent();
+        for (int y = 0; y < gridExtent.y; y++)
         {
-            var coord = occupation.Coord;
-            var (x,y,z) = Vector3Util.CastInt(coord);
-            if (!_drawnGrid.WithinBounds(x,y,z)) continue;
-            var grid = _xwfc.GridManager.Grid;
-            var status = grid.Get(coord);
-            var drawnStatus = _drawnGrid.Get(coord);
-            
-            // Only update if there is a change.
-            if (status == drawnStatus.Id) continue;
-            
-            // Clear the cells content to be replaced with a new drawing.
-            if (drawnStatus.Id != grid.DefaultFillValue) Destroy(drawnStatus.Atom);
-            
-            // Empty cell should not show an object. Drawn grid restored to default.
-            if (status == grid.DefaultFillValue)
+            for (int x = 0; x < gridExtent.x; x++)
             {
-                _drawnGrid.Set(coord, new Drawing(grid.DefaultFillValue, null));
-            }
-            else
-            {
-                // Drawn atom should be updated to match the new atom's specification.
-                // TODO: reference the prefab corresponding to the atom, instead of assuming the same is used for all.
-                var atom = Instantiate(unitTilePrefab);
-                var drawing = new Drawing(status, atom);
-                atom.transform.position = CalcAtomPosition(coord);
-                UpdateColorFromAtom(atom, status);
-                // atom.GetComponent<Renderer>().material.color = GetTerminalColor(status);
-                _drawnGrid.Set(coord, drawing);
+                for (int z = 0; z < gridExtent.z; z++)
+                {
+                    var drawing = _drawnGrid.Get(x, y, z);
+                    var gridValue = grid.Get(x, y, z);
+
+                    var coord = new Vector3(x, y, z);
+                    if (gridValue == grid.DefaultFillValue && drawing.Atom != null)
+                    {
+                        Drawing.DestroyAtom(drawing);
+                        _drawnGrid.Set(coord, new Drawing(grid.DefaultFillValue, null));
+                    }
+                    else if (drawing.Id != gridValue)
+                    {
+                        if (drawing.Atom != null)
+                        {
+                            Drawing.DestroyAtom(drawing);
+                        }
+                        DrawAtom(coord,gridValue);
+                    }
+
+                    if (_drawnGrid.Get(coord).Id != grid.Get(coord))
+                    {
+                        Debug.Log("Somehow not matched...");
+                    }
+                }
             }
         }
     }
 
-    private void UpdateColorFromAtom(GameObject obj, int atomId)
+    private void DrawAtom(Vector3 coord, int atomId)
     {
-        obj.GetComponent<Renderer>().material.color = GetTerminalColorFromAtom(atomId);
+        var atom = Instantiate(unitTilePrefab);
+                
+        atom.transform.position = CalcAtomPosition(coord);
+        var edges = DrawEdges(atomId, atom);
+        var drawing = new Drawing(atomId, atom, edges);
+        UpdateColorFromAtom(atom, atomId);
+        // atom.GetComponent<Renderer>().material.color = GetTerminalColor(status);
+        _drawnGrid.Set(coord, drawing);
+    }
+
+    private HashSet<GameObject> DrawEdges(int atomId, GameObject atom)
+    {
+        var bounds = atom.GetComponent<Renderer>().bounds.size;
+        var edgeExtent = new Vector3(0.05f,0.05f,0.05f);
+        var origin = atom.transform.position;
+        var halfBounds = Vector3Util.Scale(bounds, 0.5f);
+        var zeroOrigin = origin - halfBounds;
+        
+        var (terminalId, atomIndex, _) = _xwfc.AdjMatrix.AtomMapping.Get(atomId);
+        
+        var edges = TileSet[terminalId].AtomEdges;
+        var edgeObjects = new HashSet<GameObject>();
+        if (edges == null) return edgeObjects;
+
+        var atomEdges = edges[new Vector3Int((int)atomIndex.x, (int)atomIndex.y, (int)atomIndex.z)];
+        foreach (var atomEdge in atomEdges)
+        {
+            var edge = Instantiate(edgePrefab);
+            var edgeCenter = Vector3Util.Scale(atomEdge.GetDistance(), 0.5f);
+            
+            // Edge pos, account for origin being center of object. 
+            var edgePos = zeroOrigin + Vector3Util.Mult(atomEdge.From + edgeCenter, bounds);
+            
+            edge.transform.position = edgePos;
+            var atomDist = atomEdge.GetDistance();
+            var newEdgeBounds = atomDist;//Vector3Util.Mult(atomDist, bounds);
+            var normScale = Vector3Util.Div(bounds, edge.GetComponent<Renderer>().bounds.size);
+            newEdgeBounds.x = Math.Max(edgeExtent.x, newEdgeBounds.x);
+            newEdgeBounds.y = Math.Max(edgeExtent.y, newEdgeBounds.y);
+            newEdgeBounds.z = Math.Max(edgeExtent.z, newEdgeBounds.z);
+            edge.transform.localScale = Vector3Util.Mult(normScale, newEdgeBounds);
+            
+            // Prefab from blender needs to be rotated first...
+            edge.transform.Rotate(new Vector3(90,0,0));
+            edgeObjects.Add(edge);
+        }
+
+        return edgeObjects;
+    }
+
+    private static Color ApplyVariation(Color c, float fluctuation)
+    {
+        var rand = new Random();
+        var fluct = (float)rand.NextDouble() * fluctuation;
+        Color color = c;
+        color.r += fluct;
+        color.g += fluct;
+        color.b += fluct;
+        return color;
+
+    }
+
+    private void UpdateColorFromAtom(GameObject obj, int atomId, bool applyFluctuation=true)
+    {
+        var color = GetTerminalColorFromAtom(atomId);
+        if (applyFluctuation) color = ApplyVariation(color, 0.2f);
+        obj.GetComponent<Renderer>().material.color = color;
     }
 
     private void UpdateColorFromTerminal(GameObject obj, int tileId)
     {
-        obj.GetComponent<Renderer>().material.color = TileSet[tileId].Color;
+        obj.GetComponent<Renderer>().material.color = CompleteTerminalSet[tileId].Color;
     }
 
     private Color GetTerminalColorFromAtom(int atomId)
@@ -474,21 +751,101 @@ public class XWFCAnimator : MonoBehaviour
     {
         delay = value;
     }
+
+    public string SaveConfig()
+    {
+        /*
+         * To replicate a config need:
+         * Json representation of AdjacencyMatrix.
+         * This contains the tileset, the tile id mapping and the adjacency constraints.
+         * From those, the parameters for recreating config can be restored.
+         */
+        var adjs = _xwfc.AdjMatrix.TileAdjacencyConstraints;
+        var tiles = TileSet;
+        var config = new AdjacencyMatrixJsonFormatter(adjs, tiles).ToJson();
+        var path = CreateSaveConfigPath();
+        FileUtil.WriteToFile(config, path);
+        return path;
+    }
+
+    private string GetConfigFolderPath()
+    {
+        return FileUtil.RootPathTo("Configs");
+    }
+
+    public void LoadConfig(string fileName="")
+    {
+        var extension = ".json";
+        
+        var path = "";
+        if (fileName.Length == 0)
+        {
+            var files = FindConfigPaths();
+            path = files.Last();
+        }
+        else
+        {
+            if (!fileName.EndsWith(extension)) fileName += extension;
+            path = Path.Join(GetConfigFolderPath(), fileName);
+        }
+        var contents = FileUtil.ReadFromFile(path);
+        var adjMat = AdjacencyMatrixJsonFormatter.FromJson(contents);
+        
+        UpdateTerminals(adjMat.TileSet);
+        UpdateAdjacencyConstraints(adjMat.TileAdjacencyConstraints);
+    }
+
+    private string CreateSaveConfigPath()
+    {
+        var prefix = "config-";
+        var timeStamp = FileUtil.GetTimeStamp();
+        var format = ".json";
+        var fileName = $"{prefix}{timeStamp}{format}";
+        var filePath = Path.Join(GetConfigFolderPath(), fileName);
+
+        return filePath;
+    }
+
+    public IEnumerable<string> FindConfigPaths()
+    {
+        var files = FileUtil.FindFiles(GetConfigFolderPath(), "*.json").ToArray();
+        return files;
+    }
+
+    public IEnumerable<string> FindConfigFileNames(bool includeExtension = false)
+    {
+        var paths = FindConfigPaths();
+        foreach (var path in paths)
+        {
+            yield return FileUtil.GetFileNameFromPath(path, includeExtension);
+        }
+    }
     
     private record Drawing
     {
         public int Id;
         public GameObject Atom;
+        public HashSet<GameObject> Edges;
 
-        public Drawing(int id, GameObject atom)
+        public Drawing(int id, GameObject atom, [CanBeNull] HashSet<GameObject> edges=null)
         {
             Id = id;
             Atom = atom;
+            Edges = edges;
         }
 
         public static void DestroyAtom(Drawing drawing)
         {
-            if (drawing != null && drawing.Atom != null) Destroy(drawing.Atom);
+            if (drawing == null || drawing.Atom == null) return; 
+            
+            Destroy(drawing.Atom);
+            
+            if (drawing.Edges == null) return;
+            
+            foreach (var edge in drawing.Edges)
+            {
+                Destroy(edge);
+            }
         }
     }
 }

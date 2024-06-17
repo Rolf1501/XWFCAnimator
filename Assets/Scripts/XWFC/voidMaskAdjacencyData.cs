@@ -5,7 +5,7 @@ namespace XWFC
 {
     public class VoidMaskAdjacencyData
     {
-        public Terminal Terminal { get; }
+        public Tile Tile { get; }
         public int TerminalId { get; }
         private Vector3 Offset { get; }
         public int[] Rotations { get; }
@@ -13,26 +13,26 @@ namespace XWFC
         private int? Volume { get; set; }
         public Dictionary<int, int[,]> VoidMasks { get; private set; }
 
-        public VoidMaskAdjacencyData(Terminal terminal, int terminalId, Vector3 offset, int[] rotations,
+        public VoidMaskAdjacencyData(Tile tile, int terminalId, Vector3 offset, int[] rotations,
             int offsetDirectionIndex)
         {
-            Terminal = terminal;
+            Tile = tile;
             TerminalId = terminalId;
             Offset = offset;
             Rotations = rotations;
             OffsetDirectionIndex = offsetDirectionIndex;
-            VoidMasks = Terminal.OrientedVoidMasks[Offset];
+            VoidMasks = Tile.OrientedVoidMasks[Offset];
         }
 
         public (int, int, int) MaskShape(int orientation)
         {
-            var m = Terminal.OrientedMask[orientation];
+            var m = Tile.OrientedMask[orientation];
             return (m.GetLength(0), m.GetLength(1), m.GetLength(2));
         }
 
         public int GetVolume()
         {
-            Volume ??= Terminal.OrientedMask[0].Length;
+            Volume ??= Tile.OrientedMask[0].Length;
             return Volume.Value;
         }
     }

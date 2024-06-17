@@ -4,98 +4,362 @@ using UnityEngine;
 
 using System.Collections.Generic;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace XWFC
 {
-    public class HashSetAdjacency : HashSet<Adjacency> { } // Class for shorthand notation of set of adjacency constraints.
+    public class HashSetAdjacency : HashSet<Adjacency>
+    {
+        // Class for shorthand notation of set of adjacency constraints.
+        public string ToJson()
+        {
+            var dict = new Dictionary<string, string>();
+            var set = new HashSet<string>();
+            
+            foreach (var adj in this)
+            {
+                set.Add(adj.ToJson());
+            }
+
+            dict["adjacencyConstraints"] = JsonConvert.SerializeObject(set);
+            var json = JsonConvert.SerializeObject(dict);
+            return json;
+        }
+
+        public static HashSetAdjacency FromJson(string s)
+        {
+            var set = new HashSetAdjacency();
+            
+            var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(s);
+            foreach (var (k,v) in dict)
+            {
+                var hashSetString = JsonConvert.DeserializeObject<HashSet<string>>(v);
+                foreach (var adjacencyString in hashSetString)
+                {
+                    var adjDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(adjacencyString);
+                    var adjacency = new Adjacency(adjDict["source"], adjDict["relations"], adjDict["offset"]);
+                    set.Add(adjacency);
+                }
+            }
+            return set;
+        }
+    } 
 
     public class AdjacencyMatrix
     {
-        private int[] TileIds { get; }
-        public HashSetAdjacency TileAdjacencyConstraints { get; } // Set of tile adjacency constraints.
-        private TileSet TileSet { get; }
-        private int OffsetsDimensions { get; } // Set the number of dimensions to operate in.
-        public HashSetAdjacency AtomAdjacencies { get; private set; } // Set of atom adjacency constraints.
-        private Vector3[] Offsets { get; }
-        private Dictionary<Vector3, bool[,]> TileAdjacencyMatrix { get; } // 2D matrix for tile adjacency constraints per offset. 
-        private Dictionary<Vector3, float[,]> TileAdjacencyMatrixWeights { get; } // 2D matrix for tile adjacency constraint weights per offset.
-        private Dictionary<int, int> TileToIndexMapping { get; } // Mapping of parts to their index.
-        public Bidict<(int, Vector3, int), int> AtomMapping { get; } // Mapping of atom indices to relative atom coordinate, corresponding terminal id and orientation.
-        public Dictionary<Vector3, bool[,]> AtomAdjacencyMatrix { get; }
-        private Dictionary<Vector3, float[,]> AtomAdjacencyMatrixW { get; }
-        public Dictionary<int, (int, int)> TileAtomRangeMapping { get; } // Reserves an index range for the atoms of the tile.
-        public Dictionary<int, HashSetAdjacency> TileAdjacencyMapping { get; private set; }
+        public HashSetAdjacency TileAdjacencyConstraints { get; private set; } // Set of tile adjacency constraints.
+        public TileSet TileSet { get; private set; }
+        private int _offsetsDimensions; // Set the number of dimensions to operate in.
+        public HashSetAdjacency AtomAdjacencyConstraints { get; private set; } // Set of atom adjacency constraints.
+        private Vector3[] _offsets;
+        private Dictionary<Vector3, bool[,]> _tileAdjacencyMatrix; // 2D matrix for tile adjacency constraints per offset. 
+        private Dictionary<Vector3, float[,]> _tileAdjacencyMatrixWeights; // 2D matrix for tile adjacency constraint weights per offset.
+        private Dictionary<int, int> _tileIdToIndexMapping; // Mapping of parts to their index.
+        public Bidict<(int tileId, Vector3 atomCoord, int orientation), int> AtomMapping { get; private set; } // Mapping of atom indices to relative atom coordinate, corresponding terminal id and orientation.
+        public Dictionary<Vector3, bool[,]> AtomAdjacencyMatrix { get; private set; }
+        private Dictionary<Vector3, float[,]> AtomAdjacencyMatrixW;
+        public Dictionary<int, (int, int)> TileAtomRangeMapping { get; private set; } // Reserves an index range for the atoms of the tile.
 
-        public AdjacencyMatrix(int[] tileIds, HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, int offsetsDimensions = 3)
+        public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, int offsetsDimensions = 3)
         {
-            TileIds = tileIds;
+            
+            Init(tileSet, offsetsDimensions);
+            
             TileAdjacencyConstraints = tileAdjacencyConstraints;
+            
+
+            InitTileAdjacency();
+            InferTileAdjacencyConstraints(TileAdjacencyConstraints);
+            InferAtomAdjacencies();
+        }
+        
+        public AdjacencyMatrix(TileSet tiles, List<InputGrid> grids)
+        {
+            /*
+             * Infer adjacency constraints from input.
+             */
+            var offsetDimensions = 3;
+            Init(tiles, offsetDimensions);
+            
+            InnerAtomAdjacency();
+
+            /*
+             * TODO: go over all grids.
+             */
+            Debug.Log("Atomized...");
+
+            foreach (var grid in grids)
+            {
+                var atomizedGrid = AtomizeInputGrid(grid);
+                AtomAdjacencyFromGrid(atomizedGrid);
+            }
+
+            var builder = new StringBuilder();
+            foreach (var (k,v) in AtomAdjacencyMatrix)
+            {
+                builder.Append($"key: {k}\n");
+                for (int i = 0; i < v.GetLength(0); i++)
+                {
+                    builder.Append($"value: {v}");
+                    for (int j = 0; j < v.GetLength(1); j++)
+                    {
+                        builder.Append($"{AtomAdjacencyMatrix[k][i,j]},");
+                    }
+
+                    builder.Append("\n");
+                }
+            }
+            Debug.Log($"{builder}");
+            // Process atomized grid.
+            Debug.Log("Atom adjacency derived from grid.");
+        }
+
+        private void Init(TileSet tileSet, int offsetsDimensions)
+        {
+            /*
+             * Set of actions that must always be performed to initialize the adjacency matrix.
+             * Initializes mappings and matrices.
+             */
             TileSet = tileSet;
-            OffsetsDimensions = offsetsDimensions;
-            AtomAdjacencies = new HashSetAdjacency();
+            _offsetsDimensions = offsetsDimensions;
+            _offsets = OffsetFactory.GetOffsets(_offsetsDimensions);
+            
+            AtomAdjacencyConstraints = new HashSetAdjacency();
             AtomMapping = new Bidict<(int, Vector3, int), int>();
             AtomAdjacencyMatrix = new Dictionary<Vector3, bool[,]>();
             AtomAdjacencyMatrixW = new Dictionary<Vector3, float[,]>();
             TileAtomRangeMapping = new Dictionary<int, (int, int)>();
-            TileAdjacencyMapping = new Dictionary<int, HashSetAdjacency>();
-
-            int nTiles = TileIds.Length;
-            TileToIndexMapping = new Dictionary<int, int>();
-            for (int i = 0; i < nTiles; i++)
-            {
-                TileToIndexMapping.Add(TileIds[i], i);
-            }
-
-            Offsets = OffsetFactory.GetOffsets(OffsetsDimensions);
-            InferAtomAdjacencies();
-
-            TileAdjacencyMatrix = new Dictionary<Vector3, bool[,]>();
-            TileAdjacencyMatrixWeights = new Dictionary<Vector3, float[,]>();
-            foreach (Vector3 offset in Offsets)
-            {
-                TileAdjacencyMatrix[offset] = new bool[nTiles, nTiles];
-                TileAdjacencyMatrixWeights[offset] = new float[nTiles, nTiles];
-            }
-            InferTileAdjacencyConstraints(TileAdjacencyConstraints);
+            
+            _tileIdToIndexMapping = MapTileIdToIndex(TileSet);
+            
+            // Create tile to atom range mapping.
+            int nAtoms;
+            (TileAtomRangeMapping, nAtoms) = MapTileAtomRange(TileSet);
+            InitAtomAdjacencyMatrix(nAtoms);
         }
 
-        // TODO: implement this for showing adjs in GUI.
-        // public Dictionary<int, HashSetAdjacency> GetAllPartAdjacenciesAsId()
-        // {
-        //     return null;
-        // }
+        private void InitTileAdjacency()
+        {
+            var nTiles = TileSet.Keys.Count;
+            _tileAdjacencyMatrix = new Dictionary<Vector3, bool[,]>();
+            _tileAdjacencyMatrixWeights = new Dictionary<Vector3, float[,]>();
+            foreach (Vector3 offset in _offsets)
+            {
+                _tileAdjacencyMatrix[offset] = new bool[nTiles, nTiles];
+                _tileAdjacencyMatrixWeights[offset] = new float[nTiles, nTiles];
+            }
+        }
 
+        private void InitAtomAdjacencyMatrix(int nAtoms)
+        {
+            // Initialize the initial nd arrays.
+            foreach (Vector3 offset in _offsets)
+            {
+                AtomAdjacencyMatrix[offset] = new bool[nAtoms, nAtoms];
+                AtomAdjacencyMatrixW[offset] = new float[nAtoms, nAtoms];
+            }
+        }
+        
+        private Dictionary<int, int> MapTileIdToIndex(TileSet tiles)
+        {
+            var mapping = new Dictionary<int, int>();
+            var keyArray = tiles.Keys.ToArray();
+            for (int i = 0; i < keyArray.Length; i++)
+            {
+                mapping[keyArray[i]] = i;
+            }
+
+            return mapping;
+        }
+
+        private AtomGrid AtomizeInputGrid(InputGrid inputGrid)
+        {
+            var e = inputGrid.GetExtent();
+            var atomizedGrid = new AtomGrid(e);
+            
+            // foreach (var (k, v) in TileSet)
+            // {
+            //     // TODO: assumes only 0 rotation. Tiles with different rotations are considered different tiles.
+            //     firstAtomCoord[k] = v.OrientedIndices[0][0];
+            // }
+            for (int y = 0; y < e.y; y++)
+            {
+                for (int x = 0; x < e.x; x++)
+                {
+                    for (int z = 0; z < e.z; z++)
+                    {
+                        /*
+                         * TODO: support multiple tile ids per cell.
+                         */
+                        var value = inputGrid.Get(x, y, z);
+                        if (value == null || value.Equals(inputGrid.DefaultFillValue)) continue;
+                        
+                        var coord = new Vector3(x, y, z);
+
+                        var orientation = 0;
+                        /*
+                         * IDEA:
+                         * - Start at 000.
+                         * - Try to overlay all tiles on that cell:
+                         *      - This means that all atoms for each tile is already checked, meaning that the atoms can already be assigned in this phase.
+                         *      - Each cell can host multiple atoms.
+                         *      - For each NUT, only consider the occupied entries in the mask.
+                         *      - A tile fits iff the coordinate + tile extent is within bounds of the grid. No partial tiles are considered. 
+                         *      - As soon as at least one atom does not match, consider the placement invalid.
+                         * - This is essentially a sliding window approach, brute force.
+                         * - Though, it all happens in pre computation and is negligible compared to running WFC.
+                         */
+                        foreach (var (tileId, tile) in TileSet)
+                        {
+                            var maxCoord = coord + tile.Extent - new Vector3(1,1,1); // Must subtract 1, index starts at 0.
+                            if (!inputGrid.WithinBounds(maxCoord)) continue;
+                            var valid = true;
+                            
+                            // Check if atom values match those present in the grid.
+                            foreach (var atomCoord in tile.OrientedIndices[orientation])
+                            {
+                                var atomGridValue = inputGrid.Get(atomCoord + coord);
+                                var atomTileValue = tile.GetAtomValue(atomCoord);
+                                if (!atomTileValue.Equals(inputGrid.DefaultFillValue) && atomGridValue != null && atomGridValue.Equals(atomTileValue))
+                                    continue;
+                                valid = false;
+                                break;
+                            }
+
+                            if (!valid) continue;
+                            
+                            // If tile placement is a match, then add the atom ids to the corresponding grid cells.
+                            foreach (var atomCoord in tile.OrientedIndices[orientation])
+                            {
+                                var gridCoord = atomCoord + coord;
+                                var atomId = AtomMapping.GetValue((tileId, atomCoord, orientation));
+                                atomizedGrid.Get(gridCoord).Add(atomId);
+                            }
+                        }
+                        
+                    }
+                }
+            }
+            
+            Debug.Log(atomizedGrid.ToString());
+
+            return atomizedGrid;
+        }
+
+        private void AtomAdjacencyFromGrid(AtomGrid atomGrid)
+        {
+            var e = atomGrid.GetExtent();
+            var positiveOffsets = (from offset in _offsets where offset is { x: >= 0, y: >= 0, z: >= 0 } select offset).ToList();
+            for (int y = 0; y < e.y; y++)
+            {
+                for (int x = 0; x < e.x; x++)
+                {
+                    for (int z = 0; z < e.z; z++)
+                    {
+                        var coord = new Vector3(x, y, z);
+                        var atoms = atomGrid.Get(coord);
+                        
+                        if (atoms == null || atoms.Count == 0) continue;
+                        
+                        var atomId = atomGrid.Get(coord)[0]; // TODO: consider all atoms in the list.
+                        var (tileId, atomCoord, orientation) = AtomMapping.GetKey(atomId);
+                        var tileAtoms = TileSet[tileId].OrientedIndices[orientation];
+                        
+                        if (!AtomMapping.ContainsValue(atomId)) continue;
+                        
+                        foreach (var offset in positiveOffsets)
+                        {
+                            var otherCoord = coord + offset;
+                            if (!atomGrid.WithinBounds(otherCoord)) continue;
+
+                            var others = atomGrid.Get(otherCoord);
+                            if (others == null || others.Count == 0) continue;
+
+                            var innerAtomCoord = atomCoord + offset;
+                            
+                            // Atoms belong to same tile.
+                            if (tileAtoms.Contains(innerAtomCoord))
+                            {
+                                // Must follow inner atom adjacency constraints.
+                                var otherId = AtomMapping.GetValue((tileId, innerAtomCoord, orientation));
+                                SetAtomAdjacency(atomId, otherId, offset);
+                            }
+                            else
+                            {
+                                // Atoms belong to distinct tiles.
+                                
+                                var complement = Vector3Util.Negate(offset);
+                                // If there are no inner atom adjacency constraints to be enforced, consider all other atom ids.
+                                foreach (var otherAtomId in others)
+                                {
+                                    // In case this atom and other atom belong to two distinct tiles, make sure not to include atoms of the other tile if that causes the presence of partial tiles.
+                                    // i.e. exclude all other atoms who have an atom. this can be done by checking the other potential atoms ids in this cell and excluding any in the others
+                                    var (otherTileId, otherAtomCoord, otherOrientation) = AtomMapping.Get(otherAtomId);
+                                    var otherAtoms = TileSet[otherTileId].OrientedIndices[otherOrientation];
+                                    
+                                    // Do not allow adjacency between atoms who expect an inner atom adjacency.
+                                    if (otherAtoms.Contains(otherAtomCoord + complement)) continue;
+                                    
+                                    SetAtomAdjacency(atomId, otherAtomId, offset);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void SetAtomAdjacency(int thisAtomId, int thatAtomId, Vector3 offset)
+        {
+            AtomAdjacencyMatrix[offset][thisAtomId, thatAtomId] = true;
+            AtomAdjacencyMatrixW[offset][thisAtomId, thatAtomId] += 1;
+
+            // Adjacency constraints are symmetric.
+            var complement = Vector3Util.Negate(offset);
+            AtomAdjacencyMatrix[complement][thatAtomId, thisAtomId] = true;
+            AtomAdjacencyMatrixW[complement][thatAtomId, thisAtomId] += 1;
+        }
+        private static TileSet ToTileSet(Dictionary<int, (bool[,,] mask, Color color)> tiles)
+        {
+            var t = new TileSet();
+            foreach (var (k, (mask, color)) in tiles)
+            {
+                var extent = new Vector3(mask.GetLength(1), mask.GetLength(0), mask.GetLength(2));
+                t[k] = new Tile(extent, mask: mask, color: color, distinctOrientations:null, computeAtomEdges:true, description:"");
+            }
+
+            return t;
+        }
+        
         public int GetNAtoms()
         {
             return AtomMapping.GetNEntries();
         }
 
-        private static int CalcAtomRange(Terminal terminal)
+        private static int CalcAtomRange(Tile tile)
         {
-            return terminal.NAtoms;
+            return tile.NAtoms;
         }
         private void InferAtomAdjacencies()
         {
-            int nAtoms = 0;
+            InnerAtomAdjacency(); // With atoms from within a molecule.
+            OuterAtomAdjacency(); // With atoms from another molecule.
+        }
 
+        private (Dictionary<int, (int start, int end)> mapping, int nAtoms) MapTileAtomRange(TileSet tiles)
+        {
+            int nAtoms = 0;
+            var mapping = new Dictionary<int, (int start, int end)>();
             // Map each terminal to a range in the mapping list.
-            foreach (int p in TileIds)
+            foreach (int tileId in tiles.Keys)
             {
-                Terminal t = TileSet[p];
+                Tile t = TileSet[tileId];
                 int tAtoms = CalcAtomRange(t);
-                TileAtomRangeMapping[p] = (nAtoms, nAtoms + tAtoms);
+                mapping[tileId] = (nAtoms, nAtoms + tAtoms);
                 nAtoms += tAtoms;
             }
 
-            // Initialize the initial nd arrays.
-            foreach (Vector3 offset in Offsets)
-            {
-                AtomAdjacencyMatrix[offset] = new bool[nAtoms, nAtoms];
-                AtomAdjacencyMatrixW[offset] = new float[nAtoms, nAtoms];
-            }
-
-            InnerAtomAdjacency(); // With atoms from within a molecule.
-            OuterAtomAdjacency(); // With atoms from another molecule.
+            return (mapping, nAtoms);
         }
 
         private void InnerAtomAdjacency()
@@ -103,9 +367,9 @@ namespace XWFC
             /*
              * Formalizes the atom atom adjacencies within a molecule.
              */
-            foreach (int p in TileIds)
+            foreach (int p in TileSet.Keys.ToArray())
             {
-                Terminal t = TileSet[p];
+                Tile t = TileSet[p];
                 CreatePartToIndexEntry(p, t);
 
                 foreach (int d in t.DistinctOrientations)
@@ -114,7 +378,7 @@ namespace XWFC
                     {
                         Vector3 atomIndex = t.OrientedIndices[d][i];
                         int thisIndex = AtomMapping.Get((p, atomIndex, d));
-                        foreach (Vector3 offset in Offsets)
+                        foreach (Vector3 offset in _offsets)
                         {
                             if (!t.ContainsAtom(d, atomIndex + offset)) continue;
                             int otherIndex = AtomMapping.Get((p, atomIndex + offset, d));
@@ -130,7 +394,7 @@ namespace XWFC
             }
         }
 
-        private void CreatePartToIndexEntry(int partId, Terminal t)
+        private void CreatePartToIndexEntry(int tileId, Tile t)
         {
             /*
              * Append entries mapping an index to the corresponding terminal info.
@@ -142,7 +406,7 @@ namespace XWFC
                 {
                     Vector3 index = t.OrientedIndices[d][i];
                     int newKeyEntry = AtomMapping.GetNEntries();
-                    AtomMapping.AddPair((partId, index, d), newKeyEntry);
+                    AtomMapping.AddPair((tileId, index, d), newKeyEntry);
                 }
             }
         }
@@ -169,8 +433,8 @@ namespace XWFC
              */
             var (ox, oy, oz) = Vector3Util.CastInt(offset);
             int offsetDirectionIndex = Array.FindIndex(new int[] { ox, oy, oz }, e => e != 0);
-            Terminal thisT = TileSet[thisId];
-            Terminal thatT = TileSet[thatId];
+            Tile thisT = TileSet[thisId];
+            Tile thatT = TileSet[thatId];
             var thisVmAdj = new VoidMaskAdjacencyData(
                 thisT,
                 thisId,
@@ -265,6 +529,7 @@ namespace XWFC
 
         private int CalcMinSum(int[] baseSlice, int baseMaxDepth, int[] sliderSlice, int sliderMaxDepth)
         {
+            if (baseSlice.Length == 0 || sliderSlice.Length == 0) return -1;
             // There cannot be an adjacency when all layers in either the base or slider are empty.
             if (baseSlice.Min() > baseMaxDepth - 1 || sliderSlice.Min() > sliderMaxDepth - 1) return -1;
             
@@ -290,7 +555,7 @@ namespace XWFC
                 [offsetDirectionIndex] = 0
             };
 
-            var (up, looking) = Terminal.CalcUpAndLookingDirections(offsetDirectionIndex, false);
+            var (up, looking) = Tile.CalcUpAndLookingDirections(offsetDirectionIndex, false);
             
             int sign = offset[offsetDirectionIndex] < 0 ? -1 : 1;
             
@@ -320,6 +585,11 @@ namespace XWFC
                     int minSum = CalcMinSum(baseSlice, baseData.ShapeXyz[offsetDirectionIndex], 
                         sliderSlice, sliderData.ShapeXyz[offsetDirectionIndex]);
 
+                    if (minSum < 0)
+                    {
+                        continue; 
+                    }
+
                     Vector3 relativeSliderPosition = RelativeSliderPosition(
                         sliderMinPositionFromBase, x, y, minSum, sign, offsetDirectionIndex, up, looking);
                     
@@ -339,7 +609,7 @@ namespace XWFC
                     {
                         var baseAtomCoord = new Vector3(ix, iy, iz);
                         
-                        if (!baseData.Terminal.ContainsAtom(baseData.Orientation, baseAtomCoord)) continue;
+                        if (!baseData.Tile.ContainsAtom(baseData.Orientation, baseAtomCoord)) continue;
                         
                         int baseAtomIndex = AtomMapping.Get((baseData.TerminalId, baseAtomCoord, baseData.Orientation));
 
@@ -358,17 +628,17 @@ namespace XWFC
 
         private IEnumerable<(int sliderAtomIndex, Vector3 io)> CalcSliderAtomIndices(VmData sliderData, Vector3 baseAtomCoord, Vector3 relativeSliderPosition)
         {
-            foreach (Vector3 io in Offsets)
+            foreach (Vector3 io in _offsets)
             {
                 Vector3 relativeOffset = baseAtomCoord + io;
                             
                 // Find the vector pointing to the relative slider atom coordinate.
                 Vector3 sliderAtomCoord = relativeOffset - relativeSliderPosition;
 
-                if (!sliderData.Terminal.WithinBounds(sliderAtomCoord)) continue;
+                if (!sliderData.Tile.WithinBounds(sliderAtomCoord)) continue;
                             
                 // Bounds check implicitly done with contains atom. If the mapped position is not an atom, continue.
-                if (!sliderData.Terminal.ContainsAtom(sliderData.Orientation, sliderAtomCoord)) continue;
+                if (!sliderData.Tile.ContainsAtom(sliderData.Orientation, sliderAtomCoord)) continue;
 
                 int sliderAtomIndex = AtomMapping.Get((sliderData.TerminalId, sliderAtomCoord, sliderData.Orientation));
 
@@ -452,15 +722,14 @@ namespace XWFC
             foreach (Adjacency a in tileAdjacencies)
             {
                 Vector3 complement = Vector3Util.Negate(a.Offset);
-                int sourceIndex = TileToIndexMapping[a.Source];
+                int sourceIndex = _tileIdToIndexMapping[a.Source];
                 foreach (Relation r in a.Relations)
                 {
-                    int relationIndex = TileToIndexMapping[r.Other];
-                    TileAdjacencyMatrix[a.Offset][sourceIndex, relationIndex] = true;
-                    TileAdjacencyMatrix[complement][sourceIndex, relationIndex] = true;
-                    TileAdjacencyMatrixWeights[a.Offset][sourceIndex, relationIndex] = r.Weight;
-                    TileAdjacencyMatrixWeights[complement][sourceIndex, relationIndex] = r.Weight;
-
+                    int relationIndex = _tileIdToIndexMapping[r.Other];
+                    _tileAdjacencyMatrix[a.Offset][sourceIndex, relationIndex] = true;
+                    _tileAdjacencyMatrix[complement][sourceIndex, relationIndex] = true;
+                    _tileAdjacencyMatrixWeights[a.Offset][sourceIndex, relationIndex] = r.Weight;
+                    _tileAdjacencyMatrixWeights[complement][sourceIndex, relationIndex] = r.Weight;
                 }
             }
         }
@@ -486,7 +755,7 @@ namespace XWFC
             return GetRow(span, choiceId).ToArray();
         }
 
-        public Terminal GetTerminalFromAtomId(int atomId)
+        public Tile GetTerminalFromAtomId(int atomId)
         {
             return TileSet[AtomMapping.Get(atomId).Item1];
         }
@@ -555,7 +824,7 @@ namespace XWFC
     public record VmData
     {
         public int Orientation { get; }
-        public Terminal Terminal { get; }
+        public Tile Tile { get; }
         public int TerminalId { get; }
         public int[] ShapeXyz { get; }
         public int[,] VoidMask { get; }
@@ -566,16 +835,52 @@ namespace XWFC
 
         public VmData(VoidMaskAdjacencyData vmData, int rotation)
         {
-            Terminal = vmData.Terminal;
+            Tile = vmData.Tile;
             TerminalId = vmData.TerminalId;
-            Orientation = Terminal.GetRotationOrientation(rotation);
-            var vm = Terminal.OrientedMask[Orientation];
+            Orientation = Tile.GetRotationOrientation(rotation);
+            var vm = Tile.OrientedMask[Orientation];
             ShapeXyz = new int[] { vm.GetLength(1), vm.GetLength(0), vm.GetLength(2) };
 
             VoidMask = vmData.VoidMasks[Orientation];
             VmShapeVector = new Vector2(VoidMask.GetLength(1), VoidMask.GetLength(0));
             MaxY = VoidMask.GetLength(0) - 1;
             MaxX = VoidMask.GetLength(1) - 1;
+        }
+    }
+
+    public class AdjacencyMatrixJsonFormatter
+    {
+        private HashSetAdjacency _tileAdjacencyConstraints;
+        private TileSet _tiles;
+        public AdjacencyMatrixJsonFormatter(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet)
+        {
+            _tileAdjacencyConstraints = tileAdjacencyConstraints;
+            _tiles = tileSet;
+        }
+        public string ToJson()
+        {
+            var dict = new Dictionary<string, string>();
+            var tileString = new Dictionary<string, string>();
+            foreach (var (k,v) in _tiles)
+            {
+                tileString[k.ToString()] = JsonConvert.SerializeObject(v.ToJson());
+            }
+            
+            dict["tileset"] = JsonConvert.SerializeObject(tileString);
+            dict["tileAdjacencyConstraints"] = _tileAdjacencyConstraints.ToJson();
+            
+            return JsonConvert.SerializeObject(dict);
+        }
+
+        public static AdjacencyMatrix FromJson(string s)
+        {
+            var dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(s);
+            var tilesetString = dict["tileset"];
+            var tileset = TileSet.FromJson(tilesetString);
+            var adjConstraintsString = dict["tileAdjacencyConstraints"];
+            var adjConstraints = HashSetAdjacency.FromJson(adjConstraintsString);
+
+            return new AdjacencyMatrix(adjConstraints, tileset);
         }
     }
 }

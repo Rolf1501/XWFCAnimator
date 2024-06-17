@@ -54,6 +54,11 @@ namespace XWFC
             return Dict[key];
         }
 
+        public bool ContainsValue(TValue value)
+        {
+            return _inverse.Keys.Contains(value);
+        }
+
         public int GetNEntries()
         {
             return Dict.Keys.Count;

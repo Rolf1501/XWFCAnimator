@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace XWFC
@@ -20,6 +21,27 @@ namespace XWFC
             Depth = depth;
             DefaultFillValue = defaultFillValue;
             _grid = new T[Height, Width, Depth];
+        }
+
+        protected AbstractGrid(Vector3 extent, T defaultFillValue)
+        {
+            (Width, Height, Depth) = Vector3Util.CastInt(extent);
+            DefaultFillValue = defaultFillValue;
+            _grid = new T[Height, Width, Depth];
+        }
+        
+        protected AbstractGrid(T[,,] grid, T defaultFillValue)
+        {
+            Height = grid.GetLength(0);
+            Width = grid.GetLength(1);
+            Depth = grid.GetLength(2);
+            DefaultFillValue = defaultFillValue; 
+            _grid = grid;
+        }
+
+        public Vector3Int GetExtent()
+        {
+            return new Vector3Int(Width, Height, Depth);
         }
 
         public void Populate(T value)
@@ -74,6 +96,11 @@ namespace XWFC
             return x < Width && y < Height && z < Depth && x >= 0 && y >= 0 && z >= 0;
         }
 
+        public bool WithinBounds(Vector3 vector)
+        {
+            return WithinBounds((int)vector.x, (int)vector.y, (int)vector.z);
+        }
+
         public T Get(int x, int y, int z)
         {
             return _grid[y, x, z];
@@ -98,11 +125,6 @@ namespace XWFC
             var (x, y, z) = Vector3Util.CastInt(coord);
             Set(x, y, z, value);
         }
-
-        public Vector3Int GetExtent()
-        {
-            return new Vector3Int(Width, Height, Depth);
-        }
         
         public string GridToString()
         {
@@ -115,7 +137,7 @@ namespace XWFC
                     s += "[";
                     for (int z = 0; z < _grid.GetLength(2); z++)
                     {
-                        s += _grid[y, x, z] + ", ";
+                        s += "(" + string.Join(",", _grid[y, x, z]) + "), ";
                     }
                     s += "]\n";
                 }
@@ -146,6 +168,8 @@ namespace XWFC
             Populate(defaultFillValue);
         }
 
+        public Grid(T[,,] grid, T defaultFilValue) : base(grid, defaultFilValue){}
+        
         public bool IsChosen(int x, int y, int z)
         {
             var choice = Get(x, y, z);
@@ -171,6 +195,80 @@ namespace XWFC
             return copy;
         }
 
+    }
+    
+    public class InputGrid : AbstractGrid<string>
+    {
+        public InputGrid(int width, int height, int depth, string defaultFillValue="") : base(width, height, depth, defaultFillValue)
+        {
+            Populate(defaultFillValue);
+        }
+
+        public InputGrid(Vector3 extent, string defaultFillValue = "") : base(extent, defaultFillValue)
+        {
+            Populate(defaultFillValue);
+        }
+
+        public InputGrid(string[,,] grid, string defaultFillValue) : base(grid, defaultFillValue)
+        {
+            Populate(defaultFillValue);
+        }
+    }
+
+    public class AtomGrid : AbstractGrid<List<int>>
+    {
+        public AtomGrid(int width, int height, int depth) : base(width, height, depth, new List<int>())
+        {
+            Populate();
+        }
+
+        public AtomGrid(Vector3 extent) : base(extent, new List<int>())
+        {
+            Populate();
+        }
+
+        public AtomGrid(List<int>[,,] grid) : base(grid, new List<int>())
+        {
+            Populate();
+        }
+
+        private void Populate()
+        {
+            var (x,y,z) = Vector3Util.CastInt(GetExtent());
+            for (int i = 0; i < x; i++)
+            {
+                for (int j = 0; j < y; j++)
+                {
+                    for (int k = 0; k < z; k++)
+                    {
+                        Set(i, j, k, new List<int>());
+                    }
+                }
+            }
+        }
+
+        public override string ToString()
+        {
+            var grid = GetGrid();
+            var s = new StringBuilder();
+            for (int y = 0; y < grid.GetLength(0); y++)
+            {
+                s.Append("[\n");
+                for (int x = 0; x < grid.GetLength(1); x++)
+                {
+                    s.Append("[");
+                    for (int z = 0; z < grid.GetLength(2); z++)
+                    {
+                        var ss = grid[y, x, z].Aggregate("", (current, item) => current + ("," + item));
+                        s.Append("(" + ss + "), ");
+                    }
+                    s.Append("]\n");
+                }
+                s.Append("\n]\n");
+            }
+
+            return s.ToString();
+        }
     }
 
     public class GridManager

@@ -43,12 +43,16 @@ public class TabbedMenu : MonoBehaviour
 
     private string _tilesetListName = "tilesetListContainer";
     private Button _updateTilesetButton;
-    private HashSet<int> _activeTiles = new();
+    private List<int> _activeTiles = new List<int>();
 
     private const string HiddenClassName = "hidden";
     private const string SelectedClassName = "selected";
     private readonly Vector3 _defaultDirection = Vector3.right;
-    
+    private Button _saveConfigButton;
+    private Button _loadConfigButton;
+    private VisualElement _configContainer;
+    private VisualElement _tilesetListContainer;
+
 
     private void OnEnable()
     {
@@ -79,6 +83,9 @@ public class TabbedMenu : MonoBehaviour
         _updateExtentButton = _root.Q<Button>("updateExtentButton");
         _updateAdjacencyButton = _root.Q<Button>("updateAdjacencyButton");
         _updateTilesetButton = _root.Q<Button>("updateTilesetButton");
+        _saveConfigButton = _root.Q<Button>("saveConfigButton");
+        _loadConfigButton = _root.Q<Button>("loadConfigButton");
+        _configContainer = _root.Q<VisualElement>("configContentContainer");
     }
 
     private void AddListeners()
@@ -88,19 +95,14 @@ public class TabbedMenu : MonoBehaviour
             Debug.Log("Reset!");
             XWFCAnimator.Instance.Reset();
         };
-
-        _updateAdjacencyButton.clicked += delegate
-        {
-            Debug.Log("Updated Adjacency Constraints!");
-            XWFCAnimator.Instance.UpdateAdjacencyConstraints(_adjacencyGridController.ToAdjacencySet());
-        };
     }
 
     private void Start()
     {
-        InitAdjacencyGrid();
+        // InitAdjacencyGrid();
         InitGridValues();
         InitTilesetList();
+        InitConfig();
         AddExtentListeners(_wSlider, _wInput);
         AddExtentListeners(_hSlider, _hInput);
         AddExtentListeners(_dSlider, _dInput);
@@ -223,7 +225,6 @@ public class TabbedMenu : MonoBehaviour
         }
 
         _adjacencyGridController = new AdjacencyGridController(tiles, hashSetAdjacency, offsets);
-        // _adjacencyGridController = new AdjacencyGridController(XWFCAnimator.Instance.GetTiles().Keys.ToList(), XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
         var directionNames = GetOffsetNamesMapping();
         var grids = _adjacencyGridController.Grids;
 
@@ -246,6 +247,11 @@ public class TabbedMenu : MonoBehaviour
         _adjGrid = _root.Q<VisualElement>(_adjacencyGridName);
         InitAdjacencyDropDown();
         InitAdjacencyToggles(XWFCAnimator.Instance.GetTiles().Keys.ToList(), XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
+        _updateAdjacencyButton.clicked += delegate
+        {
+            Debug.Log("Updated Adjacency Constraints!");
+            XWFCAnimator.Instance.UpdateAdjacencyConstraints(_adjacencyGridController.ToAdjacencySet());
+        };
     }
     
     public static void SwitchClass(VisualElement element, string classRemove, string classAdd)
@@ -257,33 +263,49 @@ public class TabbedMenu : MonoBehaviour
     private void InitTilesetList()
     {
         var tiles = XWFCAnimator.Instance.CompleteTerminalSet;
-        var tilesetListContainer = _root.Q<VisualElement>(_tilesetListName);
-        tilesetListContainer.AddToClassList("tile-entry-container");
-        
+        _tilesetListContainer = _root.Q<VisualElement>(_tilesetListName);
+        _tilesetListContainer.AddToClassList("tile-entry-container");
+
         foreach (var tileId in tiles.Keys)
         {
-            var value = XWFCAnimator.Instance.TileSet.Keys.Contains(tileId);
-            var entry = TileEntry(tileId, value);
-            tilesetListContainer.Add(entry);
-            if (value) _activeTiles.Add(tileId);
+            // var value = XWFCAnimator.Instance.TileSet.Keys.Contains(tileId);
+            var entry = TileEntry(tileId);
+            _tilesetListContainer.Add(entry);
+            // if (value) _activeTiles.Add(tileId);
         }
+        
+        SetActiveTiles(XWFCAnimator.Instance.TileSet.Keys.ToList());
+
         /*
          * Upon changing tile set:
          * Update tileset used in xwfc.
-         * Update visual elements of adjacency. 
+         * Update visual elements of adjacency.
          */
-        _updateTilesetButton.clicked += delegate
-        {
-            var tileDict = _activeTiles.ToDictionary(tileId => tileId, tileId => tiles[tileId]);
-            Debug.Log("Tried updating tileset...");
-            InitAdjacencyToggles(tileDict.Keys.ToList(), new HashSetAdjacency(), OffsetFactory.GetOffsets());
-            _adjacencyGridController.Populate(true);
-            XWFCAnimator.Instance.UpdateTerminals(TileSet.FromDict(tileDict));
-            XWFCAnimator.Instance.UpdateAdjacencyConstraints(_adjacencyGridController.ToAdjacencySet());
-        };
+        _updateTilesetButton.clicked += delegate { OnTileSetChange(new HashSetAdjacency()); };
     }
 
-    private VisualElement TileEntry(int tileId, bool toggleValue)
+    private void SetActiveTiles(List<int> tileIds)
+    {
+        _activeTiles = tileIds;
+        var toggles = _tilesetListContainer.Query<Toggle>().ToList();
+        toggles.ForEach(t =>
+        {
+            var id = int.Parse(t.name.Replace("tilesetEntryToggle",""));
+            t.value = _activeTiles.Contains(id);
+        });
+    }
+
+    private void OnTileSetChange(HashSetAdjacency adjacency)
+    {
+        var tileDict = _activeTiles.ToDictionary(tileId => tileId, tileId => XWFCAnimator.Instance.CompleteTerminalSet[tileId]);
+        Debug.Log("Tried updating tileset...");
+        InitAdjacencyToggles(tileDict.Keys.ToList(), adjacency, OffsetFactory.GetOffsets());
+        if (adjacency.Count == 0) _adjacencyGridController.Populate(true);
+        XWFCAnimator.Instance.UpdateTerminals(TileSet.FromDict(tileDict));
+        XWFCAnimator.Instance.UpdateAdjacencyConstraints(_adjacencyGridController.ToAdjacencySet());
+    }
+
+    private VisualElement TileEntry(int tileId, bool toggleValue=false)
     {
         var entry = new VisualElement();
         entry.name = $"tilesetEntry{tileId}";
@@ -315,6 +337,42 @@ public class TabbedMenu : MonoBehaviour
 
         _activeTiles.Add(tileId);
     }
+
+    private void InitConfig()
+    {
+        var dropdown = InitConfigDropdown();
+        _configContainer.Add(dropdown);
+        _loadConfigButton.clicked += delegate
+        {
+            XWFCAnimator.Instance.LoadConfig(dropdown.value);
+            /*
+             * Update selected terminals and adjacency constraints in UI.
+             */
+            SetActiveTiles(XWFCAnimator.Instance.TileSet.Keys.ToList());
+            OnTileSetChange(XWFCAnimator.Instance.GetTileAdjacencyConstraints());
+        };
+        _saveConfigButton.clicked += delegate
+        {
+            var path = XWFCAnimator.Instance.SaveConfig();
+            var fileName = FileUtil.GetFileNameFromPath(path, false);
+            dropdown.choices.Add(fileName);
+            dropdown.value = dropdown.choices.Last();
+        };
+    }
+
+    private DropdownField InitConfigDropdown()
+    {
+        var dropDown = new DropdownField();
+        var paths = XWFCAnimator.Instance.FindConfigFileNames().ToList();
+        foreach (var path in paths)
+        {
+            dropDown.choices.Add(path);
+        }
+        dropDown.value = paths.Count > 0 ? paths.Last() : "";
+        return dropDown;
+    }
+    
+    
 
     private static void ToggleDisabled(VisualElement element)
     {

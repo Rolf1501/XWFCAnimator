@@ -35,6 +35,9 @@ namespace XWFC
         public ExpressiveWFC(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
             Vector3Int gridExtent, Dictionary<int, float>? defaultWeights = null, bool writeResults = false, int? seed = null, bool allowBacktracking = true)
         {
+            /*
+             * Constructor for XWFC with predefined adjacency constraints between NUTs.
+             */
             _tileSet = tileSet;
             GridExtent = gridExtent;
             
@@ -44,9 +47,10 @@ namespace XWFC
 
             _allowBacktracking = allowBacktracking;
 
-            int[] keys = _tileSet.Keys.ToArray();
-            AdjMatrix = new AdjacencyMatrix(keys, adjacencyConstraints, _tileSet);
+            AdjMatrix = new AdjacencyMatrix(adjacencyConstraints, _tileSet);
 
+            AdjMatrix = new AdjacencyMatrix(adjacencyConstraints, _tileSet);
+            
             _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
             _defaultWeights = ExpandDefaultWeights(defaultWeights);
             
@@ -70,6 +74,32 @@ namespace XWFC
             _trainingDataFormatter = new TrainingDataFormatter(outPath,"output.csv");
             
             _trainingDataFormatter.WriteConfig(GridExtent, _seed.ToString(), AdjMatrix);
+        }
+
+        public ExpressiveWFC(TileSet tileSet, Vector3Int extent, List<InputGrid> inputGrids)
+        {
+            /*
+             * Constructor for XWFC with a list of grids with preset tile ids and instance ids to learn from.
+             * Note that each cell may contain multiple tiles as valid occupants, due to ambiguity.
+             * One layer of abstraction.
+             */
+            GridExtent = extent;
+            _tileSet = tileSet;
+            AdjMatrix = new AdjacencyMatrix(tileSet, inputGrids);
+            _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
+            _defaultWeights = ExpandDefaultWeights(null);
+            Offsets = OffsetFactory.GetOffsets(3);
+            CleanGrids(GridExtent, _defaultWeights, _maxEntropy);
+            CleanState();
+        }
+
+        public ExpressiveWFC(TileSet tileSet, Vector3 extent, List<Grid<string>> learnGrids)
+        {
+            /*
+             * Constructor for XWFC with a list of grids containing string values to learn from.
+             * Zero layers of abstraction.
+             */
+            
         }
 
         private Vector3 CenterCoord()
@@ -236,7 +266,6 @@ namespace XWFC
             var (_, _, tO) = AdjMatrix.AtomMapping.Get(choiceId);
 
             SetOccupied(coord, choiceId);
-
             return (coord, choiceId, tO);
         }
 
@@ -244,6 +273,8 @@ namespace XWFC
         {
             GridManager.Grid.Set(coord, id);
             GridManager.Entropy.Set(coord, CalcEntropy(1));
+            _propQueue.Enqueue(new Propagation(new int[] { id }, coord));
+            
             // Whenever a cell is set to be occupied, progress is made and needs to be updated.
             UpdateProgress();
         }
@@ -408,6 +439,11 @@ namespace XWFC
                         if (Math.Abs(GridManager.Entropy.Get(n) - _maxEntropy) < 0.0001)
                             continue;
 
+                        if (nChoices == 1)
+                        {
+                            SetOccupied(n, neighborWChoicesI[0]);
+                        }
+
                         if (!GridManager.Grid.IsChosen(n))
                             _propQueue.Enqueue(new Propagation(neighborWChoicesI.ToArray(), n));
                     }
@@ -421,6 +457,7 @@ namespace XWFC
 
         public bool IsDone()
         {
+            return _collapseQueue.IsDone();
             return _progress >= 100;
         }
 

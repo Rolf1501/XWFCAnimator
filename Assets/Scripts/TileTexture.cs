@@ -25,7 +25,7 @@ public class TileTexture
         _camera.transform.Translate(new Vector3(0,0,-offset));
         obj.transform.position = _camera.transform.position;
         
-        RenderTexture = new RenderTexture(128,128,16,RenderTextureFormat.ARGB32);
+        RenderTexture = new RenderTexture(256,256,16,RenderTextureFormat.ARGB32);
         RenderTexture.name = "RenderTexture1";
         _camera.targetTexture = RenderTexture;
     }
