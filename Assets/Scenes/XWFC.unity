@@ -478,12 +478,9 @@ MonoBehaviour:
   unitTilePrefab: {fileID: 8410042719729564467, guid: 3613ece26b5228a4a9482bacca203304, type: 3}
   edgePrefab: {fileID: -8391222552659086748, guid: 96bac0e54ded09747a0c96e9dc7c68d8, type: 3}
   tileLabelPrefab: {fileID: 3078947573050405680, guid: f3cbec5e06abcc5409468549833779dd, type: 3}
-  extent: {x: 3, y: 3, z: 3}
+  extent: {x: 5, y: 1, z: 5}
   stepSize: 20
-  seed: -1
-  WriteResults: 1
   delay: 0
-  AllowBacktracking: 0
 --- !u!4 &1830932354
 Transform:
   m_ObjectHideFlags: 0

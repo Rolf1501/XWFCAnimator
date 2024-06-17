@@ -4,6 +4,7 @@ using UnityEngine;
 
 using System.Collections.Generic;
 using System.Text;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace XWFC
@@ -58,28 +59,31 @@ namespace XWFC
         public Bidict<(int tileId, Vector3 atomCoord, int orientation), int> AtomMapping { get; private set; } // Mapping of atom indices to relative atom coordinate, corresponding terminal id and orientation.
         public Dictionary<Vector3, bool[,]> AtomAdjacencyMatrix { get; private set; }
         private Dictionary<Vector3, float[,]> AtomAdjacencyMatrixW;
-        public Dictionary<int, (int, int)> TileAtomRangeMapping { get; private set; } // Reserves an index range for the atoms of the tile.
+        public Dictionary<int, (int, int)> TileAtomRange2DMapping { get; private set; } // Reserves an index Range2D for the atoms of the tile.
 
-        public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, int offsetsDimensions = 3)
+        public Dictionary<int, float> TileWeigths;
+        
+        public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, [CanBeNull] Dictionary<int, float> defaultWeights, int offsetsDimensions = 3)
         {
             
             Init(tileSet, offsetsDimensions);
-            
+
+            TileWeigths = ExpandDefaultWeights(defaultWeights);
             TileAdjacencyConstraints = tileAdjacencyConstraints;
             
-
             InitTileAdjacency();
             InferTileAdjacencyConstraints(TileAdjacencyConstraints);
             InferAtomAdjacencies();
         }
         
-        public AdjacencyMatrix(TileSet tiles, List<InputGrid> grids)
+        public AdjacencyMatrix(TileSet tiles, List<InputGrid> grids, [CanBeNull] Dictionary<int, float> tileWeights)
         {
             /*
              * Infer adjacency constraints from input.
              */
             var offsetDimensions = 3;
             Init(tiles, offsetDimensions);
+            TileWeigths = ExpandDefaultWeights(tileWeights);
             
             InnerAtomAdjacency();
 
@@ -113,6 +117,35 @@ namespace XWFC
             // Process atomized grid.
             Debug.Log("Atom adjacency derived from grid.");
         }
+        
+        private Dictionary<int, float> ExpandDefaultWeights([CanBeNull] Dictionary<int, float> defaultWeights)
+        {
+            /*
+             * Expands the default weights when the weights are specified per tile. Returns the default weights instead.
+             */
+
+            // If the number of weights is neither equal to the number of atoms or the number of terminals, set all weights of all atoms to 1.
+            if (defaultWeights == null || defaultWeights.Count != TileSet.Count)
+            {
+                return Enumerable.Range(0, GetNAtoms()).ToDictionary(k => k, v => 1f);
+            }
+
+            // No need to expand if weights are specified per atom already.
+            if (defaultWeights.Count == GetNAtoms()) return defaultWeights;
+
+            // Otherwise, expand the weights of the terminals to atoms. 
+            var aug = new Dictionary<int, float>();
+            foreach (var (k, v) in defaultWeights)
+            {
+                var (start, end) = TileAtomRange2DMapping[k];
+                for (int i = start; i < end; i++)
+                {
+                    aug[i] = v;
+                }
+            }
+
+            return aug;
+        }
 
         private void Init(TileSet tileSet, int offsetsDimensions)
         {
@@ -128,13 +161,13 @@ namespace XWFC
             AtomMapping = new Bidict<(int, Vector3, int), int>();
             AtomAdjacencyMatrix = new Dictionary<Vector3, bool[,]>();
             AtomAdjacencyMatrixW = new Dictionary<Vector3, float[,]>();
-            TileAtomRangeMapping = new Dictionary<int, (int, int)>();
+            TileAtomRange2DMapping = new Dictionary<int, (int, int)>();
             
             _tileIdToIndexMapping = MapTileIdToIndex(TileSet);
             
-            // Create tile to atom range mapping.
+            // Create tile to atom Range2D mapping.
             int nAtoms;
-            (TileAtomRangeMapping, nAtoms) = MapTileAtomRange(TileSet);
+            (TileAtomRange2DMapping, nAtoms) = MapTileAtomRange2D(TileSet);
             InitAtomAdjacencyMatrix(nAtoms);
         }
 
@@ -312,12 +345,14 @@ namespace XWFC
         private void SetAtomAdjacency(int thisAtomId, int thatAtomId, Vector3 offset)
         {
             AtomAdjacencyMatrix[offset][thisAtomId, thatAtomId] = true;
-            AtomAdjacencyMatrixW[offset][thisAtomId, thatAtomId] += 1;
+            AtomAdjacencyMatrixW[offset][thisAtomId, thatAtomId] = 1;
+            // AtomAdjacencyMatrixW[offset][thisAtomId, thatAtomId] += 1;
 
             // Adjacency constraints are symmetric.
             var complement = Vector3Util.Negate(offset);
             AtomAdjacencyMatrix[complement][thatAtomId, thisAtomId] = true;
-            AtomAdjacencyMatrixW[complement][thatAtomId, thisAtomId] += 1;
+            AtomAdjacencyMatrixW[complement][thatAtomId, thisAtomId] = 1;
+            // AtomAdjacencyMatrixW[complement][thatAtomId, thisAtomId] += 1;
         }
         private static TileSet ToTileSet(Dictionary<int, (bool[,,] mask, Color color)> tiles)
         {
@@ -336,7 +371,7 @@ namespace XWFC
             return AtomMapping.GetNEntries();
         }
 
-        private static int CalcAtomRange(Tile tile)
+        private static int CalcAtomRange2D(Tile tile)
         {
             return tile.NAtoms;
         }
@@ -346,15 +381,15 @@ namespace XWFC
             OuterAtomAdjacency(); // With atoms from another molecule.
         }
 
-        private (Dictionary<int, (int start, int end)> mapping, int nAtoms) MapTileAtomRange(TileSet tiles)
+        private (Dictionary<int, (int start, int end)> mapping, int nAtoms) MapTileAtomRange2D(TileSet tiles)
         {
             int nAtoms = 0;
             var mapping = new Dictionary<int, (int start, int end)>();
-            // Map each terminal to a range in the mapping list.
+            // Map each terminal to a Range2D in the mapping list.
             foreach (int tileId in tiles.Keys)
             {
                 Tile t = TileSet[tileId];
-                int tAtoms = CalcAtomRange(t);
+                int tAtoms = CalcAtomRange2D(t);
                 mapping[tileId] = (nAtoms, nAtoms + tAtoms);
                 nAtoms += tAtoms;
             }
@@ -497,25 +532,25 @@ namespace XWFC
             return sliderMinPositionFromBase;
         }
 
-        private static T[,] SelectRegion2D<T>(T[,] matrix, Range range)
+        private static T[,] SelectRegion2D<T>(T[,] matrix, Range2D Range2D)
         {
-            var output = new T[range.GetYLength(), range.GetXLength()];
-            for (int i = 0; i < range.GetYLength(); i++)
+            var output = new T[Range2D.GetYLength(), Range2D.GetXLength()];
+            for (int i = 0; i < Range2D.GetYLength(); i++)
             {
-                for (int j = 0; j < range.GetXLength(); j++)
+                for (int j = 0; j < Range2D.GetXLength(); j++)
                 {
-                    output[i, j] = matrix[range.YStart + i, range.XStart + j];
+                    output[i, j] = matrix[Range2D.YRange.Start + i, Range2D.XRange.Start + j];
                 }
             }
 
             return output;
         }
 
-        private int[] FlattenedSliceMask(Range range, int[,] mask)
-        // private int[] FlattenedSliceMask(Range range, Span2D<int> mask)
+        private int[] FlattenedSliceMask(Range2D Range2D, int[,] mask)
+        // private int[] FlattenedSliceMask(Range2D Range2D, Span2D<int> mask)
         {
-            // var sliced = mask.Slice(range.YStart, range.XStart, range.GetYLength(), range.GetXLength());
-            int[,] sliced = SelectRegion2D(mask, range);
+            // var sliced = mask.Slice(Range2D.YStart, Range2D.XStart, Range2D.GetYLength(), Range2D.GetXLength());
+            int[,] sliced = SelectRegion2D(mask, Range2D);
             // var maskArr = new int[mask.Length];
             // sliced.CopyTo(maskArr);
             int[] maskArr = Flatten(sliced);
@@ -555,7 +590,7 @@ namespace XWFC
                 [offsetDirectionIndex] = 0
             };
 
-            var (up, looking) = Tile.CalcUpAndLookingDirections(offsetDirectionIndex, false);
+            var (up, looking) = VoidMasks.CalcUpAndLookingDirections(offsetDirectionIndex, false);
             
             int sign = offset[offsetDirectionIndex] < 0 ? -1 : 1;
             
@@ -567,20 +602,20 @@ namespace XWFC
             for (int y = 0; y < shifts.y; y++)
             {
                 // Find the overlapping regions of the overlaid void void masks in up-direction (i.e. relative Y).
-                var (startYSlider, endYSlider) = CalcSliderRange(sliderData.MaxY, baseData.MaxY, y);
-                var (startYBase, endYBase) = CalcBaseRange(baseData.MaxY, startYSlider, endYSlider, y);
+                var (startYSlider, endYSlider) = CalcSliderRange2D(sliderData.MaxY, baseData.MaxY, y);
+                var (startYBase, endYBase) = CalcBaseRange2D(baseData.MaxY, startYSlider, endYSlider, y);
 
                 for (int x = 0; x < shifts.x; x++)
                 {
                     // Find the overlapping regions of the overlaid void void masks in looking-direction (i.e. relative X).
-                    var (startXSlider, endXSlider) = CalcSliderRange(sliderData.MaxX, baseData.MaxX, x);
-                    var (startXBase, endXBase) = CalcBaseRange(baseData.MaxX, startXSlider, endXSlider, x);
+                    var (startXSlider, endXSlider) = CalcSliderRange2D(sliderData.MaxX, baseData.MaxX, x);
+                    var (startXBase, endXBase) = CalcBaseRange2D(baseData.MaxX, startXSlider, endXSlider, x);
                     
-                    var sliderRange = new Range(startXSlider, endXSlider, startYSlider, endYSlider);
-                    var sliderSlice = FlattenedSliceMask(sliderRange, sliderData.VoidMask);
+                    var sliderRange2D = new Range2D(startXSlider, endXSlider, startYSlider, endYSlider);
+                    var sliderSlice = FlattenedSliceMask(sliderRange2D, sliderData.VoidMask);
                     
-                    var baseRange = new Range(startXBase, endXBase, startYBase, endYBase);
-                    var baseSlice = FlattenedSliceMask(baseRange, baseData.VoidMask);
+                    var baseRange2D = new Range2D(startXBase, endXBase, startYBase, endYBase);
+                    var baseSlice = FlattenedSliceMask(baseRange2D, baseData.VoidMask);
                     
                     int minSum = CalcMinSum(baseSlice, baseData.ShapeXyz[offsetDirectionIndex], 
                         sliderSlice, sliderData.ShapeXyz[offsetDirectionIndex]);
@@ -672,10 +707,10 @@ namespace XWFC
             return true;
         }
 
-        private static (int, int) CalcSliderRange(int maxSlider, int maxBase, int shift)
+        private static (int, int) CalcSliderRange2D(int maxSlider, int maxBase, int shift)
         {
             /*
-            Calculates the slider sliding window range, for a given shift d.
+            Calculates the slider sliding window Range2D, for a given shift d.
             Do not exceed the slider window's bounds.
             When the slider's coverage is smaller than the base window y, the base window should not exceed the y length of the slider.
 
@@ -689,22 +724,22 @@ namespace XWFC
             /*
             Same cases as before. In case (1), the last index of the slider still overlaps with an index of the base. Hence, the cap.
             In case (2), the length of the slider window should not exceed the length of the base.
-            +1 is to compensate for numpy range handling.
+            +1 is to compensate for numpy Range2D handling.
             */
             int end = Math.Min(maxSlider, maxSlider + maxBase - shift) + 1;
             return (start, end);
         }
 
-        private static (int, int) CalcBaseRange(int maxBase, int startSlider, int endSlider, int shift)
+        private static (int, int) CalcBaseRange2D(int maxBase, int startSlider, int endSlider, int shift)
         {
             /*
-            Calculates the base sliding window range, for a given shift d.
-            Slider window range is used to infer base window range, since the two should not differ in length.
+            Calculates the base sliding window Range2D, for a given shift d.
+            Slider window Range2D is used to infer base window Range2D, since the two should not differ in length.
             Stays 0 until y is larger than the slider, at which point the base start should start to increase as well.
 
             Do not exceed the slider window's bounds.
             When the slider's coverage is smaller than the base window y, the base window should not exceed the y length of the slider.
-            Note that the second argument does not contain +1, since this is already incorporated in the end slider range.
+            Note that the second argument does not contain +1, since this is already incorporated in the end slider Range2D.
             */
             int start = Math.Max(shift - endSlider, 0);
             int end = Math.Min(maxBase + 1, start + endSlider - startSlider);
@@ -794,33 +829,7 @@ namespace XWFC
             return stringBuilder.ToString();
         }
     }
-
-    public record Range
-    {
-        public int XStart { get; }
-        public int XEnd { get; }
-        public int YStart { get; }
-        public int YEnd { get; }
-
-        public Range(int xStart, int xEnd, int yStart, int yEnd)
-        {
-            XStart = xStart;
-            XEnd = xEnd;
-            YStart = yStart;
-            YEnd = yEnd;
-            if (XStart > XEnd || YStart > YEnd) throw new Exception("Range start must not be larger than end.");
-        }
-
-        public int GetYLength()
-        {
-            return YEnd - YStart;
-        }
-        
-        public int GetXLength()
-        {
-            return XEnd - XStart;
-        }
-    }
+    
     public record VmData
     {
         public int Orientation { get; }
@@ -880,7 +889,7 @@ namespace XWFC
             var adjConstraintsString = dict["tileAdjacencyConstraints"];
             var adjConstraints = HashSetAdjacency.FromJson(adjConstraintsString);
 
-            return new AdjacencyMatrix(adjConstraints, tileset);
+            return new AdjacencyMatrix(adjConstraints, tileset, null);
         }
     }
 }
