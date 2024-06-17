@@ -590,7 +590,7 @@ namespace XWFC
                 [offsetDirectionIndex] = 0
             };
 
-            var (up, looking) = Tile.CalcUpAndLookingDirections(offsetDirectionIndex, false);
+            var (up, looking) = VoidMasks.CalcUpAndLookingDirections(offsetDirectionIndex, false);
             
             int sign = offset[offsetDirectionIndex] < 0 ? -1 : 1;
             

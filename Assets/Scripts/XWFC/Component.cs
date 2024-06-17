@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Unity.VisualScripting;
+using UnityEngine;
 
 namespace XWFC
 {
@@ -41,6 +42,26 @@ namespace XWFC
         public Range3D Ranges()
         {
             return new Range3D(XRange(), YRange(), ZRange());
+        }
+
+        public void CalcVoidMasks(Range3D region)
+        {
+            /*
+             * Find dimension that is either an exact fit/touching.
+             * If there is no such dimension, try each of the three dimensions, in order y, x, z.
+             */
+            var thisRange = new Range3D(Origin, Origin + Extent);
+            var isZeroLength = region.IsZero();
+
+            // Follows the yxz axis indices. Index corresponds to the orientation of the supposed plane of intersection. 
+            var offsetDimensionIndex = isZeroLength.y ? 0 : isZeroLength.x ? 1 : isZeroLength.z ? 2 : -1;
+            
+            if (offsetDimensionIndex == -1)
+            {
+                offsetDimensionIndex = 0; 
+                // Intersection region is 3D.
+                // So, any of the dimension are valid. For now, assume y direction.
+            }
         }
     }
 }

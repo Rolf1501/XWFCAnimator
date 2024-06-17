@@ -55,6 +55,7 @@
     <Compile Include="Assets\Scripts\Auxiliary.cs" />
     <Compile Include="Assets\Scripts\XWFC\collapseQueue.cs" />
     <Compile Include="Assets\Scripts\XWFC\TileSet.cs" />
+    <Compile Include="Assets\Scripts\XWFC\VoidMasks.cs" />
     <Compile Include="Assets\Scripts\XWFCAnimator.cs" />
     <Compile Include="Assets\Scripts\TileTexture.cs" />
     <Compile Include="Assets\Scripts\XWFC\adjacency.cs" />
