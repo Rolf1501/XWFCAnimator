@@ -10,29 +10,28 @@ namespace XWFC
 {
     public class ServerInteraction
     {
-        public static async Task<Stream> RequestAction()
+        public static async Task<string> RequestAction(string state)
         {
             Debug.Log("Starting request....");
-            var url = "http://127.0.0.1:5000/test";
-            // // using var webRequest = UnityWebRequest.Get("https://duckduckgo.com/");
-            // using var webRequest = UnityWebRequest.Get(url);
-            // yield return webRequest.SendWebRequest();
-            //
-            // // using var webPost = UnityWebRequest.Post(url, );
-            //
-            // if (webRequest.result != UnityWebRequest.Result.Success)
-            // {
-            //     Debug.Log($"Encountered error: {webRequest.error}");
-            // }
-            // else
-            // {
-            //     Debug.Log($"Got result {webRequest.result}");
-            // }
+            var url = "http://127.0.0.1:5000/predict";
+
             WebRequest myWebRequest = WebRequest.Create(url);
+            myWebRequest.ContentType = "application/json";
+            myWebRequest.Method = "POST";
+            await using (var streamWriter = new StreamWriter(await myWebRequest.GetRequestStreamAsync()))
+            {
+                var json = $"{{\"state\":\"{state}\"}}";
+
+                await streamWriter.WriteAsync(json);
+            }
+
             using (var myWebResponse = await myWebRequest.GetResponseAsync())
             {
-                var output = myWebResponse.GetResponseStream();
-                Debug.Log(output);
+                var stream = myWebResponse.GetResponseStream();
+                if (stream == null) return "";
+                var streamReader = new StreamReader(stream);
+                var output = streamReader.ReadToEnd();
+                Debug.Log("REQUEST OUTPUT " + output);
                 return output;
             }
         }

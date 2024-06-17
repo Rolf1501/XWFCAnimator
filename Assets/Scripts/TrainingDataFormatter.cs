@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.SqlTypes;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -111,6 +112,19 @@ namespace XWFC
              * - action: nTiles cells.
              */
             var builder = new StringBuilder();
+            
+            
+
+            foreach (var value in action)
+            {
+                builder.Append(value + ",");
+            }
+
+            return builder;
+        }
+
+        public static string GetStateString(GridManager gridManager, Vector3Int index, Vector3Int observationWindow)
+        {
             var padded = new Grid<bool[]>(observationWindow, new bool[gridManager.GetNChoices()]);
             var center = Vector3Util.Scale(observationWindow, 0.5f);
             var posBoundDiff = observationWindow - center;
@@ -135,19 +149,16 @@ namespace XWFC
             
             // var intFlattened = flattened.SelectMany(x => x.Select(x0 => x0 ? 1 : 0).ToArray()).ToArray();
             var paddedFlattened = Grid<bool[]>.Flatten(padded).SelectMany(x => x.Select(x0 => x0 ? 1 : 0).ToArray()).ToArray();
-            
+
+            var builder = new StringBuilder();
             foreach (var t in paddedFlattened)
             {
                 builder.Append(t + ",");
             }
 
-            foreach (var value in action)
-            {
-                builder.Append(value + ",");
-            }
-
-            return builder;
+            return builder.ToString();
         }
+            
 
         private void InitStateActionQueue()
         {

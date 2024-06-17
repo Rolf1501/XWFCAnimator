@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 using Random = System.Random;
 
@@ -24,6 +25,7 @@ namespace XWFC
         private int _counter;
         public Stack<Occupation> OccupationLog = new();
         public bool WriteResults;
+        public bool PodOracle;
         private TrainingDataFormatter _trainingDataFormatter;
         private static Random _seededRandom;
         private int _seed;
@@ -42,6 +44,8 @@ namespace XWFC
             _tileSet = tileSet;
             GridExtent = gridExtent;
             _forceCompleteTiles = forceCompleteTiles;
+
+            PodOracle = true;
             
             _seed = seed ?? new Random().Next();
             _seededRandom = new Random(_seed);
@@ -57,8 +61,7 @@ namespace XWFC
             
             Offsets = OffsetFactory.GetOffsets(3);
             
-            CleanGrids();
-            CleanState();
+            Clean();
             
             WriteResults = writeResults;
             InitTrainingDataFormatter();
@@ -233,10 +236,11 @@ namespace XWFC
             Debug.Log("All done!");
         }
 
-        public HashSet<Occupation> CollapseOnce()
+        public async Task<HashSet<Occupation>> CollapseOnce()
         {
             Debug.Log("Requesting...");
-            var response = ServerInteraction.RequestAction();
+            var state = TrainingDataFormatter.GetStateString(GridManager, new Vector3Int(0, 0, 0), GridExtent);
+            var response = ServerInteraction.RequestAction(state);
             Debug.Log("Request done.");
             /*
              * Performs a single collapse and outputs the affected cells' coordinates.
@@ -279,6 +283,13 @@ namespace XWFC
                 /*
                  * Conflict block.
                  */
+                if (PodOracle)
+                {
+                    var conflictState = TrainingDataFormatter.GetStateString(GridManager, new Vector3Int(x, y, z),
+                        GridManager.ChoiceBooleans.GetExtent());
+                    await ServerInteraction.RequestAction(conflictState);
+
+                }
                 
                 if (!_allowBacktracking)
                 {

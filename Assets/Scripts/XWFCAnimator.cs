@@ -629,7 +629,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public HashSet<Occupation> CollapseOnce()
     {
-        return !MayCollapse() ? new HashSet<Occupation>() : _xwfc.CollapseOnce();
+        return !MayCollapse() ? new HashSet<Occupation>() : _xwfc.CollapseOnce().Result;
     }
 
     public HashSet<Occupation> CollapseAndDrawOnce()
