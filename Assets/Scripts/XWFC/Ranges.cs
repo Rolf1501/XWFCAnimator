@@ -145,5 +145,14 @@ namespace XWFC
         {
             return (XRange.Equals(range.XRange), YRange.Equals(range.YRange), ZRange.Equals(range.ZRange));
         }
+
+        public Vector3Int Origin()
+        {
+            return new Vector3Int(XRange.Start, YRange.Start, ZRange.Start);
+        }
+        public Vector3Int Extent()
+        {
+            return new Vector3Int(XRange.End, YRange.End, ZRange.End);
+        }
     }
 }

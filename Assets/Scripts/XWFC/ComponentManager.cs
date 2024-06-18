@@ -34,6 +34,7 @@ namespace XWFC
              */
         }
 
+        
         public void AddComponents(Component[] components)
         {
             var key = Components.Count;

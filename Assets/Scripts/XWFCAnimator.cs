@@ -5,15 +5,12 @@ using System.Linq;
 using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Debug = UnityEngine.Debug;
 using XWFC;
 using Canvas = UnityEngine.Canvas;
 using Component = XWFC.Component;
 using Random = System.Random;
 using Vector3 = UnityEngine.Vector3;
-
-using InputTiles = System.Collections.Generic.Dictionary<int, (bool[,,] mask, UnityEngine.Color color)>;
 
 public class XWFCAnimator : MonoBehaviour
 {
@@ -72,8 +69,10 @@ public class XWFCAnimator : MonoBehaviour
         var componentManager = new ComponentManager();
         componentManager.AddComponents(houseComponents);
         componentManager.ComputeIntersections();
+        componentManager.Components[0].CalcOffset(new Range3D(new Vector3Int(0,0,0), new Vector3Int(0, 10, 1)));
         
         var (activeTiles, activeWeights) = houseDetails;
+        
         
         var activeTileSet = ToActiveTileSet(activeTiles);
 
@@ -117,9 +116,9 @@ public class XWFCAnimator : MonoBehaviour
     private Component[] GetHouseComponents()
     {
         // Three components stacked in the y-direction.
-        var baseExtent = new Vector3Int(30, 20, 1);
-        var floorExtent = new Vector3Int(20, 20, 1);
-        var roofExtent = new Vector3Int(20, 20, 1);
+        var baseExtent = new Vector3Int(30, 1, 20);
+        var floorExtent = new Vector3Int(20, 1, 20);
+        var roofExtent = new Vector3Int(20, 1, 20);
 
         var baseOrigin = new Vector3Int(0,0,0);
         var floorOrigin = baseOrigin;
@@ -213,7 +212,7 @@ public class XWFCAnimator : MonoBehaviour
         );
         
         var houseTiles = new Tile[] { doorTile, brickTile, halfBrickTile, grassTile, soilTile, windowTile, emptyTile };
-        var weights = new float[] { 1, 1, 1, 1, 1, 1, 2f};
+        var weights = new float[] { 1, 1, 1, 1, 1, 1, 1};
         return (houseTiles, weights);
     }
     private List<List<(int, Vector3)>> GetHousePatterns()
@@ -334,10 +333,10 @@ public class XWFCAnimator : MonoBehaviour
             brickPattern,
             grassSoilPattern,
             windowBrickPattern,
-            // emptyEmptyPattern,
-            // emptyBrickPattern,
-            // emptyHalfBrickPattern,
-            // emptyGrassPattern,
+            emptyEmptyPattern,
+            emptyBrickPattern,
+            emptyHalfBrickPattern,
+            emptyGrassPattern,
         };
         return patterns;
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -49,6 +50,7 @@ namespace XWFC
         public static Relation FromJson(string s)
         {
             var json = JsonConvert.DeserializeObject<Dictionary<string, string>>(s);
+            if (json == null) throw new Exception($"Cannot deserialize input {s} to JSON.");
             return new Relation(json["other"], json["rotations"], json["weight"]);
             // return new Relation(int.Parse(json["other"]), rotations, float.Parse(json["weight"]));
         }

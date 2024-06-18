@@ -63,7 +63,6 @@ namespace XWFC
             
             Offsets = OffsetFactory.GetOffsets(3);
             Clean();
-            int z = 0;
         }
         
         

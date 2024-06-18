@@ -1,4 +1,5 @@
-﻿using Unity.VisualScripting;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace XWFC
@@ -14,6 +15,8 @@ namespace XWFC
         public TileSet Tiles;
         public InputGrid[] InputGrids;
         public Grid<int> Grid;
+
+        private Dictionary<Vector3, int[,]> _voidMasks = new ();
 
         public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, InputGrid[] inputGrids)
         {
@@ -44,13 +47,48 @@ namespace XWFC
             return new Range3D(XRange(), YRange(), ZRange());
         }
 
-        public void CalcVoidMasks(Range3D region)
+        public void CalcVoidMasks()
         {
+            var (x, y, z) = Vector3Util.CastInt(Grid.GetExtent());
+            var boolMask = new bool[y,x,z];
+            for (int bx = 0; bx < x; bx++)
+            {
+                for (int by = 0; by < y; by++)
+                {
+                    for (int bz = 0; bz < z; bz++)
+                    {
+                        if (Grid.Get(bx,by,bz) != Grid.DefaultFillValue)
+                        {
+                            boolMask[by, bx, bz] = true;
+                        }
+                    }
+                }
+            }
+
+            var (negY, posY) = VoidMasks.CalcVoidMask(boolMask, 0);
+            var (negX, posX) = VoidMasks.CalcVoidMask(boolMask, 1);
+            var (negZ, posZ) = VoidMasks.CalcVoidMask(boolMask, 2);
+
+            
+            _voidMasks[new Vector3(0, 1, 0)] = posY;
+            _voidMasks[new Vector3(0, -1, 0)] = negY;
+            _voidMasks[new Vector3(1, 0, 0)] = posX;
+            _voidMasks[new Vector3(-1, 0, 0)] = negX;
+            _voidMasks[new Vector3(0, 0, 1)] = posZ;
+            _voidMasks[new Vector3(0, 0, -1)] = negZ;
+        }
+
+        public (int offset, Vector3Int direction) CalcOffset(Range3D region, OffsetMode mode = OffsetMode.Max)
+        {
+            if (_voidMasks.Values.Count == 0)
+            {
+                CalcVoidMasks();
+            }
+
             /*
              * Find dimension that is either an exact fit/touching.
              * If there is no such dimension, try each of the three dimensions, in order y, x, z.
              */
-            var thisRange = new Range3D(Origin, Origin + Extent);
             var isZeroLength = region.IsZero();
 
             // Follows the yxz axis indices. Index corresponds to the orientation of the supposed plane of intersection. 
@@ -62,6 +100,84 @@ namespace XWFC
                 // Intersection region is 3D.
                 // So, any of the dimension are valid. For now, assume y direction.
             }
+
+            /*
+             * Sign is used to denote whether the void mask in positive or negative direction should be used.
+             * The sign of the direction can be found by exploiting the fact that
+             * it can only be the negative sign if the region's origin value at the offset
+             * direction index matches that of the component's.
+             */
+            var sign = Vector3Util.GetByAxis(Origin, offsetDimensionIndex) 
+                       == Vector3Util.GetByAxis(region.Origin(), offsetDimensionIndex) ? -1 : 1;
+
+            var relativeOrigin = region.Origin() - Origin;
+            var relativeExtent = region.Extent() - Origin;
+
+            // Go over all axes and only include those not equal to the offset dimension index.
+            // This is used to determine the range that needs to be checked in the void mask.
+            // Should the region lie outside of the component's grid's bounds, cap.
+
+            var voidMaskStart = new List<int>();
+            var voidMaskEnd = new List<int>();
+            for (int i = 0; i < 3; i++)
+            {
+                if (i == offsetDimensionIndex) continue;
+                voidMaskStart.Add(Math.Max(0, Vector3Util.GetByAxis(relativeOrigin, i)));
+                voidMaskEnd.Add(Math.Min(Vector3Util.GetByAxis(Grid.GetExtent(), i) , Vector3Util.GetByAxis(relativeExtent, i)));
+            }
+
+            var direction = Vector3Util.SetByAxis(new Vector3Int(0, 0, 0), offsetDimensionIndex, sign);
+            var voidMask = _voidMasks[direction];
+
+            // To find proper adjacency of components, the offset is equal to the largest number of voids.
+            var offset = voidMask[0, 0];
+            int avg = 0;
+            int nItems = 0;
+            var items = new List<int>();
+            for (int i0 = voidMaskStart[0]; i0 < voidMaskEnd[0]; i0++)
+            {
+                for (int i1 = voidMaskStart[1]; i1 < voidMaskEnd[1]; i1++)
+                {
+                    var nVoids = voidMask[i0, i1]; 
+                    switch (mode)
+                    {
+                        case OffsetMode.Max: 
+                            if (nVoids < offset) continue;
+                            offset = nVoids;
+                            break;
+                        case OffsetMode.Min:
+                            if (nVoids > offset) continue;
+                            offset = nVoids;
+                            break;
+                        case OffsetMode.Average:
+                            avg += nVoids;
+                            nItems++;
+                            break;
+                        case OffsetMode.Median:
+                            items.Add(nVoids);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
+                    }
+                }
+            }
+            
+            items.Sort();
+            
+            return mode switch
+            {
+                OffsetMode.Average => ((int)(avg / (1.0f * nItems)), direction),
+                OffsetMode.Median => (items[(int)(items.Count * 0.5)], direction),
+                _ => (offset, direction)
+            };
         }
+    }
+
+    public enum OffsetMode
+    {
+        Max = 0,
+        Min = 1,
+        Average = 2,
+        Median = 3
     }
 }

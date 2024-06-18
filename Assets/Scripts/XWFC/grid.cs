@@ -39,9 +39,9 @@ namespace XWFC
             _grid = grid;
         }
 
-        public Vector3 GetExtent()
+        public Vector3Int GetExtent()
         {
-            return new Vector3(Width, Height, Depth);
+            return new Vector3Int(Width, Height, Depth);
         }
 
         public void Populate(T value)

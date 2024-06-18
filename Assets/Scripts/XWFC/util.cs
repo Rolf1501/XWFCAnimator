@@ -47,6 +47,34 @@ namespace XWFC
                 _ => new Vector3()
             };
         }
+
+        public static int GetByAxis(Vector3Int vector, int axis, bool useYXZ=true)
+        {
+            return axis switch
+            {
+                0 => useYXZ ? vector.y : vector.x,
+                1 => useYXZ ? vector.x : vector.y,
+                _ => vector.z
+            };
+        }
+
+        public static Vector3Int SetByAxis(Vector3Int vector, int axis, int value, bool useYXZ = true)
+        {
+            switch (axis)
+            {
+                case 0:
+                    if (useYXZ) vector.y = value; else vector.x = value;
+                    break;
+                case 1: 
+                    if (useYXZ) vector.x = value; else vector.y = value;
+                    break;
+                default: 
+                    vector.z = value;
+                    break;
+            }
+
+            return vector;
+        }
     }
     
     public static class Util
