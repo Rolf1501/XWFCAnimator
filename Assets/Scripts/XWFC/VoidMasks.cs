@@ -2,7 +2,7 @@
 {
     public class VoidMasks
     {
-        public static (int[,], int[,]) CalcVoidMask(bool[,,] mask, int axis)
+        public static (int[,] negative, int[,] positive) CalcVoidMask(bool[,,] mask, int axis)
         {
             // Void mask is created by looking at/projecting a mask onto a plane. For this we need an up (0,1,0) and looking direction.
 
@@ -54,7 +54,7 @@
             }
         }
         
-        public static (int, int) CalcUpAndLookingDirections(int axis, bool useYxz = true)
+        public static (int up, int looking) CalcUpAndLookingDirections(int axis, bool useYxz = true)
         {
             /*
              * Calculates the up and looking direction. Y is default up. Looking direction is always orthogonal to axis.
@@ -65,7 +65,7 @@
             if (!useYxz)
                 (y, x) = (1, 0);
 
-            return axis != y ? (y, axis == z ? x : z) : (z, x);
+            return axis != y ? (y, axis == z ? x : z) : (x, z);
         }
     }
 }
