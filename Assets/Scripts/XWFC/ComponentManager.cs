@@ -9,15 +9,16 @@ namespace XWFC
         public Dictionary<int, Component> Components = new();
         public Dictionary<int, List<(int componentId, Range3D range)>> Intersections = new();
         private Queue<int> _componentOrder = new();
-        private int _currentComponent;
+        private int _currentComponentId;
+        private Component _currentComponent;
 
         public Component Next()
         {
             if (!HasNext()) return null;
             
-            _currentComponent = _componentOrder.Dequeue();
-            
-            return Components[_currentComponent];
+            _currentComponentId = _componentOrder.Dequeue();
+            _currentComponent = Components[_currentComponentId];
+            return _currentComponent;
         }
 
         public bool HasNext()

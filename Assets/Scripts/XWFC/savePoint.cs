@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace XWFC
 {
     public class SavePointManager
     {
-        private readonly Stack<SavePoint> _savePoints = new();
+        private Stack<SavePoint> _savePoints = new();
         private const int MaxSavePointAttempts = 100;
         private const int SavePointIntervals = 300; // < 1 ? in percentages : in cells.
         private int _savePointAttempts;
@@ -54,5 +55,6 @@ namespace XWFC
             CollapseQueue = collapseQueue;
             Counter = counter;
         }
+        
     }
 }
