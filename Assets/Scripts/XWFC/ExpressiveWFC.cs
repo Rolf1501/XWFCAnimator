@@ -23,6 +23,7 @@ namespace XWFC
         private int _counter;
         public Stack<Occupation> OccupationLog = new();
         private bool _forceCompleteTiles;
+        private SavePoint _rootSave;
         
 
         #nullable enable
@@ -45,6 +46,7 @@ namespace XWFC
             Offsets = OffsetFactory.GetOffsets(3);
 
             Clean();
+            _rootSave = new SavePoint(GridManager, _collapseQueue, _counter);
         }
 
         public ExpressiveWFC(TileSet tileSet, Vector3Int extent, InputGrid[] inputGrids, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true)
@@ -63,6 +65,8 @@ namespace XWFC
             
             Offsets = OffsetFactory.GetOffsets(3);
             Clean();
+            _rootSave = new SavePoint(GridManager, _collapseQueue, _counter);
+
         }
         
         
@@ -306,6 +310,12 @@ namespace XWFC
             
             int undoneCells = _counter - savePoint.Counter;
             
+            LoadSavePoint(savePoint);
+            return undoneCells;
+        }
+
+        private void LoadSavePoint(SavePoint savePoint)
+        {
             GridManager = savePoint.GridManager.Deepcopy();
             _collapseQueue = savePoint.CollapseQueue.Copy();
             _counter = savePoint.Counter;
@@ -313,7 +323,6 @@ namespace XWFC
         
             // Important: clean the propagation queue.
             _propQueue.Clear();
-            return undoneCells;
         }
 
         private static int RandomChoice(bool[] choices, float[] weights)
@@ -467,7 +476,8 @@ namespace XWFC
 
         public void Reset()
         {
-            Clean();
+            LoadSavePoint(_rootSave);
+            // Clean();
         }
     }
 
