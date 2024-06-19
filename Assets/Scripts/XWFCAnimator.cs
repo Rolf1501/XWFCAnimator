@@ -42,6 +42,7 @@ public class XWFCAnimator : MonoBehaviour
     private HashSet<GameObject> _drawnTiles;
 
     private ComponentManager _componentManager;
+    private Component _currentComponent;
     
     [Flags]
     private enum StateFlag
@@ -87,7 +88,7 @@ public class XWFCAnimator : MonoBehaviour
         _drawnTiles = new HashSet<GameObject>();
         
         DrawTiles();
-        _xwfc.CollapseAutomatic();
+        // _xwfc.CollapseAutomatic();
         
         // if (!FindConfigFileNames().Any()) SaveConfig();
         // LoadConfig();
@@ -102,12 +103,12 @@ public class XWFCAnimator : MonoBehaviour
     {
         if (!HasNextComponent()) return;
         
-        var component = _componentManager.Next();
+        _currentComponent = _componentManager.Next();
         
-        _componentManager.SeedComponentGrid(ref component);
+        _componentManager.SeedComponentGrid(ref _currentComponent);
         
-        InitXWFComponent(component);
-        TileSet = component.Tiles;
+        InitXWFComponent(_currentComponent);
+        TileSet = _currentComponent.Tiles;
         CompleteTileSet = TileSet;
     }
 
@@ -595,13 +596,10 @@ public class XWFCAnimator : MonoBehaviour
         {
             _iterationsDone = 0;
         
-            var affectedCells = new HashSet<Occupation>();
             // while (MayIterate() && MayCollapse())
             while (MayIterate() && MayCollapse())
             {
-                // var cells = CollapseAndDrawOnce();
-                var cells = CollapseOnce();
-                affectedCells.UnionWith(cells);
+                CollapseOnce();
                 _iterationsDone++;
             }
             
@@ -651,20 +649,19 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
 
-    public HashSet<Occupation> CollapseOnce()
+    public void CollapseOnce()
     {
-        return !MayCollapse() ? new HashSet<Occupation>() : _xwfc.CollapseOnce();
+        if (MayCollapse()) _xwfc.CollapseOnce();
     }
 
-    public HashSet<Occupation> CollapseAndDrawOnce()
+    public void CollapseAndDrawOnce()
     {
         /*
          * Performs a single collapse and draws the resulting atoms.
          * Returns the set of affected cells.
          */
-        var affectedCells = CollapseOnce();
+        CollapseOnce();
         Draw();
-        return affectedCells;
     }
 
     private bool MayCollapse()
@@ -698,6 +695,8 @@ public class XWFCAnimator : MonoBehaviour
                 {
                     var drawing = _drawnGrid.Get(x, y, z);
                     var gridValue = grid.Get(x, y, z);
+                    // Drawing.DestroyAtom(drawing);
+                    // if (gridValue != grid.DefaultFillValue) DrawAtom(new Vector3(x,y,z),gridValue);
 
                     var coord = new Vector3(x, y, z);
                     if (gridValue == grid.DefaultFillValue && drawing.Atom != null)
@@ -713,7 +712,7 @@ public class XWFCAnimator : MonoBehaviour
                         }
                         DrawAtom(coord,gridValue);
                     }
-
+                    
                     if (_drawnGrid.Get(coord).Id != grid.Get(coord))
                     {
                         Debug.Log("Somehow not matched...");
@@ -731,7 +730,6 @@ public class XWFCAnimator : MonoBehaviour
         var edges = DrawEdges(atomId, atom);
         var drawing = new Drawing(atomId, atom, edges);
         UpdateColorFromAtom(atom, atomId);
-        // atom.GetComponent<Renderer>().material.color = GetTerminalColor(status);
         _drawnGrid.Set(coord, drawing);
     }
 
