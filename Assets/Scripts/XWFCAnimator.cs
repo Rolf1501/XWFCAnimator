@@ -17,7 +17,7 @@ public class XWFCAnimator : MonoBehaviour
     [SerializeField] private GameObject unitTilePrefab;
     [SerializeField] private GameObject edgePrefab;
     [SerializeField] private Canvas tileLabelPrefab;
-    public Vector3 extent;
+    public Vector3Int extent;
     public float stepSize;
     public TileSet TileSet;
     public TileSet CompleteTileSet = new();
@@ -40,6 +40,8 @@ public class XWFCAnimator : MonoBehaviour
     private HashSetAdjacency _adjacency;
 
     private HashSet<GameObject> _drawnTiles;
+
+    private ComponentManager _componentManager;
     
     [Flags]
     private enum StateFlag
@@ -66,28 +68,20 @@ public class XWFCAnimator : MonoBehaviour
         var houseDetails = GetHouseTiles();
         var houseComponents = GetHouseComponents();
 
-        var componentManager = new ComponentManager();
-        componentManager.AddComponents(houseComponents);
-        componentManager.ComputeIntersections();
-        componentManager.Components[0].CalcOffset(new Range3D(new Vector3Int(0,0,0), new Vector3Int(0, 10, 1)));
+        _componentManager = new ComponentManager();
+        _componentManager.AddComponents(houseComponents);
+        _componentManager.ComputeIntersections();
         
-        var (activeTiles, activeWeights) = houseDetails;
+        LoadNextComponent();
         
-        
-        var activeTileSet = ToActiveTileSet(activeTiles);
-
-        // var activeTileSet = tetrisTiles;
-        var patterns = GetHousePatterns();
-        
-        var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, activeTileSet, "");
-        
-        InitXWFCInput(activeTileSet, grids, activeWeights);
         TileSet = _xwfc.AdjMatrix.TileSet;
         
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
         
         PrintAdjacencyData();
+        
+        
 
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
         
@@ -99,22 +93,39 @@ public class XWFCAnimator : MonoBehaviour
         // LoadConfig();
     }
 
-    private TileSet ToActiveTileSet(Tile[] activeTiles)
+    private void LoadNextComponent()
     {
-        var activeTileSet = new TileSet();
+        if (!_componentManager.HasNext()) return;
+        
+        var component = _componentManager.Next();
+        
+        _componentManager.SeedComponentGrid(ref component);
+        
+        InitXWFCInput(component.Tiles, component.Grid.GetExtent(), component.InputGrids, component.TileWeigths);
+        TileSet = component.Tiles;
+    }
+
+    private TileSet ToTileSet(Tile[] tiles)
+    {
+        var tileSet = new TileSet();
         var key = 0;
-        foreach (var tile in activeTiles)
+        foreach (var tile in tiles)
         {
-            activeTileSet[key] = tile;
-            CompleteTileSet[key] = tile;
+            tileSet[key] = tile;
             key++;
         }
-        Enumerable.Range(0, activeTiles.Length).ToList().ForEach(i => activeTileSet[i] = activeTiles[i]);
-        return activeTileSet;
+        return tileSet;
     }
 
     private Component[] GetHouseComponents()
     {
+        var (houseTiles, weights) = GetHouseTiles();
+        var tileSet = ToTileSet(houseTiles);
+
+        // var activeTileSet = tetrisTiles;
+        var patterns = GetHousePatterns();
+        
+        var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, tileSet, "");
         // Three components stacked in the y-direction.
         var baseExtent = new Vector3Int(30, 1, 20);
         var floorExtent = new Vector3Int(20, 1, 20);
@@ -126,9 +137,9 @@ public class XWFCAnimator : MonoBehaviour
         var roofOrigin = floorOrigin;
         roofOrigin.y += floorExtent.y;
         
-        var baseComponent = new Component(baseOrigin, baseExtent, TileSet, new InputGrid[1]);
-        var floor = new Component(floorOrigin, floorExtent, TileSet, new InputGrid[1]);
-        var roof = new Component(roofOrigin, roofExtent, TileSet, new InputGrid[1]);
+        var baseComponent = new Component(baseOrigin, baseExtent, tileSet, grids.ToArray(), weights);
+        var floor = new Component(floorOrigin, floorExtent, tileSet, grids.ToArray(), weights);
+        var roof = new Component(roofOrigin, roofExtent, tileSet, grids.ToArray(), weights);
         var components = new Component[3] { baseComponent, floor, roof };
 
         return components;
@@ -401,16 +412,29 @@ public class XWFCAnimator : MonoBehaviour
         return tetrisTiles;
     }
 
-    private void InitXWFCInput(TileSet tiles, List<InputGrid> inputGrids, float[] activeWeights)
+    private void InitXWFCInput(TileSet tiles, Vector3Int gridExtent, InputGrid[] inputGrids, float[] weights)
     {
-        var weights = new Dictionary<int, float>();
+        _xwfc = new ExpressiveWFC(tiles, gridExtent, inputGrids, ToWeightDictionary(weights, tiles));
+        UpdateExtent(gridExtent);
+    }
+
+    private Dictionary<int, float> ToWeightDictionary(float[] weights, TileSet tileSet)
+    {
+        var dictionary = new Dictionary<int, float>();
         int i = 0;
-        foreach (var tilesKey in tiles.Keys)
+        foreach (var tilesKey in tileSet.Keys)
         {
-            weights[tilesKey] = activeWeights[i];
+            dictionary[tilesKey] = weights[i];
             i++;
         }
-        _xwfc = new ExpressiveWFC(tiles, extent, inputGrids, weights);
+
+        return dictionary;
+    }
+
+    private void InitXWFComponent(Component component)
+    {
+        _xwfc = new ExpressiveWFC(component.Tiles, component.Grid.GetExtent(), component.InputGrids,
+            ToWeightDictionary(component.TileWeigths, component.Tiles));
     }
 
     private void InitXWFC()
@@ -445,7 +469,7 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
 
-    public void UpdateTerminals(TileSet newTileSet)
+    public void UpdateTileSet(TileSet newTileSet)
     {
         var tempXWFC = _xwfc;
         try
@@ -782,13 +806,13 @@ public class XWFCAnimator : MonoBehaviour
 
     public void Reset()
     {
-        _xwfc.UpdateExtent(extent);
-        _drawnGrid.Map(Drawing.DestroyAtom);
+        _xwfc?.UpdateExtent(extent);
+        _drawnGrid?.Map(Drawing.DestroyAtom);
         _drawnGrid = InitDrawGrid();
         _activeStateFlag = 0;
     }
     
-    public void UpdateExtent(Vector3 newExtent)
+    public void UpdateExtent(Vector3Int newExtent)
     {
         if (extent.Equals(newExtent)) return;
         extent = newExtent;
@@ -844,7 +868,7 @@ public class XWFCAnimator : MonoBehaviour
         var contents = FileUtil.ReadFromFile(path);
         var adjMat = AdjacencyMatrixJsonFormatter.FromJson(contents);
         
-        UpdateTerminals(adjMat.TileSet);
+        UpdateTileSet(adjMat.TileSet);
         UpdateAdjacencyConstraints(adjMat.TileAdjacencyConstraints);
     }
 

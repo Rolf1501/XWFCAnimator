@@ -8,7 +8,22 @@ namespace XWFC
     {
         public Dictionary<int, Component> Components = new();
         public Dictionary<int, List<(int componentId, Range3D range)>> Intersections = new();
+        private Queue<int> _componentOrder = new();
+        private int _currentComponent;
 
+        public Component Next()
+        {
+            if (!HasNext()) return null;
+            
+            _currentComponent = _componentOrder.Dequeue();
+            
+            return Components[_currentComponent];
+        }
+
+        public bool HasNext()
+        {
+            return _componentOrder.Count > 0;
+        }
         public void SeedComponentGrid(ref Component component)
         {
             if (!Components.ContainsValue(component)) return;
@@ -42,6 +57,7 @@ namespace XWFC
             {
                 Components[key] = component;
                 key++;
+                _componentOrder.Enqueue(key);
             }
         }
 

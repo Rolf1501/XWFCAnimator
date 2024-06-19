@@ -1,10 +1,7 @@
 ﻿// This script attaches the tabbed menu logic to the game.
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.Serialization;
-using UnityEngine.UI;
 using UnityEngine.UIElements;
 using XWFC;
 using Button = UnityEngine.UIElements.Button;
@@ -168,7 +165,7 @@ public class TabbedMenu : MonoBehaviour
 
     private void UpdateExtent()
     {
-        XWFCAnimator.Instance.UpdateExtent(new Vector3(_wSlider.value, _hSlider.value, _dSlider.value));
+        XWFCAnimator.Instance.UpdateExtent(new Vector3Int(_wSlider.value, _hSlider.value, _dSlider.value));
     }
 
     private Bidict<string, Vector3> GetOffsetNamesMapping()
@@ -301,7 +298,7 @@ public class TabbedMenu : MonoBehaviour
         Debug.Log("Tried updating tileset...");
         InitAdjacencyToggles(tileDict.Keys.ToList(), adjacency, OffsetFactory.GetOffsets());
         if (adjacency.Count == 0) _adjacencyGridController.Populate(true);
-        XWFCAnimator.Instance.UpdateTerminals(TileSet.FromDict(tileDict));
+        XWFCAnimator.Instance.UpdateTileSet(TileSet.FromDict(tileDict));
         XWFCAnimator.Instance.UpdateAdjacencyConstraints(_adjacencyGridController.ToAdjacencySet());
     }
 

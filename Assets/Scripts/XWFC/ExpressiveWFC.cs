@@ -47,7 +47,7 @@ namespace XWFC
             Clean();
         }
 
-        public ExpressiveWFC(TileSet tileSet, Vector3 extent, List<InputGrid> inputGrids, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true)
+        public ExpressiveWFC(TileSet tileSet, Vector3Int extent, InputGrid[] inputGrids, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true)
         {
             /*
              * Constructor for XWFC with a list of grids with preset tile ids and instance ids to learn from.

@@ -15,16 +15,18 @@ namespace XWFC
         public TileSet Tiles;
         public InputGrid[] InputGrids;
         public Grid<int> Grid;
+        public float[] TileWeigths;
 
         private Dictionary<Vector3, int[,]> _voidMasks = new ();
 
-        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, InputGrid[] inputGrids)
+        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, InputGrid[] inputGrids, float[] tileWeigths)
         {
             Origin = origin;
             Extent = extent;
             Tiles = tileSet;
             InputGrids = inputGrids;
             Grid = new Grid<int>(Extent, -1);
+            TileWeigths = tileWeigths ?? new float[1];
         }
 
         public Range XRange()

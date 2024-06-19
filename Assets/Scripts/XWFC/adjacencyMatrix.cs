@@ -76,7 +76,7 @@ namespace XWFC
             InferAtomAdjacencies();
         }
         
-        public AdjacencyMatrix(TileSet tiles, List<InputGrid> grids, [CanBeNull] Dictionary<int, float> tileWeights)
+        public AdjacencyMatrix(TileSet tiles, InputGrid[] grids, [CanBeNull] Dictionary<int, float> tileWeights)
         {
             /*
              * Infer adjacency constraints from input.

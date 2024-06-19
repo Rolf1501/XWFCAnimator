@@ -90,7 +90,7 @@ public class UIHandler : MonoBehaviour
     private void UpdateExtent()
     {
         Debug.Log("Tried updating width.");
-        XWFCAnimator.Instance.UpdateExtent(new Vector3(wSlider.value, hSlider.value, dSlider.value));
+        XWFCAnimator.Instance.UpdateExtent(new Vector3Int((int)wSlider.value, (int)hSlider.value, (int)dSlider.value));
     }
 
     private void Update()
