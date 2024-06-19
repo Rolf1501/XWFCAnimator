@@ -470,7 +470,12 @@ namespace XWFC
 
         public void UpdateExtent(Vector3 extent)
         {
-            GridExtent = extent;
+            if (GridExtent != extent)
+            {
+                GridExtent = extent;
+                var (x, y, z) = Vector3Util.CastInt(extent);
+                _rootSave = new SavePoint(new GridManager(x, y, z), new CollapsePriorityQueue(), 0);
+            }
             Reset();
         }
 
