@@ -75,6 +75,7 @@ public class XWFCAnimator : MonoBehaviour
         LoadNextComponent();
         
         TileSet = _xwfc.AdjMatrix.TileSet;
+        CompleteTileSet = _xwfc.AdjMatrix.TileSet;
         
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
@@ -101,8 +102,9 @@ public class XWFCAnimator : MonoBehaviour
         
         _componentManager.SeedComponentGrid(ref component);
         
-        InitXWFCInput(component.Tiles, component.Grid.GetExtent(), component.InputGrids, component.TileWeigths);
+        InitXWFComponent(component);
         TileSet = component.Tiles;
+        CompleteTileSet = TileSet;
     }
 
     private TileSet ToTileSet(Tile[] tiles)
@@ -433,8 +435,9 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFComponent(Component component)
     {
-        _xwfc = new ExpressiveWFC(component.Tiles, component.Grid.GetExtent(), component.InputGrids,
-            ToWeightDictionary(component.TileWeigths, component.Tiles));
+        InitXWFCInput(component.Tiles, component.Grid.GetExtent(), component.InputGrids, component.TileWeigths);
+        // _xwfc = new ExpressiveWFC(component.Tiles, component.Grid.GetExtent(), component.InputGrids,
+        //     ToWeightDictionary(component.TileWeigths, component.Tiles));
     }
 
     private void InitXWFC()
