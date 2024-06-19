@@ -35,6 +35,7 @@
                     <ui:Button name="runButton" text="Run" class="two-cols" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
                     <ui:Button name="collapseOnceButton" text="Collapse Once" class="two-cols" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
                     <ui:Button name="resetButton" text="Reset" class="one-col" style="flex-direction: column; align-items: stretch; max-width: none; width: 100%;" />
+                    <ui:Button name="nextComponentButton" text="Load next component" class="one-col" style="flex-direction: column; align-items: stretch; max-width: none; width: 100%;" />
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement name="AdjacencyViewContent" class="unselectedContent">

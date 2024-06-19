@@ -31,6 +31,7 @@ public class TabbedMenu : MonoBehaviour
     private Button _collapseOnceButton;
     private Button _runButton;
     private Button _resetButton;
+    private Button _loadNextComponentButton;
 
     private string _adjacencyGridName = "adjacencyGrid";
     private string _adjacencyToggleContainer = "adjacencyToggleContainer";
@@ -69,6 +70,7 @@ public class TabbedMenu : MonoBehaviour
         _resetButton = _root.Q<Button>("resetButton");
         _runButton = _root.Q<Button>("runButton");
         _collapseOnceButton = _root.Q<Button>("collapseOnceButton");
+        _loadNextComponentButton = _root.Q<Button>("nextComponentButton");
         _wSlider = _root.Q<SliderInt>("widthSlider");
         _hSlider = _root.Q<SliderInt>("heightSlider");
         _dSlider = _root.Q<SliderInt>("depthSlider");
@@ -91,6 +93,14 @@ public class TabbedMenu : MonoBehaviour
         {
             Debug.Log("Reset!");
             XWFCAnimator.Instance.Reset();
+        };
+
+        _loadNextComponentButton.clicked += delegate
+        {
+            if (XWFCAnimator.Instance.HasNextComponent())
+            {
+                XWFCAnimator.Instance.LoadNextComponent();
+            }
         };
     }
 
@@ -127,7 +137,6 @@ public class TabbedMenu : MonoBehaviour
             try { XWFCAnimator.Instance.UpdateDelay(float.Parse(_delay.text)); }
             catch {}
         });
-        _resetButton.clicked += delegate { Debug.Log("RESET!!"); XWFCAnimator.Instance.Reset(); };
     }
 
     private void InitGridValues()
@@ -260,6 +269,7 @@ public class TabbedMenu : MonoBehaviour
     private void InitTilesetList()
     {
         var tiles = XWFCAnimator.Instance.CompleteTileSet;
+        if (tiles.Count == 0) return;
         _tilesetListContainer = _root.Q<VisualElement>(_tilesetListName);
         _tilesetListContainer.AddToClassList("tile-entry-container");
 
@@ -398,6 +408,19 @@ public class TabbedMenu : MonoBehaviour
             _runButton.text = "Run";
             
             ToggleEnabled(_collapseOnceButton);
+        }
+
+        if (XWFCAnimator.Instance.extent != new Vector3Int(_wSlider.value, _hSlider.value, _dSlider.value))
+        {
+            var e = XWFCAnimator.Instance.extent;
+            _wSlider.value = e.x;
+            _hSlider.value = e.y;
+            _dSlider.value = e.z;
+        }
+        
+        if (!XWFCAnimator.Instance.HasNextComponent())
+        {
+            _loadNextComponentButton.SetEnabled(false);
         }
     }
 }
