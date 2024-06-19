@@ -15,18 +15,18 @@ namespace XWFC
         public TileSet Tiles;
         public InputGrid[] InputGrids;
         public Grid<int> Grid;
-        public float[] TileWeigths;
+        public float[] TileWeights;
 
         private Dictionary<Vector3, int[,]> _voidMasks = new ();
 
-        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, InputGrid[] inputGrids, float[] tileWeigths)
+        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, InputGrid[] inputGrids, float[] tileWeights)
         {
             Origin = origin;
             Extent = extent;
             Tiles = tileSet;
             InputGrids = inputGrids;
             Grid = new Grid<int>(Extent, -1);
-            TileWeigths = tileWeigths ?? new float[1];
+            TileWeights = tileWeights ?? new float[1];
         }
 
         public Range XRange()
@@ -49,7 +49,7 @@ namespace XWFC
             return new Range3D(XRange(), YRange(), ZRange());
         }
 
-        public void CalcVoidMasks()
+        public void CalcVoidMasks(int emptyId)
         {
             var (x, y, z) = Vector3Util.CastInt(Grid.GetExtent());
             var boolMask = new bool[y,x,z];
@@ -59,7 +59,8 @@ namespace XWFC
                 {
                     for (int bz = 0; bz < z; bz++)
                     {
-                        if (Grid.Get(bx,by,bz) != Grid.DefaultFillValue)
+                        var value = Grid.Get(bx, by, bz);
+                        if (value != Grid.DefaultFillValue && value != emptyId)
                         {
                             boolMask[by, bx, bz] = true;
                         }
@@ -80,11 +81,11 @@ namespace XWFC
             _voidMasks[new Vector3(0, 0, -1)] = negZ;
         }
 
-        public (int offset, Vector3Int direction) CalcOffset(Range3D region, OffsetMode mode = OffsetMode.Max)
+        public (int offset, Vector3Int direction) CalcOffset(Range3D region, int emptyId, OffsetMode mode = OffsetMode.Max)
         {
             if (_voidMasks.Values.Count == 0)
             {
-                CalcVoidMasks();
+                CalcVoidMasks(emptyId);
             }
 
             /*

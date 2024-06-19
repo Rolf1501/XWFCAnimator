@@ -56,8 +56,8 @@ namespace XWFC
             foreach (var component in components)
             {
                 Components[key] = component;
-                key++;
                 _componentOrder.Enqueue(key);
+                key++;
             }
         }
 

@@ -16,7 +16,7 @@ namespace XWFC
         
         public string[,,] AtomValues { get; }
         public int[] DistinctOrientations { get; private set; }
-        private string Description { get; }
+        public string Description { get; }
         public Dictionary<Vector3, Atom> AtomIndexToIdMapping { get; } = new();
         public Dictionary<int, bool[,,]> OrientedMask { get; } = new();
         private Dictionary<int, bool[,,,]> OrientedAtomMask { get; } = new();

@@ -59,7 +59,7 @@ namespace XWFC
         public Bidict<(int tileId, Vector3 atomCoord, int orientation), int> AtomMapping { get; private set; } // Mapping of atom indices to relative atom coordinate, corresponding terminal id and orientation.
         public Dictionary<Vector3, bool[,]> AtomAdjacencyMatrix { get; private set; }
         private Dictionary<Vector3, float[,]> AtomAdjacencyMatrixW;
-        public Dictionary<int, (int, int)> TileAtomRange2DMapping { get; private set; } // Reserves an index Range2D for the atoms of the tile.
+        public Dictionary<int, (int, int)> TileAtomRangeMapping { get; private set; } // Reserves an index Range2D for the atoms of the tile.
 
         public Dictionary<int, float> TileWeigths;
         
@@ -137,7 +137,7 @@ namespace XWFC
             var aug = new Dictionary<int, float>();
             foreach (var (k, v) in defaultWeights)
             {
-                var (start, end) = TileAtomRange2DMapping[k];
+                var (start, end) = TileAtomRangeMapping[k];
                 for (int i = start; i < end; i++)
                 {
                     aug[i] = v;
@@ -161,13 +161,13 @@ namespace XWFC
             AtomMapping = new Bidict<(int, Vector3, int), int>();
             AtomAdjacencyMatrix = new Dictionary<Vector3, bool[,]>();
             AtomAdjacencyMatrixW = new Dictionary<Vector3, float[,]>();
-            TileAtomRange2DMapping = new Dictionary<int, (int, int)>();
+            TileAtomRangeMapping = new Dictionary<int, (int, int)>();
             
             _tileIdToIndexMapping = MapTileIdToIndex(TileSet);
             
             // Create tile to atom Range2D mapping.
             int nAtoms;
-            (TileAtomRange2DMapping, nAtoms) = MapTileAtomRange2D(TileSet);
+            (TileAtomRangeMapping, nAtoms) = MapTileAtomRange2D(TileSet);
             InitAtomAdjacencyMatrix(nAtoms);
         }
 
@@ -793,6 +793,18 @@ namespace XWFC
         public Tile GetTerminalFromAtomId(int atomId)
         {
             return TileSet[AtomMapping.Get(atomId).Item1];
+        }
+
+        public (int start, int end) GetAtomIdsFromDescription(string description)
+        {
+            foreach (var (id, tile) in TileSet)
+            {
+                if (tile.Description.Equals(description))
+                {
+                    return TileAtomRangeMapping[id];
+                }
+            }
+            return (-1, -1);
         }
     }
     

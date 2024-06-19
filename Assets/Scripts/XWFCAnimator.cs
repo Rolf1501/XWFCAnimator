@@ -65,7 +65,6 @@ public class XWFCAnimator : MonoBehaviour
         
         InitXWFC();
 
-        var houseDetails = GetHouseTiles();
         var houseComponents = GetHouseComponents();
 
         _componentManager = new ComponentManager();
@@ -81,8 +80,6 @@ public class XWFCAnimator : MonoBehaviour
         _drawnGrid = InitDrawGrid();
         
         PrintAdjacencyData();
-        
-        
 
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
         
@@ -90,13 +87,20 @@ public class XWFCAnimator : MonoBehaviour
         _drawnTiles = new HashSet<GameObject>();
         
         DrawTiles();
+        _xwfc.CollapseAutomatic();
+        
         // if (!FindConfigFileNames().Any()) SaveConfig();
         // LoadConfig();
     }
 
-    private void LoadNextComponent()
+    public bool HasNextComponent()
     {
-        if (!_componentManager.HasNext()) return;
+        return _componentManager.HasNext();
+    }
+
+    public void LoadNextComponent()
+    {
+        if (!HasNextComponent()) return;
         
         var component = _componentManager.Next();
         
@@ -435,9 +439,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFComponent(Component component)
     {
-        InitXWFCInput(component.Tiles, component.Grid.GetExtent(), component.InputGrids, component.TileWeigths);
-        // _xwfc = new ExpressiveWFC(component.Tiles, component.Grid.GetExtent(), component.InputGrids,
-        //     ToWeightDictionary(component.TileWeigths, component.Tiles));
+        InitXWFCInput(component.Tiles, component.Grid.GetExtent(), component.InputGrids, component.TileWeights);
     }
 
     private void InitXWFC()
