@@ -15,7 +15,7 @@ public class AdjacencyGridController
     private const string TogglePrefix = "toggle";
 
     private Dictionary<Vector3, float[,]> _backendGrid;
-    private readonly Vector3[] _offsets;
+    private readonly Vector3Int[] _offsets;
     private readonly HashSetAdjacency _activeAdjacency;
     private const int DefaultValue = -1;
     private bool _allTrue;
@@ -23,7 +23,7 @@ public class AdjacencyGridController
     public Dictionary<Vector3, VisualElement> Grids { get; }
 
     public AdjacencyGridController(List<int> tiles, HashSetAdjacency adjacencySet,
-        Vector3[] offsets, string rowClass = "row", string cellClass = "cell", bool allTrue=false)
+        Vector3Int[] offsets, string rowClass = "row", string cellClass = "cell", bool allTrue=false)
     {
         _tiles = tiles;
         _offsets = offsets;

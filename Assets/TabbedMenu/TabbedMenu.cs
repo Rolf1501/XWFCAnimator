@@ -217,7 +217,7 @@ public class TabbedMenu : MonoBehaviour
         });
     }
 
-    private void InitAdjacencyToggles(List<int> tiles, HashSetAdjacency hashSetAdjacency, Vector3[] offsets)
+    private void InitAdjacencyToggles(List<int> tiles, HashSetAdjacency hashSetAdjacency, Vector3Int[] offsets)
     {
         var toggles = _adjGrid.Q<VisualElement>(_adjacencyToggleContainer);
         if (toggles != null)
