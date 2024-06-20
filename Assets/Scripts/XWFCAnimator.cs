@@ -64,7 +64,7 @@ public class XWFCAnimator : MonoBehaviour
 
         _adjacency = new HashSetAdjacency();
         
-        InitXWFC();
+        // InitXWFC();
 
         var houseComponents = GetHouseComponents();
 
@@ -101,15 +101,16 @@ public class XWFCAnimator : MonoBehaviour
     {
         if (!HasNextComponent()) return;
 
-        if (_currentComponent != null)
-        {
-            
-            // Intersection with next component.
-        }
-        
-        _currentComponent = _componentManager.Next();
+        var (id, component) = _componentManager.Next();
+        _currentComponent = component;
         
         _componentManager.SeedComponentGrid(ref _currentComponent);
+        /*
+         * Find intersections with previously solved components.
+         */
+        // Intersection with next component.
+        
+        
         
         InitXWFComponent(_currentComponent);
         TileSet = _currentComponent.Tiles;
@@ -427,22 +428,11 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFCInput(TileSet tiles, Vector3Int gridExtent, InputGrid[] inputGrids, float[] weights)
     {
-        _xwfc = new ExpressiveWFC(tiles, gridExtent, inputGrids, ToWeightDictionary(weights, tiles));
+        _xwfc = new ExpressiveWFC(tiles, gridExtent, inputGrids, AdjacencyMatrix.ToWeightDictionary(weights, tiles));
         UpdateExtent(gridExtent);
     }
 
-    private Dictionary<int, float> ToWeightDictionary(float[] weights, TileSet tileSet)
-    {
-        var dictionary = new Dictionary<int, float>();
-        int i = 0;
-        foreach (var tilesKey in tileSet.Keys)
-        {
-            dictionary[tilesKey] = weights[i];
-            i++;
-        }
-
-        return dictionary;
-    }
+    
 
     private void InitXWFComponent(Component component)
     {
@@ -553,7 +543,7 @@ public class XWFCAnimator : MonoBehaviour
         return _unitSize;
     }
 
-    public Vector3[] GetOffsets()
+    public Vector3Int[] GetOffsets()
     {
         return _xwfc.Offsets;
     }

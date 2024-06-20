@@ -20,9 +20,9 @@ namespace XWFC
             _order = ComponentOrder();
         }
 
-        public Component Next()
+        public (int id, Component component) Next()
         {
-            if (!HasNext()) return null;
+            if (!HasNext()) return (-1, null);
 
             _orderIndex++;
             
@@ -31,7 +31,7 @@ namespace XWFC
             
             _currentComponent = Components[_currentComponentId];
             
-            return _currentComponent;
+            return (_currentComponentId, _currentComponent);
         }
 
 
@@ -104,7 +104,7 @@ namespace XWFC
              * Find other components adjacent to passed component.
              * Find number of layers required to fully seed the grid. --> same as calculation of void masks!
              * Insert layers into component grid.
-             * Update components' sources and extents?
+             * Update component's origin and extent?
              */
             
             /*

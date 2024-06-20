@@ -16,6 +16,7 @@ namespace XWFC
         public InputGrid[] InputGrids;
         public Grid<int> Grid;
         public float[] TileWeights;
+        public AdjacencyMatrix AdjacencyMatrix;
 
         private Dictionary<Vector3, int[,]> _voidMasks = new ();
 
@@ -27,6 +28,7 @@ namespace XWFC
             InputGrids = inputGrids;
             Grid = new Grid<int>(Extent, -1);
             TileWeights = tileWeights ?? new float[1];
+            AdjacencyMatrix = new AdjacencyMatrix(tileSet, inputGrids, AdjacencyMatrix.ToWeightDictionary(tileWeights, tileSet));
         }
 
         public Range XRange()

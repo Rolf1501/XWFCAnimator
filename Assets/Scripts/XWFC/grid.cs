@@ -297,16 +297,20 @@ namespace XWFC
             ChoiceWeights = choiceWeights;
         }
 
+        public GridManager(Grid<int> seededGrid, Dictionary<int, float> defaultWeights, float maxEntropy)
+        {
+            (Width, Height, Depth) = Vector3Util.CastInt(seededGrid.GetExtent());
+            Grid = seededGrid;
+            
+            InitChoiceWeights(defaultWeights);
+            InitEntropy(maxEntropy);
+        }
+
         public GridManager Deepcopy()
         {
             return new GridManager(Width, Height, Depth,
                 Grid.Deepcopy(), Entropy.Deepcopy(), ChoiceBooleans.Deepcopy(), ChoiceIds.Deepcopy(),
                 ChoiceWeights.Deepcopy());
-        }
-
-        public void Seed(Grid<int> seededGrid)
-        {
-            
         }
 
         public void InitChoiceWeights(Dictionary<int, float> defaultWeights)

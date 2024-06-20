@@ -52,7 +52,7 @@ namespace XWFC
         public TileSet TileSet { get; private set; }
         private int _offsetsDimensions; // Set the number of dimensions to operate in.
         public HashSetAdjacency AtomAdjacencyConstraints { get; private set; } // Set of atom adjacency constraints.
-        private Vector3[] _offsets;
+        private Vector3Int[] _offsets;
         private Dictionary<Vector3, bool[,]> _tileAdjacencyMatrix; // 2D matrix for tile adjacency constraints per offset. 
         private Dictionary<Vector3, float[,]> _tileAdjacencyMatrixWeights; // 2D matrix for tile adjacency constraint weights per offset.
         private Dictionary<int, int> _tileIdToIndexMapping; // Mapping of parts to their index.
@@ -62,6 +62,7 @@ namespace XWFC
         public Dictionary<int, (int, int)> TileAtomRangeMapping { get; private set; } // Reserves an index Range2D for the atoms of the tile.
 
         public Dictionary<int, float> TileWeigths;
+        public const int BlockedCellId = -2;
         
         public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, [CanBeNull] Dictionary<int, float> defaultWeights, int offsetsDimensions = 3)
         {
@@ -118,6 +119,19 @@ namespace XWFC
             Debug.Log("Atom adjacency derived from grid.");
         }
         
+        public static Dictionary<int, float> ToWeightDictionary(float[] weights, TileSet tileSet)
+        {
+            var dictionary = new Dictionary<int, float>();
+            int i = 0;
+            foreach (var tilesKey in tileSet.Keys)
+            {
+                dictionary[tilesKey] = weights[i];
+                i++;
+            }
+
+            return dictionary;
+        }
+        
         private Dictionary<int, float> ExpandDefaultWeights([CanBeNull] Dictionary<int, float> defaultWeights)
         {
             /*
@@ -145,6 +159,21 @@ namespace XWFC
             }
 
             return aug;
+        }
+        
+        
+        public float MaxEntropy()
+        {
+            
+            return CalcEntropy(GetNAtoms());
+        }
+
+        public static float CalcEntropy(int nChoices)
+        {
+            /*
+             * Entropy is taken as the log of the number of choices.
+             */
+            return nChoices > 0 ? (float)Math.Log(nChoices) : -1;
         }
 
         private void Init(TileSet tileSet, int offsetsDimensions)

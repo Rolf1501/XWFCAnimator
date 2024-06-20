@@ -9,7 +9,7 @@ namespace XWFC
     public class ExpressiveWFC
     {
         private readonly TileSet _tileSet;
-        public Vector3 GridExtent;
+        public Vector3Int GridExtent;
         private Vector3 _startCoord;
         private readonly Dictionary<int, float> _defaultWeights;
         private float _progress = 0;
@@ -17,7 +17,7 @@ namespace XWFC
         public GridManager GridManager;
         private readonly float _maxEntropy;
         private CollapsePriorityQueue _collapseQueue;
-        public readonly Vector3[] Offsets;
+        public readonly Vector3Int[] Offsets;
         private Queue<Propagation> _propQueue = new();
         private SavePointManager _savePointManager;
         private int _counter;
@@ -27,7 +27,7 @@ namespace XWFC
 
         #nullable enable
         public ExpressiveWFC(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
-            Vector3 gridExtent, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true)
+            Vector3Int gridExtent, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true)
         {
             /*
              * Constructor for XWFC with predefined adjacency constraints between NUTs.
@@ -38,7 +38,7 @@ namespace XWFC
             
             AdjMatrix = new AdjacencyMatrix(adjacencyConstraints, _tileSet, defaultWeights);
             
-            _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
+            _maxEntropy = AdjMatrix.MaxEntropy();
             _defaultWeights = AdjMatrix.TileWeigths;
             _collapseQueue = new CollapsePriorityQueue();
             
@@ -59,7 +59,7 @@ namespace XWFC
             _tileSet = tileSet;
             _forceCompleteTiles = forceCompleteTiles;
             AdjMatrix = new AdjacencyMatrix(tileSet, inputGrids, defaultWeights);
-            _maxEntropy = CalcEntropy(AdjMatrix.GetNAtoms());
+            _maxEntropy = AdjMatrix.MaxEntropy();
             _defaultWeights = AdjMatrix.TileWeigths;
             
             Offsets = OffsetFactory.GetOffsets(3);
@@ -68,14 +68,85 @@ namespace XWFC
 
         }
 
-        public ExpressiveWFC(TileSet tileSet, Vector3Int extent, Grid<int> seededGrid, int defaultFillValue,
-            InputGrid[] inputGrids, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true) : this(tileSet, extent, inputGrids, defaultWeights, forceCompleteTiles)
+        public ExpressiveWFC(AdjacencyMatrix adjacencyMatrix, Grid<int> seededGrid, int emptyId, bool forceCompleteTiles = true)
         {
+            AdjMatrix = adjacencyMatrix;
+            GridExtent = seededGrid.GetExtent();
+            _forceCompleteTiles = forceCompleteTiles;
+            _defaultWeights = adjacencyMatrix.TileWeigths;
+            _maxEntropy = AdjMatrix.MaxEntropy();
             
             Clean();
+            
+            RemoveEmptyInSeededGrid(ref seededGrid, emptyId);
+            var blockedCells = BlockOccupiedSeeds(ref seededGrid);
+            EliminateIncompleteBlockedCellNeighbors(blockedCells);
+            
+            GridManager = new GridManager(seededGrid, _defaultWeights, _maxEntropy);
+            
+            // Grid's shape changes because of this, so eliminate all tiles that do not fit.
+            // The only cells that need to be checked are those adjacent to replaced cell ids.
+            //TODO:
+            
             _rootSave = new SavePoint(GridManager, _collapseQueue, _counter);
         }
-        
+
+        private HashSet<Vector3Int> BlockOccupiedSeeds(ref Grid<int> seededGrid)
+        {
+            var minId = Math.Min(seededGrid.DefaultFillValue, _defaultWeights.Keys.Min()) - 1;
+            var blockedCells = new HashSet<Vector3Int>();
+
+            // For a seeded grid, the seeded tiles do not correspond to any tile in the tile set used for the seeded grid.
+            // So, set the occupied cells to an id that is not part of the tile set. 
+            // That prevents propagation from accessing those cells.
+            var blockedCellId = minId;
+            var e = seededGrid.GetExtent();
+            for (int x = 0; x < e.x; x++)
+            {
+                for (int y = 0; y < e.y; y++)
+                {
+                    for (int z = 0; z < e.z; z++)
+                    {
+                        var value = seededGrid.Get(x, y, z);
+                        
+                        if (value == seededGrid.DefaultFillValue) continue;
+                        
+                        seededGrid.Set(x,y,z, blockedCellId);
+                        blockedCells.Add(new Vector3Int(x, y, z));
+                    }
+                }
+            }
+
+            return blockedCells;
+        }
+
+        private void RemoveEmptyInSeededGrid(ref Grid<int> grid, int emptyId)
+        {
+            var e = grid.GetExtent();
+            for (int x = 0; x < e.x; x++)
+            {
+                for (int y = 0; y < e.y; y++)
+                {
+                    for (int z = 0; z < e.z; z++)
+                    {
+                        if (grid.Get(x,y,z) == emptyId) grid.Set(x,y,z,grid.DefaultFillValue);
+                    }
+                }
+            }
+        }
+
+        private void EliminateIncompleteBlockedCellNeighbors(HashSet<Vector3Int> cells)
+        {
+            foreach (var cell in cells)
+            {
+                foreach (var offset in Offsets)
+                {
+                    var n = cell + offset;
+                    if (GridManager.WithinBounds(n)) EliminateIncompleteAtoms(n);
+                }
+                
+            }
+        }
         
         private void EliminateIncompleteTiles()
         {
@@ -93,8 +164,8 @@ namespace XWFC
                 for (int y = 0; y < GridExtent.y; y++)
                 {
                     var (zStart, zEnd) = (0, GridExtent.z - 1);
-                    var start = new Vector3(x, y, zStart);
-                    var end = new Vector3(x, y, zEnd);
+                    var start = new Vector3Int(x, y, zStart);
+                    var end = new Vector3Int(x, y, zEnd);
                     EliminateIncompleteAtoms(start);
                     EliminateIncompleteAtoms(end);
                 }
@@ -106,8 +177,8 @@ namespace XWFC
                 for (int z = 0; z < GridExtent.z; z++)
                 {
                     var (yStart, yEnd) = (0, GridExtent.y - 1);
-                    var start = new Vector3(x, yStart, z);
-                    var end = new Vector3(x, yEnd, z);
+                    var start = new Vector3Int(x, yStart, z);
+                    var end = new Vector3Int(x, yEnd, z);
                     EliminateIncompleteAtoms(start);
                     EliminateIncompleteAtoms(end);
                 }
@@ -119,15 +190,15 @@ namespace XWFC
                 for (int z = 0; z < GridExtent.z; z++)
                 {
                     var (xStart, xEnd) = (0, GridExtent.x - 1);
-                    var start = new Vector3(xStart, y, z);
-                    var end = new Vector3(xEnd, y, z);
+                    var start = new Vector3Int(xStart, y, z);
+                    var end = new Vector3Int(xEnd, y, z);
                     EliminateIncompleteAtoms(start);
                     EliminateIncompleteAtoms(end);
                 }
             }
         }
         
-        private void EliminateIncompleteAtoms(Vector3 coord)
+        private void EliminateIncompleteAtoms(Vector3Int coord)
         {
             var choices = GridManager.ChoiceBooleans.Get(coord);
             for (int i = 0; i < choices.Length; i++)
@@ -193,14 +264,6 @@ namespace XWFC
             {
                 EliminateIncompleteTiles();
             }
-        }
-        
-        private static float CalcEntropy(int nChoices)
-        {
-            /*
-             * Entropy is taken as the log of the number of choices.
-             */
-            return nChoices > 0 ? (float)Math.Log(nChoices) : -1;
         }
 
         public void CollapseAutomatic()
@@ -286,7 +349,7 @@ namespace XWFC
         private void SetOccupied(Vector3 coord, int id)
         {
             GridManager.Grid.Set(coord, id);
-            GridManager.Entropy.Set(coord, CalcEntropy(1));
+            GridManager.Entropy.Set(coord, AdjacencyMatrix.CalcEntropy(1));
             _propQueue.Enqueue(new Propagation(new int[] { id }, coord));
             
             // Whenever a cell is set to be occupied, progress is made and needs to be updated.
@@ -449,7 +512,7 @@ namespace XWFC
 
                         var nChoices = neighborWChoicesI.Count;
 
-                        GridManager.Entropy.Set(n, CalcEntropy(nChoices));
+                        GridManager.Entropy.Set(n, AdjacencyMatrix.CalcEntropy(nChoices));
 
                         // If all terminals are allowed, then the entropy does not change. There is nothing to propagate.
                         if (Math.Abs(GridManager.Entropy.Get(n) - _maxEntropy) < 0.0001)
@@ -475,7 +538,7 @@ namespace XWFC
             return _collapseQueue.IsDone();
         }
 
-        public void UpdateExtent(Vector3 extent)
+        public void UpdateExtent(Vector3Int extent)
         {
             if (GridExtent != extent)
             {
