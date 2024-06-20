@@ -68,9 +68,7 @@ public class XWFCAnimator : MonoBehaviour
 
         var houseComponents = GetHouseComponents();
 
-        _componentManager = new ComponentManager();
-        _componentManager.AddComponents(houseComponents);
-        _componentManager.ComputeIntersections();
+        _componentManager = new ComponentManager(houseComponents);
         
         LoadNextComponent();
         
@@ -102,6 +100,12 @@ public class XWFCAnimator : MonoBehaviour
     public void LoadNextComponent()
     {
         if (!HasNextComponent()) return;
+
+        if (_currentComponent != null)
+        {
+            
+            // Intersection with next component.
+        }
         
         _currentComponent = _componentManager.Next();
         
@@ -110,6 +114,8 @@ public class XWFCAnimator : MonoBehaviour
         InitXWFComponent(_currentComponent);
         TileSet = _currentComponent.Tiles;
         CompleteTileSet = TileSet;
+        _activeStateFlag = 0;
+        Reset();
     }
 
     private TileSet ToTileSet(Tile[] tiles)
@@ -724,6 +730,8 @@ public class XWFCAnimator : MonoBehaviour
 
     private void DrawAtom(Vector3 coord, int atomId)
     {
+        if (!_xwfc.AdjMatrix.AtomMapping.ContainsValue(atomId)) return;
+        
         var atom = Instantiate(unitTilePrefab);
                 
         atom.transform.position = CalcAtomPosition(coord);

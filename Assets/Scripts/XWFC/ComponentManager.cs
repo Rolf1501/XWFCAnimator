@@ -6,29 +6,100 @@ namespace XWFC
 {
     public class ComponentManager
     {
-        public Dictionary<int, Component> Components = new();
+        public Component[] Components;
         public Dictionary<int, List<(int componentId, Range3D range)>> Intersections = new();
-        private Queue<int> _componentOrder = new();
-        private int _currentComponentId;
+        private int _currentComponentId = -1;
         private Component _currentComponent;
+        private int _orderIndex = -1;
+        private List<int> _order;
+
+        public ComponentManager(Component[] components)
+        {
+            Components = components;
+            CalcIntersections();
+            _order = ComponentOrder();
+        }
 
         public Component Next()
         {
             if (!HasNext()) return null;
+
+            _orderIndex++;
             
-            _currentComponentId = _componentOrder.Dequeue();
+            // Upon selecting the next component, the current one is considered to be solved.
+            _currentComponentId = _order[_orderIndex];
+            
             _currentComponent = Components[_currentComponentId];
+            
             return _currentComponent;
+        }
+
+
+        private List<int> ComponentOrder()
+        {
+            /*
+             * Compute component order with DFS.
+             * Ensures acyclic graph and thus no circular dependencies.
+             */
+            var order = new List<int>();
+
+            if (Components.Length == 0) return order;
+            
+            var pending = Enumerable.Range(0,Components.Length).ToHashSet();
+            
+            /*
+             * Start with component with lowest origin.
+             */
+            var minOrigin = Components[0].Origin;
+            var minId = 0;
+            
+            foreach (int i in pending)
+            {
+                var origin = Components[i].Origin;
+                if (origin.magnitude < minOrigin.magnitude)
+                {
+                    minOrigin = origin;
+                    minId = i;
+                }
+            }
+
+            ComponentOrderDfs(minId, ref pending, ref order);
+            return order;
+        }
+
+        private void ComponentOrderDfs(int id, ref HashSet<int> pending, ref List<int> order)
+        {
+            if (pending.Count == 0) return;
+            
+            order.Add(id);
+            pending.Remove(id);
+            /*
+             * Find intersections
+             */
+            var intersections = Intersections[id];
+            
+            // Find all components connected to the id component.
+            foreach (var (componentId, _) in intersections)
+            {
+                if (pending.Contains(componentId))
+                {
+                    ComponentOrderDfs(componentId, ref pending, ref order);
+                }
+            }
+
+            // If there are disconnected components, start DFS from there.
+            if (pending.Count > 0)
+            {
+                ComponentOrderDfs(pending.First(), ref pending, ref order);
+            }
         }
 
         public bool HasNext()
         {
-            return _componentOrder.Count > 0;
+            return _orderIndex < _order.Count - 1;
         }
         public void SeedComponentGrid(ref Component component)
         {
-            if (!Components.ContainsValue(component)) return;
-            
             /*
              * Find other components adjacent to passed component.
              * Find number of layers required to fully seed the grid. --> same as calculation of void masks!
@@ -50,33 +121,21 @@ namespace XWFC
              */
         }
 
-        
-        public void AddComponents(Component[] components)
-        {
-            var key = Components.Count;
-            foreach (var component in components)
-            {
-                Components[key] = component;
-                _componentOrder.Enqueue(key);
-                key++;
-            }
-        }
-
-        public void ComputeIntersections()
+        public void CalcIntersections()
         {
             var intersections = new Dictionary<int, List<(int id, Range3D ranges)>>();
-            foreach (var componentsKey in Components.Keys)
+            for (int id = 0; id < Components.Length; id++)
             {
-                intersections[componentsKey] = new List<(int id, Range3D ranges)>();
+                intersections[id] = new List<(int id, Range3D ranges)>();
             }
             
             /*
              * For all unique component pairs, compute and store potential intersections. 
              */
-            for (int i = 0; i < Components.Keys.Count; i++)
+            for (int i = 0; i < Components.Length; i++)
             {
                 var source = Components[i];
-                for (int j = i + 1; j < Components.Keys.Count; j++)
+                for (int j = i + 1; j < Components.Length; j++)
                 {
                     var other = Components[j];
                     var (intersects, ranges) = ComponentIntersect(source, other);

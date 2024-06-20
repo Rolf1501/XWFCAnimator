@@ -794,18 +794,6 @@ namespace XWFC
         {
             return TileSet[AtomMapping.Get(atomId).Item1];
         }
-
-        public (int start, int end) GetAtomIdsFromDescription(string description)
-        {
-            foreach (var (id, tile) in TileSet)
-            {
-                if (tile.Description.Equals(description))
-                {
-                    return TileAtomRangeMapping[id];
-                }
-            }
-            return (-1, -1);
-        }
     }
     
     public record VmData

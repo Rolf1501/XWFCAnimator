@@ -163,7 +163,7 @@ namespace XWFC
         public bool IsChosen(int x, int y, int z)
         {
             var choice = Get(x, y, z);
-            // Larger than 0: choice > default
+            // Larger than 0: choice != default
             return DefaultFillValue != null
                 ? Comparer<T>.Default.Compare(choice, DefaultFillValue) > 0
                 : choice != null;
@@ -302,6 +302,11 @@ namespace XWFC
             return new GridManager(Width, Height, Depth,
                 Grid.Deepcopy(), Entropy.Deepcopy(), ChoiceBooleans.Deepcopy(), ChoiceIds.Deepcopy(),
                 ChoiceWeights.Deepcopy());
+        }
+
+        public void Seed(Grid<int> seededGrid)
+        {
+            
         }
 
         public void InitChoiceWeights(Dictionary<int, float> defaultWeights)

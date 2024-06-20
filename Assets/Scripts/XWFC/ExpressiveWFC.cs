@@ -24,7 +24,6 @@ namespace XWFC
         public Stack<Occupation> OccupationLog = new();
         private bool _forceCompleteTiles;
         private SavePoint _rootSave;
-        
 
         #nullable enable
         public ExpressiveWFC(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
@@ -67,6 +66,14 @@ namespace XWFC
             Clean();
             _rootSave = new SavePoint(GridManager, _collapseQueue, _counter);
 
+        }
+
+        public ExpressiveWFC(TileSet tileSet, Vector3Int extent, Grid<int> seededGrid, int defaultFillValue,
+            InputGrid[] inputGrids, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true) : this(tileSet, extent, inputGrids, defaultWeights, forceCompleteTiles)
+        {
+            
+            Clean();
+            _rootSave = new SavePoint(GridManager, _collapseQueue, _counter);
         }
         
         
@@ -474,7 +481,7 @@ namespace XWFC
             {
                 GridExtent = extent;
                 var (x, y, z) = Vector3Util.CastInt(extent);
-                _rootSave = new SavePoint(new GridManager(x, y, z), new CollapsePriorityQueue(), 0);
+                _rootSave = new SavePoint(new GridManager(x, y, z), new CollapsePriorityQueue(), 0); 
             }
             Reset();
         }
