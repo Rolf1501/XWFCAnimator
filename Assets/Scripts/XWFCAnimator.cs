@@ -92,6 +92,51 @@ public class XWFCAnimator : MonoBehaviour
         // LoadConfig();
     }
 
+    public void Assemble()
+    {
+        if (_componentManager.HasNext()) return;
+        SaveComponent();
+        Reset();
+        /*
+         * Assemble components in large grid?
+         */
+        /*
+         * Assemble components in large grid?
+         */
+        /*
+         * Find smallest and largest coord.
+         */
+        _activeStateFlag = 0;
+        
+        var (min, max) = _componentManager.BoundingBox();
+        
+        // foreach (var drawing in _drawnGrid.GetGrid())
+        // {
+        //     Drawing.DestroyAtom(drawing);
+        // }
+        
+        var defaultValue = _xwfc.GridManager.Grid.DefaultFillValue;
+        _drawnGrid = new Grid<Drawing>(max, new Drawing(defaultValue, null));
+            
+        for (var id = 0; id< _componentManager.Components.Length; id++)
+        {
+            var component = _componentManager.Components[id];
+            var origin = component.Origin;
+            var grid = component.Grid;
+            var e = grid.GetExtent();
+            for (int x = 0; x < e.x; x++)
+            {
+                for (int y = 0; y < e.y; y++)
+                {
+                    for (int z = 0; z < e.z; z++)
+                    {
+                        DrawAtom(new Vector3(x,y,z), grid.Get(x,y,z), origin);
+                    }
+                }
+            }
+        }
+    }
+
     public bool HasNextComponent()
     {
         return _componentManager.HasNext();
@@ -100,19 +145,22 @@ public class XWFCAnimator : MonoBehaviour
     public void LoadNextComponent()
     {
         if (!HasNextComponent()) return;
-
-        var (id, component) = _componentManager.Next();
-        _currentComponent = component;
         
-        _componentManager.SeedComponentGrid(ref _currentComponent);
+        SaveComponent();
+        
         /*
-         * Find intersections with previously solved components.
+         * Before selecting the next component, translate all unsolved components depending on the results of the current component.
          */
+        _componentManager.TranslateUnsolved();
+        
+        var id = _componentManager.Next();
+        _componentManager.SeedComponent(id);
+        
+        _currentComponent = _componentManager.Components[id];
+        
         // Intersection with next component.
         
-        
-        
-        InitXWFComponent(_currentComponent);
+        InitXWFComponent(ref _currentComponent);
         TileSet = _currentComponent.Tiles;
         CompleteTileSet = TileSet;
         _activeStateFlag = 0;
@@ -147,9 +195,9 @@ public class XWFCAnimator : MonoBehaviour
 
         var baseOrigin = new Vector3Int(0,0,0);
         var floorOrigin = baseOrigin;
-        floorOrigin.y += baseExtent.y;
+        floorOrigin.z += baseExtent.z;
         var roofOrigin = floorOrigin;
-        roofOrigin.y += floorExtent.y;
+        roofOrigin.z += floorExtent.z;
         
         var baseComponent = new Component(baseOrigin, baseExtent, tileSet, grids.ToArray(), weights);
         var floor = new Component(floorOrigin, floorExtent, tileSet, grids.ToArray(), weights);
@@ -233,7 +281,8 @@ public class XWFCAnimator : MonoBehaviour
             new Vector3(1, 1, 1),
             new Color(0, 0.2f, 0.5f, 0.2f),
             description: "empty",
-            computeAtomEdges:false
+            computeAtomEdges:false,
+            isEmptyTile:true
         );
         
         var houseTiles = new Tile[] { doorTile, brickTile, halfBrickTile, grassTile, soilTile, windowTile, emptyTile };
@@ -434,9 +483,10 @@ public class XWFCAnimator : MonoBehaviour
 
     
 
-    private void InitXWFComponent(Component component)
+    private void InitXWFComponent(ref Component component)
     {
-        InitXWFCInput(component.Tiles, component.Grid.GetExtent(), component.InputGrids, component.TileWeights);
+        _xwfc = new ExpressiveWFC(component.AdjacencyMatrix, ref component.Grid);
+        UpdateExtent(component.Grid.GetExtent());
     }
 
     private void InitXWFC()
@@ -453,6 +503,13 @@ public class XWFCAnimator : MonoBehaviour
             Debug.Log("Ran into an error...");
         }
         Debug.Log("Initialized XWFC");
+    }
+    
+    public void SaveComponent()
+    {
+        if (_xwfc == null) return;
+        _currentComponent.Grid = _xwfc.GridManager.Grid.Deepcopy();
+        _xwfc.RemoveEmpty(ref _currentComponent.Grid);
     }
 
     public void UpdateAdjacencyConstraints(HashSetAdjacency adjacency)
@@ -491,17 +548,17 @@ public class XWFCAnimator : MonoBehaviour
     public void DrawTiles()
     {
         // Draw in z-axis.
-        var start = new Vector3(-100,-100,-5);
-        var gap = new Vector3(5, 0, 0);
+        var origin = new Vector3Int(-100,-100,-5);
+        var gap = new Vector3Int(5, 0, 0);
         foreach (var (key, value) in CompleteTileSet)
         {
-            var maxIndex = new Vector3();
+            var maxIndex = new Vector3Int();
             bool labeled = false;
             foreach (var (index, _) in value.AtomIndexToIdMapping)
             {
-                if (maxIndex.x < index.x) maxIndex.x = index.x;
+                if (maxIndex.x < index.x) maxIndex.x = (int)index.x;
                 var drawnAtom = Instantiate(unitTilePrefab);
-                drawnAtom.transform.position = CalcAtomPosition(start + index);
+                drawnAtom.transform.position = CalcAtomPosition(index, origin);
                 
                 UpdateColorFromTerminal(drawnAtom, key);
                 _drawnTiles.Add(drawnAtom);
@@ -512,8 +569,8 @@ public class XWFCAnimator : MonoBehaviour
                 drawnTilePositions[key] = drawnAtom.transform.position;
             }
 
-            start += maxIndex;
-            start += gap;
+            origin += maxIndex;
+            origin += gap;
         }
         
     }
@@ -534,8 +591,9 @@ public class XWFCAnimator : MonoBehaviour
 
     private Grid<Drawing> InitDrawGrid()
     {
-        return new Grid<Drawing>(
-            _xwfc.GridExtent, new Drawing(_xwfc.GridManager.Grid.DefaultFillValue, null));
+        var e = _xwfc.GridExtent;
+        if (_drawnGrid != null) e = _drawnGrid.GetExtent(); 
+        return new Grid<Drawing>(e, new Drawing(_xwfc.GridManager.Grid.DefaultFillValue, null));
     }
 
     public Vector3 GetUnitSize()
@@ -599,7 +657,7 @@ public class XWFCAnimator : MonoBehaviour
                 _iterationsDone++;
             }
             
-            Draw();
+            Draw(new Vector3Int(0,0,0));
         }
         
         if (!MayCollapse())
@@ -657,7 +715,7 @@ public class XWFCAnimator : MonoBehaviour
          * Returns the set of affected cells.
          */
         CollapseOnce();
-        Draw();
+        Draw(new Vector3Int(0,0,0));
     }
 
     private bool MayCollapse()
@@ -679,7 +737,7 @@ public class XWFCAnimator : MonoBehaviour
         return _iterationsDone < stepSize || stepSize < 0;
     }
 
-    private void Draw()
+    private void Draw(Vector3Int origin)
     {
         var grid = _xwfc.GridManager.Grid;
         var gridExtent = grid.GetExtent();
@@ -694,11 +752,18 @@ public class XWFCAnimator : MonoBehaviour
                     // Drawing.DestroyAtom(drawing);
                     // if (gridValue != grid.DefaultFillValue) DrawAtom(new Vector3(x,y,z),gridValue);
 
+                    var blockedCellId =
+                        ExpressiveWFC.BlockedCellId(grid.DefaultFillValue, _xwfc.AdjMatrix.TileSet.Keys);
                     var coord = new Vector3(x, y, z);
                     if (gridValue == grid.DefaultFillValue && drawing.Atom != null)
                     {
                         Drawing.DestroyAtom(drawing);
                         _drawnGrid.Set(coord, new Drawing(grid.DefaultFillValue, null));
+                    }
+                    else if (gridValue == blockedCellId && drawing.Atom != null)
+                    {
+                        Drawing.DestroyAtom(drawing);
+                        _drawnGrid.Set(coord, new Drawing(blockedCellId, null));
                     }
                     else if (drawing.Id != gridValue)
                     {
@@ -706,7 +771,7 @@ public class XWFCAnimator : MonoBehaviour
                         {
                             Drawing.DestroyAtom(drawing);
                         }
-                        DrawAtom(coord,gridValue);
+                        DrawAtom(coord, gridValue, origin);
                     }
                     
                     if (_drawnGrid.Get(coord).Id != grid.Get(coord))
@@ -718,17 +783,17 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
 
-    private void DrawAtom(Vector3 coord, int atomId)
+    private void DrawAtom(Vector3 coord, int atomId, Vector3Int origin)
     {
         if (!_xwfc.AdjMatrix.AtomMapping.ContainsValue(atomId)) return;
         
         var atom = Instantiate(unitTilePrefab);
                 
-        atom.transform.position = CalcAtomPosition(coord);
+        atom.transform.position = CalcAtomPosition(coord, origin);
         var edges = DrawEdges(atomId, atom);
         var drawing = new Drawing(atomId, atom, edges);
         UpdateColorFromAtom(atom, atomId);
-        _drawnGrid.Set(coord, drawing);
+        _drawnGrid.Set(coord + origin, drawing);
     }
 
     private HashSet<GameObject> DrawEdges(int atomId, GameObject atom)
@@ -800,17 +865,22 @@ public class XWFCAnimator : MonoBehaviour
         return _xwfc.AdjMatrix.GetTerminalFromAtomId(atomId).Color;
     }
 
-    private Vector3 CalcAtomPosition(Vector3 coord)
+    private Vector3 CalcAtomPosition(Vector3 coord, Vector3Int origin)
     {
-        return Vector3Util.Mult(coord, _unitSize);
+        return Vector3Util.Mult(origin + coord, _unitSize);
     }
 
     public void Reset()
     {
         _xwfc?.UpdateExtent(extent);
+        ResetDrawnGrid();
+        _activeStateFlag = 0;
+    }
+
+    public void ResetDrawnGrid()
+    {
         _drawnGrid?.Map(Drawing.DestroyAtom);
         _drawnGrid = InitDrawGrid();
-        _activeStateFlag = 0;
     }
     
     public void UpdateExtent(Vector3Int newExtent)

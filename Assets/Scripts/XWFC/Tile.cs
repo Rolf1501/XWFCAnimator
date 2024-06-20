@@ -23,6 +23,7 @@ namespace XWFC
         public Dictionary<int, Vector3[]> OrientedIndices { get; } = new();
         public Dictionary<Vector3, Dictionary<int, int[,]>> OrientedVoidMasks { get; } = new();
         [CanBeNull] public Dictionary<Vector3Int, HashSet<BorderOutline.Edge>> AtomEdges;
+        public readonly bool IsEmptyTile = false;
 
         public int NAtoms { get; private set; }
 
@@ -65,9 +66,10 @@ namespace XWFC
         }
 
         public Tile(string uniformAtomValue, Vector3 extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
-            bool computeAtomEdges = true, string description="")
+            bool computeAtomEdges = true, string description="", bool isEmptyTile=false)
         {
             Description = description;
+            IsEmptyTile = isEmptyTile;
             if (mask == null)
             {
                 var (x, y, z) = Vector3Util.CastInt(extent);

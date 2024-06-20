@@ -149,7 +149,7 @@ namespace XWFC
 
     public class Grid<T> : AbstractGrid<T>
     {
-        public Grid(Vector3 extent, T defaultFillValue) : base((int)extent.x, (int)extent.y, (int)extent.z, defaultFillValue)
+        public Grid(Vector3Int extent, T defaultFillValue) : base((int)extent.x, (int)extent.y, (int)extent.z, defaultFillValue)
         {
             Populate(defaultFillValue);
         }
@@ -165,7 +165,7 @@ namespace XWFC
             var choice = Get(x, y, z);
             // Larger than 0: choice != default
             return DefaultFillValue != null
-                ? Comparer<T>.Default.Compare(choice, DefaultFillValue) > 0
+                ? !EqualityComparer<T>.Default.Equals(choice, DefaultFillValue)
                 : choice != null;
         }
 
@@ -297,10 +297,15 @@ namespace XWFC
             ChoiceWeights = choiceWeights;
         }
 
-        public GridManager(Grid<int> seededGrid, Dictionary<int, float> defaultWeights, float maxEntropy)
+        public GridManager(ref Grid<int> seededGrid, Dictionary<int, float> defaultWeights, float maxEntropy)
         {
             (Width, Height, Depth) = Vector3Util.CastInt(seededGrid.GetExtent());
             Grid = seededGrid;
+            
+            Entropy = new Grid<float>(Width, Height, Depth, -1.0f);
+            ChoiceBooleans = new Grid<bool[]>(Width, Height, Depth, new bool[1]);
+            ChoiceIds = new Grid<int[]>(Width, Height, Depth, new int[1]);
+            ChoiceWeights = new Grid<float[]>(Width, Height, Depth, new float[1]);
             
             InitChoiceWeights(defaultWeights);
             InitEntropy(maxEntropy);

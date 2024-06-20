@@ -1,4 +1,4 @@
-using Unity.VisualScripting;
+using System;
 using UnityEngine;
 
 namespace XWFC
@@ -13,6 +13,12 @@ namespace XWFC
         public static (int, int, int) CastInt(Vector3 vec)
         {
             return ((int)vec.x, (int)vec.y, (int)vec.z);
+        }
+
+        public static Vector3Int VectorToVectorInt(Vector3 vector)
+        {
+            var (x,y,z) = CastInt(vector);
+            return new Vector3Int(x, y, z);
         }
         
         public static Vector3 Mult(Vector3 v0, Vector3 v1) => new(v0.x * v1.x, v0.y * v1.y, v0.z * v1.z);
@@ -74,6 +80,16 @@ namespace XWFC
             }
 
             return vector;
+        }
+
+        public static Vector3Int PairWiseMin(Vector3Int v0, Vector3Int v1)
+        {
+            return new Vector3Int(Math.Min(v0.x, v1.x), Math.Min(v0.y, v1.y), Math.Min(v0.z, v1.z));
+        }
+        
+        public static Vector3Int PairWiseMax(Vector3Int v0, Vector3Int v1)
+        {
+            return new Vector3Int(Math.Max(v0.x, v1.x), Math.Max(v0.y, v1.y), Math.Max(v0.z, v1.z));
         }
     }
     

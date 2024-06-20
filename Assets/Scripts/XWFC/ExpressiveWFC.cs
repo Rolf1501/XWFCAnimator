@@ -68,21 +68,28 @@ namespace XWFC
 
         }
 
-        public ExpressiveWFC(AdjacencyMatrix adjacencyMatrix, Grid<int> seededGrid, int emptyId, bool forceCompleteTiles = true)
+        public ExpressiveWFC(AdjacencyMatrix adjacencyMatrix, ref Grid<int> seededGrid, bool forceCompleteTiles = true)
         {
             AdjMatrix = adjacencyMatrix;
             GridExtent = seededGrid.GetExtent();
+            _tileSet = adjacencyMatrix.TileSet;
             _forceCompleteTiles = forceCompleteTiles;
             _defaultWeights = adjacencyMatrix.TileWeigths;
             _maxEntropy = AdjMatrix.MaxEntropy();
             
-            Clean();
+            Offsets = OffsetFactory.GetOffsets(3);
             
-            RemoveEmptyInSeededGrid(ref seededGrid, emptyId);
+            GridManager = new GridManager(ref seededGrid, _defaultWeights, _maxEntropy);
+            _startCoord = CenterCoord();
+            CleanState();
+            
+            
+            RemoveEmpty(ref seededGrid);
             var blockedCells = BlockOccupiedSeeds(ref seededGrid);
-            EliminateIncompleteBlockedCellNeighbors(blockedCells);
+            EliminateIncompleteBlockedCellNeighbors(blockedCells, seededGrid);
             
-            GridManager = new GridManager(seededGrid, _defaultWeights, _maxEntropy);
+            CleanIncompleteTiles();
+            
             
             // Grid's shape changes because of this, so eliminate all tiles that do not fit.
             // The only cells that need to be checked are those adjacent to replaced cell ids.
@@ -91,15 +98,21 @@ namespace XWFC
             _rootSave = new SavePoint(GridManager, _collapseQueue, _counter);
         }
 
+        public static int BlockedCellId(int defaultFillValue, IEnumerable<int> tileIds)
+        {
+            var minId = Math.Min(defaultFillValue, tileIds.Min()) - 1;
+            return minId;
+        }
+
         private HashSet<Vector3Int> BlockOccupiedSeeds(ref Grid<int> seededGrid)
         {
-            var minId = Math.Min(seededGrid.DefaultFillValue, _defaultWeights.Keys.Min()) - 1;
             var blockedCells = new HashSet<Vector3Int>();
+
+            var blockedCellId = BlockedCellId(seededGrid.DefaultFillValue, _defaultWeights.Keys);
 
             // For a seeded grid, the seeded tiles do not correspond to any tile in the tile set used for the seeded grid.
             // So, set the occupied cells to an id that is not part of the tile set. 
             // That prevents propagation from accessing those cells.
-            var blockedCellId = minId;
             var e = seededGrid.GetExtent();
             for (int x = 0; x < e.x; x++)
             {
@@ -120,8 +133,9 @@ namespace XWFC
             return blockedCells;
         }
 
-        private void RemoveEmptyInSeededGrid(ref Grid<int> grid, int emptyId)
+        public void RemoveEmpty(ref Grid<int> grid)
         {
+            var emptyIds = AdjMatrix.GetEmptyAtomIds();
             var e = grid.GetExtent();
             for (int x = 0; x < e.x; x++)
             {
@@ -129,22 +143,34 @@ namespace XWFC
                 {
                     for (int z = 0; z < e.z; z++)
                     {
-                        if (grid.Get(x,y,z) == emptyId) grid.Set(x,y,z,grid.DefaultFillValue);
+                        if (emptyIds.Contains(grid.Get(x, y, z)))
+                        {
+                            grid.Set(x,y,z,grid.DefaultFillValue);
+                        }
                     }
                 }
             }
         }
 
-        private void EliminateIncompleteBlockedCellNeighbors(HashSet<Vector3Int> cells)
+        private void EliminateIncompleteBlockedCellNeighbors(HashSet<Vector3Int> cells, Grid<int> seededGrid)
         {
+            var neighbors = new HashSet<Vector3Int>();
             foreach (var cell in cells)
             {
                 foreach (var offset in Offsets)
                 {
                     var n = cell + offset;
-                    if (GridManager.WithinBounds(n)) EliminateIncompleteAtoms(n);
+                    if (!neighbors.Contains(n) && !cells.Contains(n) && GridManager.WithinBounds(n))
+                    {
+                        neighbors.Add(n);
+                    }
                 }
-                
+            }
+            
+            // Elimination is expensive, so only perform it on cells for which it's strictly necessary.
+            foreach (var neighbor in neighbors)
+            {
+                EliminateIncompleteAtoms(neighbor, seededGrid);
             }
         }
         
@@ -198,12 +224,13 @@ namespace XWFC
             }
         }
         
-        private void EliminateIncompleteAtoms(Vector3Int coord)
+        private void EliminateIncompleteAtoms(Vector3Int coord, Grid<int>? seededGrid = null)
         {
+            seededGrid ??= GridManager.Grid;
             var choices = GridManager.ChoiceBooleans.Get(coord);
             for (int i = 0; i < choices.Length; i++)
             {
-                if (!choices[i] || TileFits(i, coord)) continue;
+                if (!choices[i] || TileFits(i, coord, seededGrid)) continue;
                 // If the allowed atom's tile does not fit, eliminate from choices and propagate. 
                 choices[i] = false;
                 GridManager.ChoiceBooleans.Set(coord, choices);
@@ -217,12 +244,27 @@ namespace XWFC
             Propagate();
         }
 
-        private bool TileFits(int atomId, Vector3 coord)
+        private bool TileFits(int atomId, Vector3Int coord, Grid<int> seededGrid)
         {
             var  (tileId, atomCoord, _) = AdjMatrix.AtomMapping.GetKey(atomId);
             var tileSource = coord - atomCoord;
-            var tileEnd = tileSource + _tileSet[tileId].Extent - new Vector3(1, 1, 1);
-            return GridManager.WithinBounds(tileSource) && GridManager.WithinBounds(tileEnd);
+            var tileEnd = tileSource + AdjMatrix.TileSet[tileId].Extent - new Vector3Int(1, 1, 1);
+            
+            if (!(GridManager.WithinBounds(tileSource) && GridManager.WithinBounds(tileEnd))) return false;
+
+            // Also check if all other cells in the tile's area are not blocked.
+            for (int x = (int)tileSource.x; x <= tileEnd.x; x++)
+            {
+                for (int y = (int)tileSource.y; y <= tileEnd.y; y++)
+                {
+                    for (int z = (int)tileSource.z; z <= tileEnd.z; z++)
+                    {
+                        if (seededGrid.Get(x, y, z) != seededGrid.DefaultFillValue) return false;
+                    }
+                }
+            }
+            
+            return true;
         }
 
         private Vector3 CenterCoord()

@@ -13,9 +13,7 @@ namespace XWFC
         public Vector3Int Origin;
         public Vector3Int Extent;
         public TileSet Tiles;
-        public InputGrid[] InputGrids;
         public Grid<int> Grid;
-        public float[] TileWeights;
         public AdjacencyMatrix AdjacencyMatrix;
 
         private Dictionary<Vector3, int[,]> _voidMasks = new ();
@@ -25,9 +23,7 @@ namespace XWFC
             Origin = origin;
             Extent = extent;
             Tiles = tileSet;
-            InputGrids = inputGrids;
             Grid = new Grid<int>(Extent, -1);
-            TileWeights = tileWeights ?? new float[1];
             AdjacencyMatrix = new AdjacencyMatrix(tileSet, inputGrids, AdjacencyMatrix.ToWeightDictionary(tileWeights, tileSet));
         }
 
@@ -51,7 +47,7 @@ namespace XWFC
             return new Range3D(XRange(), YRange(), ZRange());
         }
 
-        public void CalcVoidMasks(int emptyId)
+        public void CalcVoidMasks()
         {
             var (x, y, z) = Vector3Util.CastInt(Grid.GetExtent());
             var boolMask = new bool[y,x,z];
@@ -62,7 +58,7 @@ namespace XWFC
                     for (int bz = 0; bz < z; bz++)
                     {
                         var value = Grid.Get(bx, by, bz);
-                        if (value != Grid.DefaultFillValue && value != emptyId)
+                        if (value != Grid.DefaultFillValue)
                         {
                             boolMask[by, bx, bz] = true;
                         }
@@ -83,28 +79,18 @@ namespace XWFC
             _voidMasks[new Vector3(0, 0, -1)] = negZ;
         }
 
-        public (int offset, Vector3Int direction) CalcOffset(Range3D region, int emptyId, OffsetMode mode = OffsetMode.Max)
+        public (int offset, Vector3Int direction) CalcOffset(Range3D region, OffsetMode mode = OffsetMode.Max)
         {
             if (_voidMasks.Values.Count == 0)
             {
-                CalcVoidMasks(emptyId);
+                CalcVoidMasks();
             }
 
             /*
              * Find dimension that is either an exact fit/touching.
              * If there is no such dimension, try each of the three dimensions, in order y, x, z.
              */
-            var isZeroLength = region.IsZero();
-
-            // Follows the yxz axis indices. Index corresponds to the orientation of the supposed plane of intersection. 
-            var offsetDimensionIndex = isZeroLength.y ? 0 : isZeroLength.x ? 1 : isZeroLength.z ? 2 : -1;
-            
-            if (offsetDimensionIndex == -1)
-            {
-                offsetDimensionIndex = 0; 
-                // Intersection region is 3D.
-                // So, any of the dimension are valid. For now, assume y direction.
-            }
+            var offsetDimensionIndex = region.OffsetDimensionIndex();
 
             /*
              * Sign is used to denote whether the void mask in positive or negative direction should be used.
@@ -113,10 +99,11 @@ namespace XWFC
              * direction index matches that of the component's.
              */
             var sign = Vector3Util.GetByAxis(Origin, offsetDimensionIndex) 
-                       == Vector3Util.GetByAxis(region.Origin(), offsetDimensionIndex) ? -1 : 1;
+                       == Vector3Util.GetByAxis(region.Min(), offsetDimensionIndex) ? -1 : 1;
+            var direction = Vector3Util.SetByAxis(new Vector3Int(0, 0, 0), offsetDimensionIndex, sign);
 
-            var relativeOrigin = region.Origin() - Origin;
-            var relativeExtent = region.Extent() - Origin;
+            var relativeOrigin = region.Min() - Origin;
+            var relativeExtent = region.Max() - Origin;
 
             // Go over all axes and only include those not equal to the offset dimension index.
             // This is used to determine the range that needs to be checked in the void mask.
@@ -131,7 +118,6 @@ namespace XWFC
                 voidMaskEnd.Add(Math.Min(Vector3Util.GetByAxis(Grid.GetExtent(), i) , Vector3Util.GetByAxis(relativeExtent, i)));
             }
 
-            var direction = Vector3Util.SetByAxis(new Vector3Int(0, 0, 0), offsetDimensionIndex, sign);
             var voidMask = _voidMasks[direction];
 
             // To find proper adjacency of components, the offset is equal to the largest number of voids.

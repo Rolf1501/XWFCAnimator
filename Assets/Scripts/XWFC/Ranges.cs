@@ -1,5 +1,4 @@
 ﻿using System;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace XWFC
@@ -146,13 +145,30 @@ namespace XWFC
             return (XRange.Equals(range.XRange), YRange.Equals(range.YRange), ZRange.Equals(range.ZRange));
         }
 
-        public Vector3Int Origin()
+        public Vector3Int Min()
         {
             return new Vector3Int(XRange.Start, YRange.Start, ZRange.Start);
         }
-        public Vector3Int Extent()
+        public Vector3Int Max()
         {
             return new Vector3Int(XRange.End, YRange.End, ZRange.End);
+        }
+
+        public int OffsetDimensionIndex()
+        {
+            var isZeroLength = IsZero();
+
+            // Follows the yxz axis indices. Index corresponds to the orientation of the supposed plane of intersection. 
+            var offsetDimensionIndex = isZeroLength.y ? 0 : isZeroLength.x ? 1 : isZeroLength.z ? 2 : -1;
+            
+            if (offsetDimensionIndex == -1)
+            {
+                offsetDimensionIndex = 0; 
+                // Intersection region is 3D.
+                // So, any of the dimension are valid. For now, assume y direction.
+            }
+
+            return offsetDimensionIndex;
         }
     }
 }

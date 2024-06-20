@@ -22,7 +22,7 @@ namespace XWFC
         public Bidict<(int tileId, Vector3 atomCoord, int orientation), int> AtomMapping { get; private set; } // Mapping of atom indices to relative atom coordinate, corresponding terminal id and orientation.
         public Dictionary<Vector3, bool[,]> AtomAdjacencyMatrix { get; private set; }
         private Dictionary<Vector3, float[,]> AtomAdjacencyMatrixW;
-        public Dictionary<int, (int, int)> TileAtomRangeMapping { get; private set; } // Reserves an index Range2D for the atoms of the tile.
+        public Dictionary<int, Range> TileAtomRangeMapping { get; private set; } // Reserves an index Range2D for the atoms of the tile.
 
         public Dictionary<int, float> TileWeigths;
         public const int BlockedCellId = -2;
@@ -114,8 +114,8 @@ namespace XWFC
             var aug = new Dictionary<int, float>();
             foreach (var (k, v) in defaultWeights)
             {
-                var (start, end) = TileAtomRangeMapping[k];
-                for (int i = start; i < end; i++)
+                var range = TileAtomRangeMapping[k];
+                for (int i = range.Start; i < range.End; i++)
                 {
                     aug[i] = v;
                 }
@@ -153,13 +153,13 @@ namespace XWFC
             AtomMapping = new Bidict<(int, Vector3, int), int>();
             AtomAdjacencyMatrix = new Dictionary<Vector3, bool[,]>();
             AtomAdjacencyMatrixW = new Dictionary<Vector3, float[,]>();
-            TileAtomRangeMapping = new Dictionary<int, (int, int)>();
+            TileAtomRangeMapping = new Dictionary<int, Range>();
             
             _tileIdToIndexMapping = MapTileIdToIndex(TileSet);
             
             // Create tile to atom Range2D mapping.
             int nAtoms;
-            (TileAtomRangeMapping, nAtoms) = MapTileAtomRange2D(TileSet);
+            (TileAtomRangeMapping, nAtoms) = MapTileAtomRange(TileSet);
             InitAtomAdjacencyMatrix(nAtoms);
         }
 
@@ -363,7 +363,7 @@ namespace XWFC
             return AtomMapping.GetNEntries();
         }
 
-        private static int CalcAtomRange2D(Tile tile)
+        private static int CalcAtomRange(Tile tile)
         {
             return tile.NAtoms;
         }
@@ -373,16 +373,16 @@ namespace XWFC
             OuterAtomAdjacency(); // With atoms from another molecule.
         }
 
-        private (Dictionary<int, (int start, int end)> mapping, int nAtoms) MapTileAtomRange2D(TileSet tiles)
+        private (Dictionary<int, Range> mapping, int nAtoms) MapTileAtomRange(TileSet tiles)
         {
             int nAtoms = 0;
-            var mapping = new Dictionary<int, (int start, int end)>();
-            // Map each terminal to a Range2D in the mapping list.
+            var mapping = new Dictionary<int, Range>();
+            // Map each terminal to a range in the mapping list.
             foreach (int tileId in tiles.Keys)
             {
                 Tile t = TileSet[tileId];
-                int tAtoms = CalcAtomRange2D(t);
-                mapping[tileId] = (nAtoms, nAtoms + tAtoms);
+                int tAtoms = CalcAtomRange(t);
+                mapping[tileId] = new Range(nAtoms, nAtoms + tAtoms);
                 nAtoms += tAtoms;
             }
 
@@ -785,6 +785,23 @@ namespace XWFC
         public Tile GetTerminalFromAtomId(int atomId)
         {
             return TileSet[AtomMapping.Get(atomId).Item1];
+        }
+
+        public HashSet<int> GetEmptyAtomIds()
+        {
+            var emptyAtomIds = new HashSet<int>();
+            foreach (var (id, tile) in TileSet)
+            {
+                if (!tile.IsEmptyTile) continue;
+                
+                var range = TileAtomRangeMapping[id];
+                for (int i = range.Start; i < range.End; i++)
+                {
+                    emptyAtomIds.Add(i);
+                }
+            }
+
+            return emptyAtomIds;
         }
     }
     

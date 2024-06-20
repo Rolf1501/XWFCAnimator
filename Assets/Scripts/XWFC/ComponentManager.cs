@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace XWFC
 {
@@ -20,9 +20,9 @@ namespace XWFC
             _order = ComponentOrder();
         }
 
-        public (int id, Component component) Next()
+        public int Next()
         {
-            if (!HasNext()) return (-1, null);
+            if (!HasNext()) return -1;
 
             _orderIndex++;
             
@@ -31,9 +31,22 @@ namespace XWFC
             
             _currentComponent = Components[_currentComponentId];
             
-            return (_currentComponentId, _currentComponent);
+            return _currentComponentId;
         }
 
+        public (Vector3Int min, Vector3Int max) BoundingBox()
+        {
+            var min = Components[0].Origin;
+            var max = Components[0].Origin + Components[0].Extent;
+            
+            foreach (var component in Components)
+            {
+                min = Vector3Util.PairWiseMin(min, component.Origin);
+                max = Vector3Util.PairWiseMax(max, component.Origin + component.Extent);
+            }
+
+            return (min, max);
+        }
 
         private List<int> ComponentOrder()
         {
@@ -98,28 +111,6 @@ namespace XWFC
         {
             return _orderIndex < _order.Count - 1;
         }
-        public void SeedComponentGrid(ref Component component)
-        {
-            /*
-             * Find other components adjacent to passed component.
-             * Find number of layers required to fully seed the grid. --> same as calculation of void masks!
-             * Insert layers into component grid.
-             * Update component's origin and extent?
-             */
-            
-            /*
-             * Determining direction for void mask calculation: find intersecting dimension ranges.
-             * To be considered intersecting, at least two dimensions should intersect and at most one should touch.
-             * Choose the dimension not part of intersection.
-             *
-             * If the region of overlap is void, then shifting is needed.
-             * How to determine shifting direction? --> dimension not involved in intersecting region.
-             */
-            
-            /*
-             * Foreach solved adjacent component, obtain void masks and then offset the component. 
-             */
-        }
 
         public void CalcIntersections()
         {
@@ -155,5 +146,120 @@ namespace XWFC
         {
             return Range3D.Intersect3D(source.Ranges(), other.Ranges());
         }
+
+        public void TranslateUnsolved()
+        {
+            if (_currentComponentId < 0 || _currentComponentId >= Components.Length) return;
+            
+            var curComponent = Components[_currentComponentId];
+            var intersections = Intersections[_currentComponentId];
+
+            var solved = GetSolvedIds();
+
+            var visited = new HashSet<int>() {_currentComponentId};
+            for (int j = 0; j < intersections.Count; j++)
+            {
+                var (id, range) = intersections[j];
+                
+                // Allowing translation of the same component multiple times could result in endless loop.
+                if (visited.Contains(id) || solved.Contains(id)) continue;
+                
+                var (offset, direction) = curComponent.CalcOffset(range);
+                
+                if (offset == 0) continue;
+                
+                // Translate the unsolved component by the offset in the given direction.
+                visited = PropagateTranslation(id, direction, offset, visited, solved);
+            }
+            
+            // Translation can result in different intersections, so recompute them.
+            CalcIntersections();
+        }
+
+        private HashSet<int> GetSolvedIds()
+        {
+            var solved = new HashSet<int>();
+            for (int i = 0; i < _orderIndex; i++)
+            {
+                solved.Add(_order[i]);
+            }
+
+            return solved;
+        }
+
+        public void SeedComponent(int componentId)
+        {
+            /*
+             * To seed a component, find the solved components it intersects with.
+             * Then, map the region of overlap to the local grid coordinate system.
+             */
+            var intersections = Intersections[componentId];
+            var component = Components[componentId];
+            var blockedCellId = ExpressiveWFC.BlockedCellId(component.Grid.DefaultFillValue,
+                component.AdjacencyMatrix.TileSet.Keys);
+
+            var solved = GetSolvedIds();
+            foreach (var (id, range) in intersections)
+            {
+                // Seeding is only when the component intersects with a solved component.
+                if (!solved.Contains(id)) continue;
+                
+                // Map range to relative coordinates to reference items in grid.
+                var other = Components[id];
+                var startOther = range.Min() - other.Origin;
+
+                var startThis = range.Min() - component.Origin;
+
+                var xLength = range.GetXLength();
+                var yLength = range.GetYLength();
+                var zLength = range.GetZLength();
+
+                var otherDefaultFillValue = other.Grid.DefaultFillValue;
+                for (int x = 0; x < xLength; x++)
+                {
+                    for (int y = 0; y < yLength; y++)
+                    {
+                        for (int z = 0; z < zLength; z++)
+                        {
+                            var relativeCoord = new Vector3Int(x, y, z);
+                            var otherCoord = startOther + relativeCoord;
+                            var thisCoord = startThis + relativeCoord; 
+                            if (other.Grid.Get(otherCoord) != otherDefaultFillValue)
+                            {
+                                component.Grid.Set(thisCoord, blockedCellId);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public HashSet<int> PropagateTranslation(int componentId, Vector3Int direction, int offset, HashSet<int> visited, HashSet<int> solved)
+        {
+            /*
+             * Propagate translation DFS order.
+             */
+            Translate(componentId, direction, offset);
+            visited.Add(componentId);
+            
+            var intersections = Intersections[componentId];
+            foreach (var (i, range) in intersections)
+            {
+                if (visited.Contains(i) || solved.Contains(i)) continue;
+                return PropagateTranslation(i, direction, offset, visited, solved);
+            }
+
+            return visited;
+        }
+        
+        public void Translate(int componentId, Vector3Int direction, int offset)
+        {
+            /*
+             * Given an offset and a direction, the translation should be the negated offset (hence -offset).
+             */
+            var translation = Vector3Util.VectorToVectorInt(Vector3Util.Scale(direction, -offset));
+            Components[componentId].Origin += translation;
+        }
+        
     }
 }
