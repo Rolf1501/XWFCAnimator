@@ -12,6 +12,8 @@ using Component = XWFC.Component;
 using Random = System.Random;
 using Vector3 = UnityEngine.Vector3;
 
+using Patterns = System.Collections.Generic.List<(int,UnityEngine.Vector3)>;
+
 public class XWFCAnimator : MonoBehaviour
 {
     [SerializeField] private GameObject unitTilePrefab;
@@ -66,7 +68,7 @@ public class XWFCAnimator : MonoBehaviour
         
         // InitXWFC();
 
-        var houseComponents = GetHouseComponents();
+        var houseComponents = HouseComponents();
 
         _componentManager = new ComponentManager(houseComponents);
         
@@ -130,7 +132,7 @@ public class XWFCAnimator : MonoBehaviour
                 {
                     for (int z = 0; z < e.z; z++)
                     {
-                        DrawAtom(new Vector3(x,y,z), grid.Get(x,y,z), origin);
+                        DrawAtom(new Vector3(x,y,z), grid.Get(x,y,z), origin, component.AdjacencyMatrix);
                     }
                 }
             }
@@ -179,13 +181,13 @@ public class XWFCAnimator : MonoBehaviour
         return tileSet;
     }
 
-    private Component[] GetHouseComponents()
+    private Component[] HouseComponents()
     {
-        var (houseTiles, weights) = GetHouseTiles();
+        var (houseTiles, weights) = HouseTiles();
         var tileSet = ToTileSet(houseTiles);
 
         // var activeTileSet = tetrisTiles;
-        var patterns = GetHousePatterns();
+        var patterns = HousePatterns();
         
         var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, tileSet, "");
         // Three components stacked in the y-direction.
@@ -201,12 +203,14 @@ public class XWFCAnimator : MonoBehaviour
 
         var baseTileSet = ToTileSet(BaseTiles());
         var (baseGrid, ids) = InputHandler.PatternsToGrids(BasePatterns(), baseTileSet, "");
-        
+
+        var floorTileSet = ToTileSet(FloorTiles());
+        var (floorGrid, _) = InputHandler.PatternsToGrids(FloorPatterns(), floorTileSet, "");
         
         var baseComponent = new Component(baseOrigin, baseExtent, baseTileSet, baseGrid.ToArray(), weights);
-        // var floor = new Component(floorOrigin, floorExtent, tileSet, grids.ToArray(), weights);
+        var floorComponent = new Component(floorOrigin, floorExtent, floorTileSet, floorGrid.ToArray(), weights);
         // var roof = new Component(roofOrigin, roofExtent, tileSet, grids.ToArray(), weights);
-        var components = new Component[] { baseComponent };//, floor, roof };
+        var components = new Component[] { baseComponent, floorComponent };//, floor, roof };
 
         return components;
     }
@@ -216,7 +220,7 @@ public class XWFCAnimator : MonoBehaviour
         var grassTile = new Tile(
             "g",
             new Vector3(1,1,1), 
-            color: new Color(0,0.8f,0,1) 
+            color: new Color(0,0.2f,0,1) 
         );
         
         var soilTile = new Tile(
@@ -229,7 +233,7 @@ public class XWFCAnimator : MonoBehaviour
         var brickTile = new Tile(
             "b0",
             new Vector3(2,1,1), 
-            color: new Color(0.8f,0,0,1)
+            color: new Color(0.8f,1,0,1)
         );
         
         var emptyTile = new Tile(
@@ -244,15 +248,15 @@ public class XWFCAnimator : MonoBehaviour
         var halfBrickTile = new Tile(
             "b1",
             new Vector3(1,1,1), 
-            color: new Color(0.4f,0,0.4f,1)
+            color: new Color(0.4f,0.6f,0.4f,1)
         );
 
         return new Tile[] { brickTile, grassTile, soilTile, emptyTile, halfBrickTile };
     }
 
-    private List<List<(int, Vector3)>> BasePatterns()
+    private List<Patterns> BasePatterns()
     {
-        var grassBrickPattern = new List<(int, Vector3)>()
+        var grassBrickPattern = new Patterns()
         {
             // b,b
             // g,g
@@ -261,7 +265,7 @@ public class XWFCAnimator : MonoBehaviour
             (1, new Vector3(1, 0, 0)),
         };
 
-        var brickPattern = new List<(int, Vector3)>()
+        var brickPattern = new Patterns()
         {
             // b1,b,b,b1
             //  b,b,b,b
@@ -272,7 +276,7 @@ public class XWFCAnimator : MonoBehaviour
             (4, new Vector3(3,0,1)),
         };
 
-        var brickPattern1 = new List<(int, Vector3)>()
+        var brickPattern1 = new Patterns()
         {
             // b1      ,b1
             // b0,b0,b0,b0
@@ -285,7 +289,7 @@ public class XWFCAnimator : MonoBehaviour
             (4, new Vector3(3, 0, 2)),
         };
 
-        var grassSoilPattern = new List<(int, Vector3)>()
+        var grassSoilPattern = new Patterns()
         {
             // g,g,s
             // s,s,s
@@ -297,7 +301,7 @@ public class XWFCAnimator : MonoBehaviour
             (2, new Vector3(2,0,0)),
         };
 
-        var emptyGrassPattern = new List<(int, Vector3)>()
+        var emptyGrassPattern = new Patterns()
         {
             // e
             // g
@@ -305,7 +309,7 @@ public class XWFCAnimator : MonoBehaviour
             (1, new Vector3(0, 0, 0))
         };
 
-        var emptyBrickPattern = new List<(int, Vector3)>()
+        var emptyBrickPattern = new Patterns()
         {
             //   e,e
             // e,b,b,e
@@ -316,7 +320,7 @@ public class XWFCAnimator : MonoBehaviour
             (3, new Vector3(1, 0, 2)),
         };
 
-        var emptyEmptyPattern = new List<(int, Vector3)>()
+        var emptyEmptyPattern = new Patterns()
         {
             // e
             // e,e
@@ -325,8 +329,108 @@ public class XWFCAnimator : MonoBehaviour
             (3, new Vector3(1, 0, 0)),
         };
 
-        return new List<List<(int, Vector3)>>()
+        return new List<Patterns>()
             { brickPattern, emptyBrickPattern, emptyEmptyPattern, emptyGrassPattern, grassBrickPattern, grassSoilPattern, brickPattern1 };
+    }
+
+    private Tile[] FloorTiles()
+    {
+        var brickTile = new Tile(
+            "b0",
+            new Vector3(2,1,1), 
+            color: new Color(1,0.3f,0.3f,1)
+        );
+        
+        var emptyTile = new Tile(
+            ".",
+            new Vector3(1, 1, 1),
+            new Color(0.5f, 0.2f, 0.5f, 0.2f),
+            description: "empty",
+            computeAtomEdges:false,
+            isEmptyTile:true
+        );
+        
+        var halfBrickTile = new Tile(
+            "b1",
+            new Vector3(1,1,1), 
+            color: new Color(0.7f,0.6f,0.3f,1)
+        );
+        
+        var windowTile = new Tile(
+            "w",
+            new Vector3(3, 1, 3),
+            color: new Color(0, 0, 0.8f)
+        );
+
+        return new Tile[] { brickTile, halfBrickTile, windowTile, emptyTile };
+    }
+
+    private List<Patterns> FloorPatterns()
+    {
+        var brickPattern = new Patterns()
+        {
+            // b1,b,b,b1
+            //  b,b,b,b
+            (0, new Vector3(2,0,0)),
+            (0, new Vector3(0,0,0)),
+            (0, new Vector3(1,0,1)),
+            (1, new Vector3(0,0,1)),
+            (1, new Vector3(3,0,1)),
+        };
+
+        var brickPattern1 = new Patterns()
+        {
+            // b1      ,b1
+            // b0,b0,b0,b0
+            // b1      ,b1
+            (1, new Vector3(0, 0, 0)),
+            (1, new Vector3(0, 0, 2)),
+            (0, new Vector3(0, 0, 1)),
+            (0, new Vector3(2, 0, 1)),
+            (1, new Vector3(3, 0, 0)),
+            (1, new Vector3(3, 0, 2)),
+        };
+        
+        var emptyBrickPattern = new Patterns()
+        {
+            //   e,e
+            // e,b,b,e
+            (0, new Vector3(1, 0, 0)),
+            (3, new Vector3(0, 0, 0)),
+            (3, new Vector3(3, 0, 0)),
+            (3, new Vector3(1, 0, 1)),
+            (3, new Vector3(1, 0, 2)),
+        };
+
+        var emptyEmptyPattern = new Patterns()
+        {
+            // e
+            // e,e
+            (3, new Vector3(0, 0, 0)),
+            (3, new Vector3(0, 0, 1)),
+            (3, new Vector3(1, 0, 0)),
+        };
+        
+        var windowBrickPattern = new Patterns()
+        {
+            (2, new Vector3(2, 0, 1)),
+
+            (1, new Vector3(1, 0, 1)),
+            (0, new Vector3(0, 0, 2)),
+            (1, new Vector3(1, 0, 3)),
+            
+            (1, new Vector3(5, 0, 1)),
+            (0, new Vector3(5, 0, 2)),
+            (1, new Vector3(5, 0, 3)),
+
+            (0, new Vector3(2, 0, 0)),
+            (1, new Vector3(4, 0, 0)),
+            
+            (1, new Vector3(2, 0, 4)),
+            (0, new Vector3(3, 0, 4)),
+        };
+
+        return new List<Patterns>() { brickPattern, emptyBrickPattern, brickPattern1, windowBrickPattern, emptyEmptyPattern };
     }
     
     private void PrintAdjacencyData()
@@ -360,7 +464,7 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
 
-    private (Tile[] houseTiles, float[] weights) GetHouseTiles()
+    private (Tile[] houseTiles, float[] weights) HouseTiles()
     {
         var doorTile = new Tile(
             "d", 
@@ -412,9 +516,9 @@ public class XWFCAnimator : MonoBehaviour
         var weights = new float[] { 1, 1, 1, 1, 1, 1, 1};
         return (houseTiles, weights);
     }
-    private List<List<(int, Vector3)>> GetHousePatterns()
+    private List<Patterns> HousePatterns()
     {
-        var doorBrickPattern = new List<(int, Vector3)>()
+        var doorBrickPattern = new Patterns()
         {
             (0, new Vector3(2,0,0)),
             
@@ -437,7 +541,7 @@ public class XWFCAnimator : MonoBehaviour
             (2, new Vector3(5,0,3)),
         };
 
-        var windowBrickPattern = new List<(int, Vector3)>()
+        var windowBrickPattern = new Patterns()
         {
             (5, new Vector3(2, 0, 1)),
 
@@ -456,7 +560,7 @@ public class XWFCAnimator : MonoBehaviour
             (1, new Vector3(3, 0, 4)),
         };
 
-        var doorGrassPattern = new List<(int, Vector3)>()
+        var doorGrassPattern = new Patterns()
         {
             (0, new Vector3(0,0,1)),
             (3, new Vector3(0,0,0)),
@@ -464,7 +568,7 @@ public class XWFCAnimator : MonoBehaviour
             (3, new Vector3(2,0,0)),
         };
 
-        var grassBrickPattern = new List<(int, Vector3)>()
+        var grassBrickPattern = new Patterns()
         {
             (1, new Vector3(0, 0, 1)),
             (3, new Vector3(0, 0, 0)),
@@ -474,7 +578,7 @@ public class XWFCAnimator : MonoBehaviour
             (3, new Vector3(2, 0, 0)),
         };
 
-        var brickPattern = new List<(int, Vector3)>()
+        var brickPattern = new Patterns()
         {
             (1, new Vector3(1,0,0)),
             (1, new Vector3(0,0,1)),
@@ -483,7 +587,7 @@ public class XWFCAnimator : MonoBehaviour
             (2, new Vector3(3,0,0)),
         };
 
-        var grassSoilPattern = new List<(int, Vector3)>()
+        var grassSoilPattern = new Patterns()
         {
             (4, new Vector3(0,0,0)),
             (4, new Vector3(1,0,0)),
@@ -491,13 +595,13 @@ public class XWFCAnimator : MonoBehaviour
             (3, new Vector3(0,0,1)),
         };
 
-        var emptyGrassPattern = new List<(int, Vector3)>()
+        var emptyGrassPattern = new Patterns()
         {
             (6, new Vector3(0, 0, 1)),
             (4, new Vector3(0, 0, 0))
         };
 
-        var emptyBrickPattern = new List<(int, Vector3)>()
+        var emptyBrickPattern = new Patterns()
         {
             (1, new Vector3(1, 0, 0)),
             (6, new Vector3(0, 0, 0)),
@@ -506,7 +610,7 @@ public class XWFCAnimator : MonoBehaviour
             (6, new Vector3(1, 0, 2)),
         };
         
-        var emptyHalfBrickPattern = new List<(int, Vector3)>()
+        var emptyHalfBrickPattern = new Patterns()
         {
             (2, new Vector3(1, 0, 0)),
             (6, new Vector3(0, 0, 0)),
@@ -514,7 +618,7 @@ public class XWFCAnimator : MonoBehaviour
             (6, new Vector3(1, 0, 1)),
         };
 
-        var emptyEmptyPattern = new List<(int, Vector3)>()
+        var emptyEmptyPattern = new Patterns()
         {
             (6, new Vector3(0,0,0)),
             (6, new Vector3(0,0,1)),
@@ -522,7 +626,7 @@ public class XWFCAnimator : MonoBehaviour
             (6, new Vector3(1,0,1))
         };
 
-        var patterns = new List<List<(int, Vector3)>>()
+        var patterns = new List<Patterns>()
         {
             doorBrickPattern,
             doorGrassPattern,
@@ -894,7 +998,7 @@ public class XWFCAnimator : MonoBehaviour
                         {
                             Drawing.DestroyAtom(drawing);
                         }
-                        DrawAtom(coord, gridValue, origin);
+                        DrawAtom(coord, gridValue, origin, _xwfc.AdjMatrix);
                     }
                     
                     if (_drawnGrid.Get(coord).Id != grid.Get(coord))
@@ -906,20 +1010,20 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
 
-    private void DrawAtom(Vector3 coord, int atomId, Vector3Int origin)
+    private void DrawAtom(Vector3 coord, int atomId, Vector3Int origin, AdjacencyMatrix adjacencyMatrix)
     {
-        if (!_xwfc.AdjMatrix.AtomMapping.ContainsValue(atomId)) return;
+        if (!adjacencyMatrix.AtomMapping.ContainsValue(atomId)) return;
         
         var atom = Instantiate(unitTilePrefab);
                 
         atom.transform.position = CalcAtomPosition(coord, origin);
-        var edges = DrawEdges(atomId, atom);
+        var edges = DrawEdges(atomId, atom, adjacencyMatrix);
         var drawing = new Drawing(atomId, atom, edges);
-        UpdateColorFromAtom(atom, atomId);
+        UpdateColorFromAtom(atom, atomId, adjacencyMatrix);
         _drawnGrid.Set(coord + origin, drawing);
     }
 
-    private HashSet<GameObject> DrawEdges(int atomId, GameObject atom)
+    private HashSet<GameObject> DrawEdges(int atomId, GameObject atom, AdjacencyMatrix adjacencyMatrix)
     {
         var bounds = atom.GetComponent<Renderer>().bounds.size;
         var edgeExtent = new Vector3(0.05f,0.05f,0.05f);
@@ -927,9 +1031,9 @@ public class XWFCAnimator : MonoBehaviour
         var halfBounds = Vector3Util.Scale(bounds, 0.5f);
         var zeroOrigin = origin - halfBounds;
         
-        var (terminalId, atomIndex, _) = _xwfc.AdjMatrix.AtomMapping.Get(atomId);
+        var (terminalId, atomIndex, _) = adjacencyMatrix.AtomMapping.Get(atomId);
         
-        var edges = TileSet[terminalId].AtomEdges;
+        var edges = adjacencyMatrix.TileSet[terminalId].AtomEdges;
         var edgeObjects = new HashSet<GameObject>();
         if (edges == null) return edgeObjects;
 
@@ -971,9 +1075,9 @@ public class XWFCAnimator : MonoBehaviour
 
     }
 
-    private void UpdateColorFromAtom(GameObject obj, int atomId, bool applyFluctuation=true)
+    private void UpdateColorFromAtom(GameObject obj, int atomId, AdjacencyMatrix adjacencyMatrix, bool applyFluctuation=true)
     {
-        var color = GetTerminalColorFromAtom(atomId);
+        var color = GetTerminalColorFromAtom(atomId, adjacencyMatrix);
         if (applyFluctuation) color = ApplyVariation(color, 0.2f);
         obj.GetComponent<Renderer>().material.color = color;
     }
@@ -983,9 +1087,9 @@ public class XWFCAnimator : MonoBehaviour
         obj.GetComponent<Renderer>().material.color = CompleteTileSet[tileId].Color;
     }
 
-    private Color GetTerminalColorFromAtom(int atomId)
+    private Color GetTerminalColorFromAtom(int atomId, AdjacencyMatrix adjacencyMatrix)
     {
-        return _xwfc.AdjMatrix.GetTerminalFromAtomId(atomId).Color;
+        return adjacencyMatrix.GetTerminalFromAtomId(atomId).Color;
     }
 
     private Vector3 CalcAtomPosition(Vector3 coord, Vector3Int origin)
