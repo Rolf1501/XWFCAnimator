@@ -79,15 +79,16 @@ namespace XWFC
             
             Offsets = OffsetFactory.GetOffsets(3);
             
-            GridManager = new GridManager(ref seededGrid, _defaultWeights, _maxEntropy);
+            GridManager = new GridManager(seededGrid, _defaultWeights, _maxEntropy);
             _startCoord = CenterCoord();
             CleanState();
             
             
             RemoveEmpty(ref seededGrid);
             var blockedCells = BlockOccupiedSeeds(ref seededGrid);
-            EliminateIncompleteBlockedCellNeighbors(blockedCells, seededGrid);
-            
+            seededGrid = EliminateIncompleteBlockedCellNeighbors(blockedCells, seededGrid);
+
+            GridManager.Grid = seededGrid;
             CleanIncompleteTiles();
             
             
@@ -152,7 +153,7 @@ namespace XWFC
             }
         }
 
-        private void EliminateIncompleteBlockedCellNeighbors(HashSet<Vector3Int> cells, Grid<int> seededGrid)
+        private Grid<int> EliminateIncompleteBlockedCellNeighbors(HashSet<Vector3Int> cells, Grid<int> seededGrid)
         {
             var neighbors = new HashSet<Vector3Int>();
             foreach (var cell in cells)
@@ -170,11 +171,13 @@ namespace XWFC
             // Elimination is expensive, so only perform it on cells for which it's strictly necessary.
             foreach (var neighbor in neighbors)
             {
-                EliminateIncompleteAtoms(neighbor, seededGrid);
+                seededGrid = EliminateIncompleteAtoms(neighbor, seededGrid);
             }
+
+            return seededGrid;
         }
         
-        private void EliminateIncompleteTiles()
+        private Grid<int> EliminateIncompleteTiles(Grid<int> grid)
         {
             /*
              * After a grid is superimposed, the cells at the borders allow atoms of tile that would extend beyond the grid's boundaries.
@@ -183,58 +186,61 @@ namespace XWFC
              * Thus:
              * For each atom in the boundary cells: Eliminate atom if corresponding tile does not fit. Propagate. Repeat.
              */
+
+            var e = grid.GetExtent();
             
             // Z layers.
-            for (int x = 0; x < GridExtent.x; x++)
+            for (int x = 0; x < e.x; x++)
             {
-                for (int y = 0; y < GridExtent.y; y++)
+                for (int y = 0; y < e.y; y++)
                 {
-                    var (zStart, zEnd) = (0, GridExtent.z - 1);
+                    var (zStart, zEnd) = (0, e.z - 1);
                     var start = new Vector3Int(x, y, zStart);
                     var end = new Vector3Int(x, y, zEnd);
-                    EliminateIncompleteAtoms(start);
-                    EliminateIncompleteAtoms(end);
+                    grid = EliminateIncompleteAtoms(start, grid);
+                    grid = EliminateIncompleteAtoms(end, grid);
                 }
             }
 
             // Y layers.
-            for (int x = 0; x < GridExtent.x; x++)
+            for (int x = 0; x < e.x; x++)
             {
-                for (int z = 0; z < GridExtent.z; z++)
+                for (int z = 0; z < e.z; z++)
                 {
-                    var (yStart, yEnd) = (0, GridExtent.y - 1);
+                    var (yStart, yEnd) = (0, e.y - 1);
                     var start = new Vector3Int(x, yStart, z);
                     var end = new Vector3Int(x, yEnd, z);
-                    EliminateIncompleteAtoms(start);
-                    EliminateIncompleteAtoms(end);
+                    grid = EliminateIncompleteAtoms(start, grid);
+                    grid = EliminateIncompleteAtoms(end, grid);
                 }
             }
             
             // X layers.
-            for (int y = 0; y < GridExtent.y; y++)
+            for (int y = 0; y < e.y; y++)
             {
-                for (int z = 0; z < GridExtent.z; z++)
+                for (int z = 0; z < e.z; z++)
                 {
-                    var (xStart, xEnd) = (0, GridExtent.x - 1);
+                    var (xStart, xEnd) = (0, e.x - 1);
                     var start = new Vector3Int(xStart, y, z);
                     var end = new Vector3Int(xEnd, y, z);
-                    EliminateIncompleteAtoms(start);
-                    EliminateIncompleteAtoms(end);
+                    grid = EliminateIncompleteAtoms(start, grid);
+                    grid = EliminateIncompleteAtoms(end, grid);
                 }
             }
+
+            return grid;
         }
         
-        private void EliminateIncompleteAtoms(Vector3Int coord, Grid<int>? seededGrid = null)
+        private Grid<int> EliminateIncompleteAtoms(Vector3Int coord, Grid<int> grid)
         {
-            seededGrid ??= GridManager.Grid;
             var choices = GridManager.ChoiceBooleans.Get(coord);
             for (int i = 0; i < choices.Length; i++)
             {
-                if (!choices[i] || TileFits(i, coord, seededGrid)) continue;
+                if (!choices[i] || TileFits(i, coord, grid)) continue;
                 // If the allowed atom's tile does not fit, eliminate from choices and propagate. 
                 choices[i] = false;
-                GridManager.ChoiceBooleans.Set(coord, choices);
             }
+            GridManager.ChoiceBooleans.Set(coord, choices);
             var choiceList = new List<int>();
             for (var j = 0; j < choices.Length; j++)
             {
@@ -242,6 +248,8 @@ namespace XWFC
             }
             _propQueue.Enqueue(new Propagation(choiceList.ToArray(), coord));
             Propagate();
+
+            return grid;
         }
 
         private bool TileFits(int atomId, Vector3Int coord, Grid<int> seededGrid)
@@ -304,7 +312,7 @@ namespace XWFC
         {
             if (_forceCompleteTiles)
             {
-                EliminateIncompleteTiles();
+                GridManager.Grid = EliminateIncompleteTiles(GridManager.Grid);
             }
         }
 

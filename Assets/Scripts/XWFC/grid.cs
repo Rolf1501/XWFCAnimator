@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using JetBrains.Annotations;
 using UnityEngine;
 
 namespace XWFC
@@ -149,7 +150,7 @@ namespace XWFC
 
     public class Grid<T> : AbstractGrid<T>
     {
-        public Grid(Vector3Int extent, T defaultFillValue) : base((int)extent.x, (int)extent.y, (int)extent.z, defaultFillValue)
+        public Grid(Vector3Int extent, T defaultFillValue) : base(extent.x, extent.y, extent.z, defaultFillValue)
         {
             Populate(defaultFillValue);
         }
@@ -265,7 +266,7 @@ namespace XWFC
         public int Width { get; }
         public int Height { get; }
         public int Depth { get; }
-        public Grid<int> Grid { get; }
+        public Grid<int> Grid;
         public Grid<float> Entropy { get; }
         public Grid<bool[]> ChoiceBooleans { get; }
         public Grid<int[]> ChoiceIds { get; }
@@ -297,7 +298,7 @@ namespace XWFC
             ChoiceWeights = choiceWeights;
         }
 
-        public GridManager(ref Grid<int> seededGrid, Dictionary<int, float> defaultWeights, float maxEntropy)
+        public GridManager(Grid<int> seededGrid, Dictionary<int, float> defaultWeights, float maxEntropy)
         {
             (Width, Height, Depth) = Vector3Util.CastInt(seededGrid.GetExtent());
             Grid = seededGrid;
@@ -307,7 +308,7 @@ namespace XWFC
             ChoiceIds = new Grid<int[]>(Width, Height, Depth, new int[1]);
             ChoiceWeights = new Grid<float[]>(Width, Height, Depth, new float[1]);
             
-            InitChoiceWeights(defaultWeights);
+            InitChoiceWeights(defaultWeights, seededGrid);
             InitEntropy(maxEntropy);
         }
 
@@ -318,7 +319,7 @@ namespace XWFC
                 ChoiceWeights.Deepcopy());
         }
 
-        public void InitChoiceWeights(Dictionary<int, float> defaultWeights)
+        public void InitChoiceWeights(Dictionary<int, float> defaultWeights, [CanBeNull] Grid<int> grid=null)
         {
             for (int w = 0; w < Width; w++)
             {
@@ -326,6 +327,7 @@ namespace XWFC
                 {
                     for (int d = 0; d < Depth; d++)
                     {
+                        if (grid != null && grid.Get(w,h,d) != grid.DefaultFillValue) continue;
                         ChoiceBooleans.Set(w, h, d, Enumerable.Repeat(true, defaultWeights.Count).ToArray());
                         ChoiceIds.Set(w, h, d, defaultWeights.Keys.ToArray());
                         ChoiceWeights.Set(w, h, d, defaultWeights.Values.ToArray());
