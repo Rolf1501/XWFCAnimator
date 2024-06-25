@@ -97,9 +97,15 @@ public class TabbedMenu : MonoBehaviour
 
         _loadNextComponentButton.clicked += delegate
         {
+            // Save current component and move on to next one.
             if (XWFCAnimator.Instance.HasNextComponent())
             {
                 XWFCAnimator.Instance.LoadNextComponent();
+            }
+            else
+            {
+                XWFCAnimator.Instance.SaveComponent();
+                XWFCAnimator.Instance.Assemble();
             }
         };
     }
@@ -420,7 +426,7 @@ public class TabbedMenu : MonoBehaviour
         
         if (!XWFCAnimator.Instance.HasNextComponent())
         {
-            _loadNextComponentButton.SetEnabled(false);
+            _loadNextComponentButton.text = "Assemble!";
         }
     }
 }

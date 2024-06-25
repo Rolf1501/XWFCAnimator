@@ -99,12 +99,7 @@ public class XWFCAnimator : MonoBehaviour
         if (_componentManager.HasNext()) return;
         SaveComponent();
         Reset();
-        /*
-         * Assemble components in large grid?
-         */
-        /*
-         * Assemble components in large grid?
-         */
+
         /*
          * Find smallest and largest coord.
          */
@@ -120,9 +115,8 @@ public class XWFCAnimator : MonoBehaviour
         var defaultValue = _xwfc.GridManager.Grid.DefaultFillValue;
         _drawnGrid = new Grid<Drawing>(max, new Drawing(defaultValue, null));
             
-        for (var id = 0; id< _componentManager.Components.Length; id++)
+        foreach (var component in _componentManager.Components)
         {
-            var component = _componentManager.Components[id];
             var origin = component.Origin;
             var grid = component.Grid;
             var e = grid.GetExtent();
