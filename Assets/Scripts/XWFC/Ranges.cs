@@ -45,6 +45,11 @@ namespace XWFC
         {
             return Start == range.Start && End == range.End;
         }
+
+        public static bool InRange(int value, int start, int end)
+        {
+            return value >= start && value < end;
+        }
     }
     
     public record Range2D

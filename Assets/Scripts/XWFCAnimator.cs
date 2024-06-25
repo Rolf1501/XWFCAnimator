@@ -198,14 +198,137 @@ public class XWFCAnimator : MonoBehaviour
         floorOrigin.z += baseExtent.z;
         var roofOrigin = floorOrigin;
         roofOrigin.z += floorExtent.z;
+
+        var baseTileSet = ToTileSet(BaseTiles());
+        var (baseGrid, ids) = InputHandler.PatternsToGrids(BasePatterns(), baseTileSet, "");
         
-        var baseComponent = new Component(baseOrigin, baseExtent, tileSet, grids.ToArray(), weights);
-        var floor = new Component(floorOrigin, floorExtent, tileSet, grids.ToArray(), weights);
-        var roof = new Component(roofOrigin, roofExtent, tileSet, grids.ToArray(), weights);
-        var components = new Component[3] { baseComponent, floor, roof };
+        
+        var baseComponent = new Component(baseOrigin, baseExtent, baseTileSet, baseGrid.ToArray(), weights);
+        // var floor = new Component(floorOrigin, floorExtent, tileSet, grids.ToArray(), weights);
+        // var roof = new Component(roofOrigin, roofExtent, tileSet, grids.ToArray(), weights);
+        var components = new Component[] { baseComponent };//, floor, roof };
 
         return components;
     }
+
+    private Tile[] BaseTiles()
+    {
+        var grassTile = new Tile(
+            "g",
+            new Vector3(1,1,1), 
+            color: new Color(0,0.8f,0,1) 
+        );
+        
+        var soilTile = new Tile(
+            "s",
+            new Vector3(1,1,1), 
+            color: new Color(0.1f,0.1f,0.1f,1),
+            computeAtomEdges: false
+        );
+        
+        var brickTile = new Tile(
+            "b0",
+            new Vector3(2,1,1), 
+            color: new Color(0.8f,0,0,1)
+        );
+        
+        var emptyTile = new Tile(
+            ".",
+            new Vector3(1, 1, 1),
+            new Color(0, 0.2f, 0.5f, 0.2f),
+            description: "empty",
+            computeAtomEdges:false,
+            isEmptyTile:true
+        );
+        
+        var halfBrickTile = new Tile(
+            "b1",
+            new Vector3(1,1,1), 
+            color: new Color(0.4f,0,0.4f,1)
+        );
+
+        return new Tile[] { brickTile, grassTile, soilTile, emptyTile, halfBrickTile };
+    }
+
+    private List<List<(int, Vector3)>> BasePatterns()
+    {
+        var grassBrickPattern = new List<(int, Vector3)>()
+        {
+            // b,b
+            // g,g
+            (0, new Vector3(0, 0, 1)),
+            (1, new Vector3(0, 0, 0)),
+            (1, new Vector3(1, 0, 0)),
+        };
+
+        var brickPattern = new List<(int, Vector3)>()
+        {
+            // b1,b,b,b1
+            //  b,b,b,b
+            (0, new Vector3(2,0,0)),
+            (0, new Vector3(0,0,0)),
+            (0, new Vector3(1,0,1)),
+            (4, new Vector3(0,0,1)),
+            (4, new Vector3(3,0,1)),
+        };
+
+        var brickPattern1 = new List<(int, Vector3)>()
+        {
+            // b1      ,b1
+            // b0,b0,b0,b0
+            // b1      ,b1
+            (4, new Vector3(0, 0, 0)),
+            (4, new Vector3(0, 0, 2)),
+            (0, new Vector3(0, 0, 1)),
+            (0, new Vector3(2, 0, 1)),
+            (4, new Vector3(3, 0, 0)),
+            (4, new Vector3(3, 0, 2)),
+        };
+
+        var grassSoilPattern = new List<(int, Vector3)>()
+        {
+            // g,g,s
+            // s,s,s
+            (1, new Vector3(0,0,1)),
+            (1, new Vector3(1,0,1)),
+            (2, new Vector3(0,0,0)),
+            (2, new Vector3(1,0,0)),
+            (2, new Vector3(2,0,1)),
+            (2, new Vector3(2,0,0)),
+        };
+
+        var emptyGrassPattern = new List<(int, Vector3)>()
+        {
+            // e
+            // g
+            (3, new Vector3(0, 0, 1)),
+            (1, new Vector3(0, 0, 0))
+        };
+
+        var emptyBrickPattern = new List<(int, Vector3)>()
+        {
+            //   e,e
+            // e,b,b,e
+            (0, new Vector3(1, 0, 0)),
+            (3, new Vector3(0, 0, 0)),
+            (3, new Vector3(3, 0, 0)),
+            (3, new Vector3(1, 0, 1)),
+            (3, new Vector3(1, 0, 2)),
+        };
+
+        var emptyEmptyPattern = new List<(int, Vector3)>()
+        {
+            // e
+            // e,e
+            (3, new Vector3(0, 0, 0)),
+            (3, new Vector3(0, 0, 1)),
+            (3, new Vector3(1, 0, 0)),
+        };
+
+        return new List<List<(int, Vector3)>>()
+            { brickPattern, emptyBrickPattern, emptyEmptyPattern, emptyGrassPattern, grassBrickPattern, grassSoilPattern, brickPattern1 };
+    }
+    
     private void PrintAdjacencyData()
     {
         foreach (var o in _xwfc.Offsets)

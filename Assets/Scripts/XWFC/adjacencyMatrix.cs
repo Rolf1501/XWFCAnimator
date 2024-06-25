@@ -202,11 +202,6 @@ namespace XWFC
             var e = inputGrid.GetExtent();
             var atomizedGrid = new AtomGrid(e);
             
-            // foreach (var (k, v) in TileSet)
-            // {
-            //     // TODO: assumes only 0 rotation. Tiles with different rotations are considered different tiles.
-            //     firstAtomCoord[k] = v.OrientedIndices[0][0];
-            // }
             for (int y = 0; y < e.y; y++)
             {
                 for (int x = 0; x < e.x; x++)
@@ -239,14 +234,23 @@ namespace XWFC
                             var maxCoord = coord + tile.Extent - new Vector3(1,1,1); // Must subtract 1, index starts at 0.
                             if (!inputGrid.WithinBounds(maxCoord)) continue;
                             var valid = true;
-                            
                             // Check if atom values match those present in the grid.
                             foreach (var atomCoord in tile.OrientedIndices[orientation])
                             {
-                                var atomGridValue = inputGrid.Get(atomCoord + coord);
+                                var gridCoord = atomCoord + coord;
+                                var atomGridValue = inputGrid.Get(gridCoord);
                                 var atomTileValue = tile.GetAtomValue(atomCoord);
-                                if (!atomTileValue.Equals(inputGrid.DefaultFillValue) && atomGridValue != null && atomGridValue.Equals(atomTileValue))
+
+                                var cellContainsTile = atomizedGrid.Get(gridCoord).Count(v => v >= TileAtomRangeMapping[tileId].Start && v < TileAtomRangeMapping[tileId].End) > 0;
+                                if (
+                                    !atomTileValue.Equals(inputGrid.DefaultFillValue)
+                                    && atomGridValue != null
+                                    && atomGridValue.Equals(atomTileValue)
+                                    && !cellContainsTile
+                                    )
+                                {
                                     continue;
+                                }
                                 valid = false;
                                 break;
                             }
@@ -804,7 +808,7 @@ namespace XWFC
             return emptyAtomIds;
         }
     }
-    
+
     public record VmData
     {
         public int Orientation { get; }
