@@ -11,14 +11,14 @@ namespace XWFC
         public TileSet Tiles;
         private Bidict<int, int> _tileIdToIndexMapping;
 
-        public static (List<InputGrid> grids, int[] tileIds) PatternsToGrids(
+        public static List<SampleGrid> PatternsToGrids(
             List<List<(int, Vector3)>> patterns, TileSet tileSet, string defaultFillValue)
         {
             var tileIds = new HashSet<int>();
-            var grids = new List<InputGrid>();
+            var grids = new List<SampleGrid>();
             foreach (var pattern in patterns)
             {
-                var (grid, ids) = ToInputGrid(pattern, tileSet, defaultFillValue);
+                var (grid, ids) = ToSampleGrid(pattern, tileSet, defaultFillValue);
                 
                 foreach (var id in ids.Where(id => !tileIds.Contains(id)))
                 {
@@ -26,10 +26,10 @@ namespace XWFC
                 }
                 grids.Add(grid);
             }
-            return (grids, tileIds.ToArray());
+            return grids;
         }
 
-        public static (InputGrid placedTiles, HashSet<int> tileIds) ToInputGrid(List<(int, Vector3)> tileIdOrigins, TileSet tileSet, string defaultFillValue)
+        public static (SampleGrid placedTiles, HashSet<int> tileIds) ToSampleGrid(List<(int, Vector3)> tileIdOrigins, TileSet tileSet, string defaultFillValue)
         {
             var maxCoord = new Vector3();
             var tileIds = new HashSet<int>();
@@ -54,7 +54,7 @@ namespace XWFC
 
             maxCoord += new Vector3(1, 1, 1); // Account for index - length difference. 
 
-            var placedTiles = new InputGrid(maxCoord, defaultFillValue);
+            var placedTiles = new SampleGrid(maxCoord, defaultFillValue);
             
             foreach (var (tileId, origin) in tileIdOrigins)
             {

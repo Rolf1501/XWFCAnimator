@@ -63,5 +63,10 @@ namespace XWFC
         {
             return Dict.Keys.Count;
         }
+
+        public List<TValue> GetValues()
+        {
+            return _inverse.Keys.ToList();
+        }
     }
 }

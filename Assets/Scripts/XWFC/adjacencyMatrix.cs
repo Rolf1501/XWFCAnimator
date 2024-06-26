@@ -39,7 +39,7 @@ namespace XWFC
             InferAtomAdjacencyConstraints();
         }
         
-        public AdjacencyMatrix(TileSet tiles, InputGrid[] grids, [CanBeNull] Dictionary<int, float> tileWeights)
+        public AdjacencyMatrix(TileSet tiles, SampleGrid[] grids, [CanBeNull] Dictionary<int, float> tileWeights)
         {
             /*
              * Infer adjacency constraints from input.
@@ -57,7 +57,7 @@ namespace XWFC
 
             foreach (var grid in grids)
             {
-                var atomizedGrid = AtomizeInputGrid(grid);
+                var atomizedGrid = AtomizeSample(grid);
                 AtomAdjacencyFromGrid(atomizedGrid);
             }
 
@@ -196,9 +196,9 @@ namespace XWFC
             return mapping;
         }
 
-        private AtomGrid AtomizeInputGrid(InputGrid inputGrid)
+        public AtomGrid AtomizeSample(SampleGrid sampleGrid)
         {
-            var e = inputGrid.GetExtent();
+            var e = sampleGrid.GetExtent();
             var atomizedGrid = new AtomGrid(e);
             
             for (int y = 0; y < e.y; y++)
@@ -210,8 +210,8 @@ namespace XWFC
                         /*
                          * TODO: support multiple tile ids per cell.
                          */
-                        var value = inputGrid.Get(x, y, z);
-                        if (value == null || value.Equals(inputGrid.DefaultFillValue)) continue;
+                        var value = sampleGrid.Get(x, y, z);
+                        if (value == null || value.Equals(sampleGrid.DefaultFillValue)) continue;
                         
                         var coord = new Vector3(x, y, z);
 
@@ -231,19 +231,19 @@ namespace XWFC
                         foreach (var (tileId, tile) in TileSet)
                         {
                             var maxCoord = coord + tile.Extent - new Vector3(1,1,1); // Must subtract 1, index starts at 0.
-                            if (!inputGrid.WithinBounds(maxCoord)) continue;
+                            if (!sampleGrid.WithinBounds(maxCoord)) continue;
                             var valid = true;
                             // Check if atom values match those present in the grid.
                             foreach (var atomCoord in tile.OrientedIndices[orientation])
                             {
                                 var gridCoord = atomCoord + coord;
-                                var atomGridValue = inputGrid.Get(gridCoord);
+                                var atomGridValue = sampleGrid.Get(gridCoord);
                                 var atomTileValue = tile.GetAtomValue(atomCoord);
 
                                 // Make sure to exclude cases where a cell can contain the same tile twice. This must happen in the output and may result in partial tile placement.
                                 var cellContainsTile = atomizedGrid.Get(gridCoord).Count(v => v >= TileAtomRangeMapping[tileId].Start && v < TileAtomRangeMapping[tileId].End) > 0;
                                 if (
-                                    !atomTileValue.Equals(inputGrid.DefaultFillValue)
+                                    !atomTileValue.Equals(sampleGrid.DefaultFillValue)
                                     && atomGridValue != null
                                     && atomGridValue.Equals(atomTileValue)
                                     && !cellContainsTile

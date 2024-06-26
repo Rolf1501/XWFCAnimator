@@ -88,8 +88,23 @@ public class XWFCAnimator : MonoBehaviour
         _drawnTiles = new HashSet<GameObject>();
         
         DrawTiles();
-        // _xwfc.CollapseAutomatic();
         
+        var brickPattern = new Patterns()
+        {
+            // b1,b,b,b1
+            //  b,b,b,b
+            (0, new Vector3(2,0,0)),
+            (0, new Vector3(0,0,0)),
+            (0, new Vector3(1,0,1)),
+            (4, new Vector3(0,0,1)),
+            (4, new Vector3(3,0,1)),
+        };
+
+        var (sample, ids) = InputHandler.ToSampleGrid(brickPattern, TileSet, "");
+
+        var extractor = new PatternMatrix(_xwfc.AdjMatrix.AtomizeSample(sample), new Vector3Int(2,1,2), _xwfc.AdjMatrix);
+        // _xwfc.CollapseAutomatic();
+
         // if (!FindConfigFileNames().Any()) SaveConfig();
         // LoadConfig();
     }
@@ -105,7 +120,7 @@ public class XWFCAnimator : MonoBehaviour
          */
         _activeStateFlag = 0;
         
-        var (min, max) = _componentManager.BoundingBox();
+        var (_, max) = _componentManager.BoundingBox();
         
         // foreach (var drawing in _drawnGrid.GetGrid())
         // {
@@ -177,13 +192,10 @@ public class XWFCAnimator : MonoBehaviour
 
     private Component[] HouseComponents()
     {
-        var (houseTiles, weights) = HouseTiles();
-        var tileSet = ToTileSet(houseTiles);
+        var (_, weights) = HouseTiles();
 
         // var activeTileSet = tetrisTiles;
-        var patterns = HousePatterns();
-        
-        var (grids, tileIds) = InputHandler.PatternsToGrids(patterns, tileSet, "");
+
         // Three components stacked in the y-direction.
         var baseExtent = new Vector3Int(30, 1, 20);
         var floorExtent = new Vector3Int(20, 1, 20);
@@ -196,10 +208,10 @@ public class XWFCAnimator : MonoBehaviour
         roofOrigin.z += floorExtent.z;
 
         var baseTileSet = ToTileSet(BaseTiles());
-        var (baseGrid, ids) = InputHandler.PatternsToGrids(BasePatterns(), baseTileSet, "");
+        var baseGrid = InputHandler.PatternsToGrids(BasePatterns(), baseTileSet, "");
 
         var floorTileSet = ToTileSet(FloorTiles());
-        var (floorGrid, _) = InputHandler.PatternsToGrids(FloorPatterns(), floorTileSet, "");
+        var floorGrid = InputHandler.PatternsToGrids(FloorPatterns(), floorTileSet, "");
         
         var baseComponent = new Component(baseOrigin, baseExtent, baseTileSet, baseGrid.ToArray(), weights);
         var floorComponent = new Component(floorOrigin, floorExtent, floorTileSet, floorGrid.ToArray(), weights);
@@ -696,7 +708,7 @@ public class XWFCAnimator : MonoBehaviour
         return tetrisTiles;
     }
 
-    private void InitXWFCInput(TileSet tiles, Vector3Int gridExtent, InputGrid[] inputGrids, float[] weights)
+    private void InitXWFCInput(TileSet tiles, Vector3Int gridExtent, SampleGrid[] inputGrids, float[] weights)
     {
         _xwfc = new ExpressiveWFC(tiles, gridExtent, inputGrids, AdjacencyMatrix.ToWeightDictionary(weights, tiles));
         UpdateExtent(gridExtent);

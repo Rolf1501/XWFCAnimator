@@ -187,19 +187,19 @@ namespace XWFC
         }
     }
     
-    public class InputGrid : AbstractGrid<string>
+    public class SampleGrid : AbstractGrid<string>
     {
-        public InputGrid(int width, int height, int depth, string defaultFillValue="") : base(width, height, depth, defaultFillValue)
+        public SampleGrid(int width, int height, int depth, string defaultFillValue="") : base(width, height, depth, defaultFillValue)
         {
             Populate(defaultFillValue);
         }
 
-        public InputGrid(Vector3 extent, string defaultFillValue = "") : base(extent, defaultFillValue)
+        public SampleGrid(Vector3 extent, string defaultFillValue = "") : base(extent, defaultFillValue)
         {
             Populate(defaultFillValue);
         }
 
-        public InputGrid(string[,,] grid, string defaultFillValue) : base(grid, defaultFillValue)
+        public SampleGrid(string[,,] grid, string defaultFillValue) : base(grid, defaultFillValue)
         {
             Populate(defaultFillValue);
         }
