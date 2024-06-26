@@ -233,14 +233,14 @@ namespace XWFC
         
         private Grid<int> EliminateIncompleteAtoms(Vector3Int coord, Grid<int> grid)
         {
-            var choices = GridManager.ChoiceBooleans.Get(coord);
+            var choices = GridManager.Wave.Get(coord);
             for (int i = 0; i < choices.Length; i++)
             {
                 if (!choices[i] || TileFits(i, coord, grid)) continue;
                 // If the allowed atom's tile does not fit, eliminate from choices and propagate. 
                 choices[i] = false;
             }
-            GridManager.ChoiceBooleans.Set(coord, choices);
+            GridManager.Wave.Set(coord, choices);
             var choiceList = new List<int>();
             for (var j = 0; j < choices.Length; j++)
             {
@@ -399,6 +399,9 @@ namespace XWFC
         private void SetOccupied(Vector3 coord, int id)
         {
             GridManager.Grid.Set(coord, id);
+            var updatedWave = new bool[AdjMatrix.GetNAtoms()];
+            updatedWave[id] = true;
+            GridManager.Wave.Set(coord, updatedWave);
             GridManager.Entropy.Set(coord, AdjacencyMatrix.CalcEntropy(1));
             _propQueue.Enqueue(new Propagation(new int[] { id }, coord));
             
@@ -411,11 +414,11 @@ namespace XWFC
             /*
              * Finds an allowed atom to place at the given coordinate.
              */
-            var choiceBooleans = GridManager.ChoiceBooleans.Get(x, y, z);
+            var wave = GridManager.Wave.Get(x, y, z);
             var choiceIds = GridManager.ChoiceIds.Get(x, y, z);
             var choiceWeights = GridManager.ChoiceWeights.Get(x, y, z);
 
-            int chosenIndex = RandomChoice(choiceBooleans, choiceWeights);
+            int chosenIndex = RandomChoice(wave, choiceWeights);
 
             // TODO: move this to propagation instead for early conflict detection.
             if (chosenIndex < 0) throw new NoMoreChoicesException($"No more choice remain for cell {x}, {y}, {z}.");
@@ -534,11 +537,11 @@ namespace XWFC
 
                     // Find the set of choices currently allowed for the neighbor.
                     float[] neighborWChoices = GridManager.ChoiceWeights.Get(n);
-                    bool[] neighborBChoices = GridManager.ChoiceBooleans.Get(n);
+                    bool[] neighbourWave = GridManager.Wave.Get(n);
 
                     var post = new bool[AdjMatrix.GetNAtoms()];
                     for (int i = 0; i < remainingChoices.Length; i++)
-                        post[i] = neighborBChoices[i] & remainingChoices[i];
+                        post[i] = neighbourWave[i] & remainingChoices[i];
 
                     foreach (int c in cs)
                     {
@@ -549,9 +552,9 @@ namespace XWFC
                     GridManager.ChoiceWeights.Set(n, neighborWChoices);
 
                     // If pre is not post, update.
-                    if (!ArrayEquals(neighborBChoices, post))
+                    if (!ArrayEquals(neighbourWave, post))
                     {
-                        GridManager.ChoiceBooleans.Set(n, post);
+                        GridManager.Wave.Set(n, post);
 
                         // Calculate entropy and get indices of allowed neighbor terminals.
                         var neighborWChoicesI = new List<int>();

@@ -25,7 +25,6 @@ namespace XWFC
         public Dictionary<int, Range> TileAtomRangeMapping { get; private set; } // Reserves an index Range2D for the atoms of the tile.
 
         public Dictionary<int, float> TileWeigths;
-        public const int BlockedCellId = -2;
         
         public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, [CanBeNull] Dictionary<int, float> defaultWeights, int offsetsDimensions = 3)
         {
@@ -37,7 +36,7 @@ namespace XWFC
             
             InitTileAdjacency();
             InferTileAdjacencyConstraints(TileAdjacencyConstraints);
-            InferAtomAdjacencies();
+            InferAtomAdjacencyConstraints();
         }
         
         public AdjacencyMatrix(TileSet tiles, InputGrid[] grids, [CanBeNull] Dictionary<int, float> tileWeights)
@@ -241,6 +240,7 @@ namespace XWFC
                                 var atomGridValue = inputGrid.Get(gridCoord);
                                 var atomTileValue = tile.GetAtomValue(atomCoord);
 
+                                // Make sure to exclude cases where a cell can contain the same tile twice. This must happen in the output and may result in partial tile placement.
                                 var cellContainsTile = atomizedGrid.Get(gridCoord).Count(v => v >= TileAtomRangeMapping[tileId].Start && v < TileAtomRangeMapping[tileId].End) > 0;
                                 if (
                                     !atomTileValue.Equals(inputGrid.DefaultFillValue)
@@ -342,24 +342,11 @@ namespace XWFC
         {
             AtomAdjacencyMatrix[offset][thisAtomId, thatAtomId] = true;
             AtomAdjacencyMatrixW[offset][thisAtomId, thatAtomId] = 1;
-            // AtomAdjacencyMatrixW[offset][thisAtomId, thatAtomId] += 1;
 
             // Adjacency constraints are symmetric.
             var complement = Vector3Util.Negate(offset);
             AtomAdjacencyMatrix[complement][thatAtomId, thisAtomId] = true;
             AtomAdjacencyMatrixW[complement][thatAtomId, thisAtomId] = 1;
-            // AtomAdjacencyMatrixW[complement][thatAtomId, thisAtomId] += 1;
-        }
-        private static TileSet ToTileSet(Dictionary<int, (bool[,,] mask, Color color)> tiles)
-        {
-            var t = new TileSet();
-            foreach (var (k, (mask, color)) in tiles)
-            {
-                var extent = new Vector3(mask.GetLength(1), mask.GetLength(0), mask.GetLength(2));
-                t[k] = new Tile(extent, mask: mask, color: color, distinctOrientations:null, computeAtomEdges:true, description:"");
-            }
-
-            return t;
         }
         
         public int GetNAtoms()
@@ -371,7 +358,7 @@ namespace XWFC
         {
             return tile.NAtoms;
         }
-        private void InferAtomAdjacencies()
+        private void InferAtomAdjacencyConstraints()
         {
             InnerAtomAdjacency(); // With atoms from within a molecule.
             OuterAtomAdjacency(); // With atoms from another molecule.
@@ -396,7 +383,7 @@ namespace XWFC
         private void InnerAtomAdjacency()
         {
             /*
-             * Formalizes the atom atom adjacencies within a molecule.
+             * Formalizes the atom atom adjacency constraints within a molecule.
              */
             foreach (int p in TileSet.Keys.ToArray())
             {

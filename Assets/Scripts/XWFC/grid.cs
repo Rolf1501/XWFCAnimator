@@ -268,7 +268,7 @@ namespace XWFC
         public int Depth { get; }
         public Grid<int> Grid;
         public Grid<float> Entropy { get; }
-        public Grid<bool[]> ChoiceBooleans { get; }
+        public Grid<bool[]> Wave { get; }
         public Grid<int[]> ChoiceIds { get; }
         public Grid<float[]> ChoiceWeights { get; }
 
@@ -279,13 +279,13 @@ namespace XWFC
             Depth = depth;
             Grid = new Grid<int>(width, height, depth, -1);
             Entropy = new Grid<float>(width, height, depth, -1.0f);
-            ChoiceBooleans = new Grid<bool[]>(width, height, depth, new bool[1]);
+            Wave = new Grid<bool[]>(width, height, depth, new bool[1]);
             ChoiceIds = new Grid<int[]>(width, height, depth, new int[1]);
             ChoiceWeights = new Grid<float[]>(width, height, depth, new float[1]);
         }
 
         private GridManager(int width, int height, int depth, Grid<int> grid, Grid<float> entropy,
-            Grid<bool[]> choiceBooleans, Grid<int[]> choiceIds,
+            Grid<bool[]> wave, Grid<int[]> choiceIds,
             Grid<float[]> choiceWeights)
         {
             Width = width;
@@ -293,7 +293,7 @@ namespace XWFC
             Depth = depth;
             Grid = grid;
             Entropy = entropy;
-            ChoiceBooleans = choiceBooleans;
+            Wave = wave;
             ChoiceIds = choiceIds;
             ChoiceWeights = choiceWeights;
         }
@@ -304,7 +304,7 @@ namespace XWFC
             Grid = seededGrid;
             
             Entropy = new Grid<float>(Width, Height, Depth, -1.0f);
-            ChoiceBooleans = new Grid<bool[]>(Width, Height, Depth, new bool[1]);
+            Wave = new Grid<bool[]>(Width, Height, Depth, new bool[1]);
             ChoiceIds = new Grid<int[]>(Width, Height, Depth, new int[1]);
             ChoiceWeights = new Grid<float[]>(Width, Height, Depth, new float[1]);
             
@@ -315,7 +315,7 @@ namespace XWFC
         public GridManager Deepcopy()
         {
             return new GridManager(Width, Height, Depth,
-                Grid.Deepcopy(), Entropy.Deepcopy(), ChoiceBooleans.Deepcopy(), ChoiceIds.Deepcopy(),
+                Grid.Deepcopy(), Entropy.Deepcopy(), Wave.Deepcopy(), ChoiceIds.Deepcopy(),
                 ChoiceWeights.Deepcopy());
         }
 
@@ -328,7 +328,7 @@ namespace XWFC
                     for (int d = 0; d < Depth; d++)
                     {
                         if (grid != null && grid.Get(w,h,d) != grid.DefaultFillValue) continue;
-                        ChoiceBooleans.Set(w, h, d, Enumerable.Repeat(true, defaultWeights.Count).ToArray());
+                        Wave.Set(w, h, d, Enumerable.Repeat(true, defaultWeights.Count).ToArray());
                         ChoiceIds.Set(w, h, d, defaultWeights.Keys.ToArray());
                         ChoiceWeights.Set(w, h, d, defaultWeights.Values.ToArray());
                     }
