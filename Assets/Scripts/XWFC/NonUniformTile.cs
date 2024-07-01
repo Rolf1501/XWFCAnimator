@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace XWFC
 {
-    public class Tile
+    public class NonUniformTile
     {
         public Vector3 Extent { get; }
         public Color Color { get; private set; }
@@ -20,7 +20,7 @@ namespace XWFC
         public Dictionary<Vector3, Atom> AtomIndexToIdMapping { get; } = new();
         public Dictionary<int, bool[,,]> OrientedMask { get; } = new();
         private Dictionary<int, bool[,,,]> OrientedAtomMask { get; } = new();
-        public Dictionary<int, Vector3[]> OrientedIndices { get; } = new();
+        public Dictionary<int, Vector3Int[]> OrientedIndices { get; } = new();
         public Dictionary<Vector3, Dictionary<int, int[,]>> OrientedVoidMasks { get; } = new();
         [CanBeNull] public Dictionary<Vector3Int, HashSet<BorderOutline.Edge>> AtomEdges;
         public readonly bool IsEmptyTile = false;
@@ -28,7 +28,7 @@ namespace XWFC
         public int NAtoms { get; private set; }
 
         #nullable enable
-        public Tile(Vector3 extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
+        public NonUniformTile(Vector3 extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
             string description = "", bool computeAtomEdges=true)
         {
             Extent = extent;
@@ -39,7 +39,7 @@ namespace XWFC
             Init(computeAtomEdges, distinctOrientations, color);
         }
 
-        public Tile(string[,,] atomValues, Color color, int[]? distinctOrientations = null, bool computeAtomEdges = true)
+        public NonUniformTile(string[,,] atomValues, Color color, int[]? distinctOrientations = null, bool computeAtomEdges = true)
         {
             /*
              * Constructor for creating a tile from a string array representation of a tile.
@@ -65,7 +65,7 @@ namespace XWFC
             Init(computeAtomEdges, distinctOrientations, color);
         }
 
-        public Tile(string uniformAtomValue, Vector3 extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
+        public NonUniformTile(string uniformAtomValue, Vector3 extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
             bool computeAtomEdges = true, string description="", bool isEmptyTile=false)
         {
             Description = description;
@@ -127,10 +127,10 @@ namespace XWFC
             };
         }
         
-        public static Tile FromJson(Dictionary<string, string> jsn)
+        public static NonUniformTile FromJson(Dictionary<string, string> jsn)
         {
             var extent = Vector3Util.Vector3FromString(jsn["extent"]);
-            return new Tile(
+            return new NonUniformTile(
                 extent,
                 ColorUtil.ColorFromString(jsn["color"]),
                 MaskFromString(jsn["mask"], extent),
@@ -226,11 +226,11 @@ namespace XWFC
             }
         }
 
-        private static Vector3[] CalcAtomIndices(bool[,,] mask)
+        private static Vector3Int[] CalcAtomIndices(bool[,,] mask)
         {
             var nonEmptyCells = NonEmptyIndices3D(mask);
 
-            return nonEmptyCells.Select(cell => new Vector3(cell.Item2, cell.Item1, cell.Item3)).ToArray();
+            return nonEmptyCells.Select(cell => new Vector3Int(cell.Item2, cell.Item1, cell.Item3)).ToArray();
         }
 
         private static T[,] NumpyTo2DArray<T>(NDarray npMatrix, int typeSize)
@@ -251,7 +251,7 @@ namespace XWFC
                 NDarray rot = arr.rot90(d, axes: new int[] { 1, 2 });
 
                 OrientedMask[d] = Mask;
-                Vector3[] indices = CalcAtomIndices(OrientedMask[d]);
+                Vector3Int[] indices = CalcAtomIndices(OrientedMask[d]);
                 OrientedIndices[d] = indices;
                 int nIndices = indices.Length;
                 NAtoms += nIndices;
