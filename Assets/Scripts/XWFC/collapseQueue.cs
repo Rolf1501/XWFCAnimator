@@ -6,242 +6,6 @@ using Random = System.Random;
 
 namespace XWFC
 {
-    // public class CollapseQueue : PriorityQueue<Vector3, float>
-    // {
-    //     public List<(Vector3, float)> Copy()
-    //     {
-    //         var clone = (CollapseQueue)MemberwiseClone();
-    //         var copy = new List<(Vector3, float)>();
-    //         while (clone.Count > 0)
-    //         {
-    //             clone.TryDequeue(out Vector3 val, out float priority);
-    //             copy.Add((new Vector3(val.x, val.y, val.z), priority));
-    //         }
-    //
-    //         return copy;
-    //     }
-    //
-    //     public static CollapseQueue FromList(List<(Vector3, float)> list)
-    //     {
-    //         var q = new CollapseQueue();
-    //         foreach (var (coord, priority) in list)
-    //         {
-    //             q.Enqueue(coord, priority);
-    //         }
-    //
-    //         return q;
-    //     }
-    // }
-    //
-    // public class CollapseList : SkipList<Node<Collapse>>
-    // {
-    //     
-    //     public Dictionary<Vector3, Node<Collapse>> EnqueuedCells = new();
-    //     
-    //     #nullable enable
-    //     private Node<Collapse>? _root;
-    //     private int _nnodes;
-    //
-    //     public void Insert(Vector3 coord, float entropy)
-    //     {
-    //         Insert(new Node<Collapse>(new Collapse(coord, entropy)));
-    //     }
-    //     
-    //     public override void Insert(Node<Collapse> value)
-    //     {
-    //         _root ??= value;
-    //
-    //         if (EnqueuedCells.Keys.Contains(value.Value.Coord))
-    //         {
-    //             var entry = EnqueuedCells[value.Value.Coord];
-    //             // If an entry already exists, only update it if the current value is lower.
-    //             if (entry.Value > value.Value) Delete(entry); else return;
-    //         }
-    //         // Check # layers. Update layer for root if needed.
-    //         // Go in express lane until we find otherValue > value.
-    //         
-    //         // If the given value is < root, said value should be the new root.
-    //         if(_root.Value < value.Value)
-    //         {
-    //             UpdateRoot(value);
-    //             return;
-    //         }
-    //
-    //         // If the location is after root, find last encountered nodes per layer.
-    //         // Find path to location for insertion.
-    //         var lastNodePerLayer = LayeredPath(value);
-    //         
-    //         int maxLayers = _root.GetNLayers() + 1; // Do not exceed the number of layers of root by more than 1.
-    //         int nLayers = 1; // At least one layer exists.
-    //         
-    //         // Decide number of layers for the node.
-    //         var coinFlip = new Random().NextDouble();
-    //         while (coinFlip >= 0.5 && nLayers < maxLayers)
-    //         {
-    //             coinFlip = new Random().NextDouble();
-    //             nLayers++;
-    //         }
-    //         
-    //         // If a new layer is added beyond root, update root's layers.
-    //         // if (_root.GetNLayers() < nLayers) _root.UpdateLayer(nLayers, value);
-    //         
-    //         // If appending layers, add root and point root to added value.
-    //         while (nLayers >= lastNodePerLayer.Length)
-    //         {
-    //             value.UpdateLayer(nLayers, null);
-    //             _root.UpdateLayer(nLayers, value);
-    //             nLayers--;
-    //         }
-    //         
-    //         // Make the last encountered nodes point to the inserted value. 
-    //         while (nLayers >= 0)
-    //         {
-    //             var current = lastNodePerLayer[nLayers];
-    //             var next = current.Next(nLayers);
-    //             value.UpdateLayer(nLayers, next);
-    //             current.UpdateLayer(nLayers, value);
-    //             nLayers--;
-    //         }
-    //         
-    //         if (!EnqueuedCells.Keys.Contains(value.Value.Coord))
-    //         {
-    //             EnqueuedCells[value.Value.Coord] = value;
-    //         }
-    //     }
-    //
-    //     private Node<Collapse>[] LayeredPath(Node<Collapse> value)
-    //     {
-    //         /*
-    //          * Find the layered path to the location where value should be.
-    //          * The node in the lowest layer is the last node encountered prior to finding the location.
-    //          */
-    //         if (_root == null) return new Node<Collapse>[]{};
-    //         
-    //         int currentLayer = _root.GetNLayers(); // Start at the highest layer.
-    //         var lastNodePerLayer = new Node<Collapse>[_root.GetNLayers()];
-    //         Node<Collapse> currentNode = _root;
-    //         
-    //         while (currentLayer > 0)
-    //         {
-    //             // Keep track of the last valid nodes we encounter, makes updating after insert easier.
-    //             lastNodePerLayer[currentLayer - 1] = currentNode;
-    //             var nextNode = currentNode.Next(currentLayer);
-    //             
-    //             // If the current node does not point to another node, then continue.
-    //             if (nextNode == null || nextNode.Value.LessThan(value.Value))
-    //             {
-    //                 currentLayer--;
-    //                 continue;
-    //             }
-    //             currentNode = nextNode;
-    //         }
-    //
-    //         return lastNodePerLayer;
-    //     }
-    //
-    //     private void UpdateRoot(Node<Collapse> value)
-    //     {
-    //         /*
-    //          * If the value is less than root's, value is new root. 
-    //          */
-    //         if (_root == null)
-    //         {
-    //             _root = value;
-    //             return;
-    //         }
-    //         
-    //         for (int i = 0; i < _root.GetNLayers(); i++)
-    //             value.UpdateLayer(i, _root);
-    //         _root = value;
-    //     }
-    //
-    //     public override bool Delete(Node<Collapse> value)
-    //     {
-    //         var layeredPath = LayeredPath(value);
-    //         if (layeredPath.Length < 1) return false;
-    //         
-    //         for (int i = 0; i < value.GetNLayers(); i++)
-    //         {
-    //             var node = layeredPath[i];
-    //             var next = value.Next(i);
-    //             if (next != null) node.UpdateLayer(i, next);
-    //         }
-    //         
-    //         if (!EnqueuedCells.Keys.Contains(value.Value.Coord))
-    //         {
-    //             EnqueuedCells.Remove(value.Value.Coord);
-    //         }
-    //
-    //         return true;
-    //     }
-    //
-    //     public override Node<Collapse>? DeleteHead()
-    //     {
-    //         if (_root == null) return null;
-    //         var newRoot = _root.Next(0);
-    //         // Make the new root point to the old root's contents, except for the layers that the new root already covers.
-    //         if (newRoot != null)
-    //         {
-    //             for (int i = newRoot.GetNLayers() - 1; i < _root.GetNLayers(); i++)
-    //                 newRoot.UpdateLayer(i, _root.Next(i));
-    //         }
-    //
-    //         Delete(_root);
-    //         return _root;
-    //     }
-    //
-    //     public int Count()
-    //     {
-    //         return EnqueuedCells.Count;
-    //     }
-    //
-    //     // public Node<Collapse>? CopyNodes()
-    //     // {
-    //     //     if (_root == null) return null;
-    //     //     var node = _root;
-    //     //     var layers = node?.NextPerLayer;
-    //     //     
-    //     //     return new Node<Collapse>(node.Value.Copy(), );
-    //     // }
-    //
-    //     // public CollapseList Copy()
-    //     // {
-    //     //     
-    //     // }
-    // }
-    //
-    // public record Collapse
-    // {
-    //     public Vector3 Coord;
-    //     public float Entropy;
-    //
-    //     public Collapse(Vector3 coord, float entropy)
-    //     {
-    //         Coord = coord;
-    //         Entropy = entropy;
-    //     }
-    //
-    //     public static bool operator <(Collapse c0, Collapse c1)
-    //     {
-    //         return c0.Entropy < c1.Entropy;
-    //     }
-    //
-    //     public static bool operator >(Collapse c0, Collapse c1)
-    //     {
-    //         return c0.Entropy > c1.Entropy;
-    //     }
-    //
-    //     public bool LessThan(Collapse other)
-    //     {
-    //         return Entropy < other.Entropy;
-    //     }
-    //
-    //     public Collapse Copy()
-    //     {
-    //         return new Collapse(new Vector3(Coord.x, Coord.y, Coord.z), Entropy);
-    //     }
-    // }
-    
     public class CollapsePriorityQueue
     {
         private List<Collapse> _list;
@@ -263,7 +27,7 @@ namespace XWFC
 
         }
         
-        public void Insert(Vector3 coord, float entropy) { Insert(new Collapse(coord, entropy));}
+        public void Insert(Vector3Int coord, float entropy) { Insert(new Collapse(coord, entropy));}
         public void Insert(Collapse collapse)
         {
             var enqueued = _enqueuedCells.Dict.Keys.Contains(collapse.Coord);
@@ -348,7 +112,7 @@ namespace XWFC
         {
             var copy = new List<Collapse>();
             foreach (var c in _list) 
-                copy.Add(new Collapse(new Vector3(c.Coord.x, c.Coord.y, c.Coord.z), c.Entropy));
+                copy.Add(new Collapse(new Vector3Int(c.Coord.x, c.Coord.y, c.Coord.z), c.Entropy));
             var output = new CollapsePriorityQueue(copy);
             return output;
         }
@@ -362,10 +126,10 @@ public class CollapseList : SkipList<Node>
     private List<Vector3> removed = new();
     
     #nullable enable
-    private static readonly Vector3 DefaultCoord = new(-1, -1, -1);
+    private static readonly Vector3Int DefaultCoord = new(-1, -1, -1);
     private Vector3 _root = DefaultCoord;
 
-    public void Insert(Vector3 coord, float entropy)
+    public void Insert(Vector3Int coord, float entropy)
     {
         Insert(new Node(new Collapse(coord, entropy)));
     }
@@ -662,10 +426,10 @@ public class CollapseList : SkipList<Node>
 
 public record Collapse
 {
-    public Vector3 Coord;
+    public Vector3Int Coord;
     public float Entropy;
 
-    public Collapse(Vector3 coord, float entropy)
+    public Collapse(Vector3Int coord, float entropy)
     {
         Coord = coord;
         Entropy = entropy;
@@ -693,7 +457,7 @@ public record Collapse
 
     public Collapse Copy()
     {
-        return new Collapse(new Vector3(Coord.x, Coord.y, Coord.z), Entropy);
+        return new Collapse(new Vector3Int(Coord.x, Coord.y, Coord.z), Entropy);
     }
 }
 

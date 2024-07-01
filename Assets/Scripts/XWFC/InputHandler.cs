@@ -12,7 +12,7 @@ namespace XWFC
         private Bidict<int, int> _tileIdToIndexMapping;
 
         public static List<SampleGrid> PatternsToGrids(
-            List<List<(int, Vector3)>> patterns, TileSet tileSet, string defaultFillValue)
+            List<List<(int, Vector3Int)>> patterns, TileSet tileSet, string defaultFillValue)
         {
             var tileIds = new HashSet<int>();
             var grids = new List<SampleGrid>();
@@ -29,7 +29,7 @@ namespace XWFC
             return grids;
         }
 
-        public static (SampleGrid placedTiles, HashSet<int> tileIds) ToSampleGrid(List<(int, Vector3)> tileIdOrigins, TileSet tileSet, string defaultFillValue)
+        public static (SampleGrid placedTiles, HashSet<int> tileIds) ToSampleGrid(List<(int, Vector3Int)> tileIdOrigins, TileSet tileSet, string defaultFillValue)
         {
             var maxCoord = new Vector3();
             var tileIds = new HashSet<int>();

@@ -19,12 +19,13 @@ namespace XWFC
         private Dictionary<Vector3, bool[,]> _tileAdjacencyMatrix; // 2D matrix for tile adjacency constraints per offset. 
         private Dictionary<Vector3, float[,]> _tileAdjacencyMatrixWeights; // 2D matrix for tile adjacency constraint weights per offset.
         private Dictionary<int, int> _tileIdToIndexMapping; // Mapping of parts to their index.
-        public Bidict<(int tileId, Vector3 atomCoord, int orientation), int> AtomMapping { get; private set; } // Mapping of atom indices to relative atom coordinate, corresponding terminal id and orientation.
-        public Dictionary<Vector3, bool[,]> AtomAdjacencyMatrix { get; private set; }
-        private Dictionary<Vector3, float[,]> AtomAdjacencyMatrixW;
+        public Bidict<(int tileId, Vector3Int atomCoord, int orientation), int> AtomMapping { get; private set; } // Mapping of atom indices to relative atom coordinate, corresponding terminal id and orientation.
+        public Dictionary<Vector3Int, bool[,]> AtomAdjacencyMatrix { get; private set; }
+        private Dictionary<Vector3Int, float[,]> AtomAdjacencyMatrixW;
         public Dictionary<int, Range> TileAtomRangeMapping { get; private set; } // Reserves an index Range2D for the atoms of the tile.
 
         public Dictionary<int, float> TileWeigths;
+        public AtomGrid[] AtomizedSamples;
         
         public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, [CanBeNull] Dictionary<int, float> defaultWeights, int offsetsDimensions = 3)
         {
@@ -54,12 +55,15 @@ namespace XWFC
              * TODO: go over all grids.
              */
             Debug.Log("Atomized...");
-
+            var aGrids = new List<AtomGrid>();
             foreach (var grid in grids)
             {
                 var atomizedGrid = AtomizeSample(grid);
+                aGrids.Add(atomizedGrid);
                 AtomAdjacencyFromGrid(atomizedGrid);
             }
+
+            AtomizedSamples = aGrids.ToArray();
 
             var builder = new StringBuilder();
             foreach (var (k,v) in AtomAdjacencyMatrix)
@@ -149,9 +153,9 @@ namespace XWFC
             _offsets = OffsetFactory.GetOffsets(_offsetsDimensions);
             
             AtomAdjacencyConstraints = new HashSetAdjacency();
-            AtomMapping = new Bidict<(int, Vector3, int), int>();
-            AtomAdjacencyMatrix = new Dictionary<Vector3, bool[,]>();
-            AtomAdjacencyMatrixW = new Dictionary<Vector3, float[,]>();
+            AtomMapping = new Bidict<(int, Vector3Int, int), int>();
+            AtomAdjacencyMatrix = new Dictionary<Vector3Int, bool[,]>();
+            AtomAdjacencyMatrixW = new Dictionary<Vector3Int, float[,]>();
             TileAtomRangeMapping = new Dictionary<int, Range>();
             
             _tileIdToIndexMapping = MapTileIdToIndex(TileSet);
@@ -177,7 +181,7 @@ namespace XWFC
         private void InitAtomAdjacencyMatrix(int nAtoms)
         {
             // Initialize the initial nd arrays.
-            foreach (Vector3 offset in _offsets)
+            foreach (var offset in _offsets)
             {
                 AtomAdjacencyMatrix[offset] = new bool[nAtoms, nAtoms];
                 AtomAdjacencyMatrixW[offset] = new float[nAtoms, nAtoms];
@@ -213,7 +217,7 @@ namespace XWFC
                         var value = sampleGrid.Get(x, y, z);
                         if (value == null || value.Equals(sampleGrid.DefaultFillValue)) continue;
                         
-                        var coord = new Vector3(x, y, z);
+                        var coord = new Vector3Int(x, y, z);
 
                         var orientation = 0;
                         /*
@@ -285,7 +289,7 @@ namespace XWFC
                 {
                     for (int z = 0; z < e.z; z++)
                     {
-                        var coord = new Vector3(x, y, z);
+                        var coord = new Vector3Int(x, y, z);
                         var atoms = atomGrid.Get(coord);
                         
                         if (atoms == null || atoms.Count == 0) continue;
@@ -338,7 +342,7 @@ namespace XWFC
             }
         }
 
-        private void SetAtomAdjacency(int thisAtomId, int thatAtomId, Vector3 offset)
+        private void SetAtomAdjacency(int thisAtomId, int thatAtomId, Vector3Int offset)
         {
             AtomAdjacencyMatrix[offset][thisAtomId, thatAtomId] = true;
             AtomAdjacencyMatrixW[offset][thisAtomId, thatAtomId] = 1;
@@ -354,7 +358,7 @@ namespace XWFC
             return AtomMapping.GetNEntries();
         }
 
-        private static int CalcAtomRange(Tile tile)
+        private static int CalcAtomRange(NonUniformTile tile)
         {
             return tile.NAtoms;
         }
@@ -371,7 +375,7 @@ namespace XWFC
             // Map each terminal to a range in the mapping list.
             foreach (int tileId in tiles.Keys)
             {
-                Tile t = TileSet[tileId];
+                NonUniformTile t = TileSet[tileId];
                 int tAtoms = CalcAtomRange(t);
                 mapping[tileId] = new Range(nAtoms, nAtoms + tAtoms);
                 nAtoms += tAtoms;
@@ -387,16 +391,16 @@ namespace XWFC
              */
             foreach (int p in TileSet.Keys.ToArray())
             {
-                Tile t = TileSet[p];
+                NonUniformTile t = TileSet[p];
                 CreatePartToIndexEntry(p, t);
 
                 foreach (int d in t.DistinctOrientations)
                 {
                     for (int i = 0; i < t.OrientedIndices[d].Length; i++)
                     {
-                        Vector3 atomIndex = t.OrientedIndices[d][i];
+                        Vector3Int atomIndex = t.OrientedIndices[d][i];
                         int thisIndex = AtomMapping.Get((p, atomIndex, d));
-                        foreach (Vector3 offset in _offsets)
+                        foreach (var offset in _offsets)
                         {
                             if (!t.ContainsAtom(d, atomIndex + offset)) continue;
                             int otherIndex = AtomMapping.Get((p, atomIndex + offset, d));
@@ -412,7 +416,7 @@ namespace XWFC
             }
         }
 
-        private void CreatePartToIndexEntry(int tileId, Tile t)
+        private void CreatePartToIndexEntry(int tileId, NonUniformTile t)
         {
             /*
              * Append entries mapping an index to the corresponding terminal info.
@@ -422,8 +426,8 @@ namespace XWFC
             {
                 for (int i = 0; i < t.OrientedIndices[d].Length; i++)
                 {
-                    Vector3 index = t.OrientedIndices[d][i];
-                    int newKeyEntry = AtomMapping.GetNEntries();
+                    var index = t.OrientedIndices[d][i];
+                    var newKeyEntry = AtomMapping.GetNEntries();
                     AtomMapping.AddPair((tileId, index, d), newKeyEntry);
                 }
             }
@@ -457,8 +461,8 @@ namespace XWFC
              * Uses void masks to infer the offset required in case of concave tiles. 
              */
             var offsetDirectionIndex = GetOffsetDirectionIndex(offset);
-            Tile thisT = TileSet[thisId];
-            Tile thatT = TileSet[thatId];
+            NonUniformTile thisT = TileSet[thisId];
+            NonUniformTile thatT = TileSet[thatId];
             var thisVmAdj = new VoidMaskAdjacencyData(
                 thisT,
                 thisId,
@@ -501,22 +505,22 @@ namespace XWFC
             }
         }
 
-        private Vector3 GetSliderMinPosition(int[] sliderShape, int[] baseShape, Vector3 configOffset, Vector3 offset, int sign)
+        private Vector3Int GetSliderMinPosition(int[] sliderShape, int[] baseShape, Vector3Int configOffset, Vector3 offset, int sign)
         {
             /*
              * To find slider coord relative to base, take the minimal position as a starting point, then add the required offsets.
              */
             
             // Relative to base, slider min point is always equal to shape of slider.
-            var sliderMinPositionFromBase = new Vector3(-sliderShape[0], -sliderShape[1], -sliderShape[2]); 
+            var sliderMinPositionFromBase = new Vector3Int(-sliderShape[0], -sliderShape[1], -sliderShape[2]); 
             sliderMinPositionFromBase += configOffset; // Need to offset to ensure a configuration where overlap could occur.
             
             // Need additional offset of base if in positive direction.
             if (sign > 0)
-                sliderMinPositionFromBase += Vector3Util.Mult(offset,new Vector3(
+                sliderMinPositionFromBase += Vector3Util.VectorToVectorInt(Vector3Util.Mult(offset,new Vector3Int(
                     sliderShape[0] + baseShape[0], 
                     sliderShape[1] + baseShape[1], 
-                    sliderShape[2] + baseShape[2]));
+                    sliderShape[2] + baseShape[2])));
 
             return sliderMinPositionFromBase;
         }
@@ -574,7 +578,7 @@ namespace XWFC
              */
             
             // Offset required from the base position to ensure a possibility of a valid configuration.
-            var configOffset = new Vector3(1, 1, 1)
+            var configOffset = new Vector3Int(1, 1, 1)
             {
                 [offsetDirectionIndex] = 0
             };
@@ -614,7 +618,7 @@ namespace XWFC
                         continue; 
                     }
 
-                    Vector3 relativeSliderPosition = RelativeSliderPosition(
+                    var relativeSliderPosition = RelativeSliderPosition(
                         sliderMinPositionFromBase, x, y, minSum, sign, offsetDirectionIndex, up, looking);
                     
                     CalcAdjacentAtoms(sliderData, baseData, relativeSliderPosition, weight);
@@ -622,7 +626,7 @@ namespace XWFC
             }
         }
 
-        private void CalcAdjacentAtoms(VmData sliderData, VmData baseData, Vector3 relativeSliderPosition, float weight)
+        private void CalcAdjacentAtoms(VmData sliderData, VmData baseData, Vector3Int relativeSliderPosition, float weight)
         {
             // For each atom in the base, check if it is adjacent to one of the atoms in the slider.
             for (int iy = 0; iy < baseData.ShapeXyz[1]; iy++)
@@ -631,9 +635,9 @@ namespace XWFC
                 {
                     for (int iz = 0; iz < baseData.ShapeXyz[2]; iz++)
                     {
-                        var baseAtomCoord = new Vector3(ix, iy, iz);
+                        var baseAtomCoord = new Vector3Int(ix, iy, iz);
                         
-                        if (!baseData.Tile.ContainsAtom(baseData.Orientation, baseAtomCoord)) continue;
+                        if (!baseData.NonUniformTile.ContainsAtom(baseData.Orientation, baseAtomCoord)) continue;
                         
                         int baseAtomIndex = AtomMapping.Get((baseData.TerminalId, baseAtomCoord, baseData.Orientation));
 
@@ -650,19 +654,19 @@ namespace XWFC
             }
         }
 
-        private IEnumerable<(int sliderAtomIndex, Vector3 io)> CalcSliderAtomIndices(VmData sliderData, Vector3 baseAtomCoord, Vector3 relativeSliderPosition)
+        private IEnumerable<(int sliderAtomIndex, Vector3Int io)> CalcSliderAtomIndices(VmData sliderData, Vector3Int baseAtomCoord, Vector3Int relativeSliderPosition)
         {
-            foreach (Vector3 io in _offsets)
+            foreach (var io in _offsets)
             {
-                Vector3 relativeOffset = baseAtomCoord + io;
+                var relativeOffset = baseAtomCoord + io;
                             
                 // Find the vector pointing to the relative slider atom coordinate.
-                Vector3 sliderAtomCoord = relativeOffset - relativeSliderPosition;
+                var sliderAtomCoord = relativeOffset - relativeSliderPosition;
 
-                if (!sliderData.Tile.WithinBounds(sliderAtomCoord)) continue;
+                if (!sliderData.NonUniformTile.WithinBounds(sliderAtomCoord)) continue;
                             
                 // Bounds check implicitly done with contains atom. If the mapped position is not an atom, continue.
-                if (!sliderData.Tile.ContainsAtom(sliderData.Orientation, sliderAtomCoord)) continue;
+                if (!sliderData.NonUniformTile.ContainsAtom(sliderData.Orientation, sliderAtomCoord)) continue;
 
                 int sliderAtomIndex = AtomMapping.Get((sliderData.TerminalId, sliderAtomCoord, sliderData.Orientation));
 
@@ -670,7 +674,7 @@ namespace XWFC
             }
         }
 
-        private Vector3 RelativeSliderPosition(Vector3 minSliderPosition, int shiftX, int shiftY, int minSum, int sign, int offsetDirectionIndex, int up, int looking)
+        private Vector3Int RelativeSliderPosition(Vector3Int minSliderPosition, int shiftX, int shiftY, int minSum, int sign, int offsetDirectionIndex, int up, int looking)
         {
             /*
              * Find translation from base origin to slider origin. This is the slider's position relative to the base.
@@ -686,9 +690,9 @@ namespace XWFC
 
             return relativeSliderPosition;
         }
-        private bool UpdateAtomAdjacency(int thisIndex, int thatIndex, Vector3 offset, float weight)
+        private bool UpdateAtomAdjacency(int thisIndex, int thatIndex, Vector3Int offset, float weight)
         {
-            Vector3 complement = Vector3Util.Negate(offset);
+            var complement = Vector3Util.Negate(offset);
             AtomAdjacencyMatrix[offset][thisIndex, thatIndex] = true;
             AtomAdjacencyMatrix[complement][thatIndex, thisIndex] = true;
             AtomAdjacencyMatrixW[offset][thisIndex, thatIndex] = weight;
@@ -764,14 +768,14 @@ namespace XWFC
                 yield return matrix[row, i];
         }
 
-        public bool[] GetAdj(Vector3 offset, int choiceId)
+        public bool[] GetAdj(Vector3Int offset, int choiceId)
         {
             // Span2D<bool> span = AtomAdjacencyMatrix[offset];
             // return span.GetRowSpan(choiceId).ToArray();
             var span = AtomAdjacencyMatrix[offset];
             return GetRow(span, choiceId).ToArray();
         }
-        public float[] GetAdjW(Vector3 offset, int choiceId)
+        public float[] GetAdjW(Vector3Int offset, int choiceId)
         {
             // Span2D<float> span = AtomAdjacencyMatrixW[offset];
             // return span.GetRowSpan(choiceId).ToArray();
@@ -779,7 +783,7 @@ namespace XWFC
             return GetRow(span, choiceId).ToArray();
         }
 
-        public Tile GetTerminalFromAtomId(int atomId)
+        public NonUniformTile GetTerminalFromAtomId(int atomId)
         {
             return TileSet[AtomMapping.Get(atomId).Item1];
         }
@@ -805,7 +809,7 @@ namespace XWFC
     public record VmData
     {
         public int Orientation { get; }
-        public Tile Tile { get; }
+        public NonUniformTile NonUniformTile { get; }
         public int TerminalId { get; }
         public int[] ShapeXyz { get; }
         public int[,] VoidMask { get; }
@@ -816,10 +820,10 @@ namespace XWFC
 
         public VmData(VoidMaskAdjacencyData vmData, int rotation)
         {
-            Tile = vmData.Tile;
+            NonUniformTile = vmData.NonUniformTile;
             TerminalId = vmData.TerminalId;
-            Orientation = Tile.GetRotationOrientation(rotation);
-            var vm = Tile.OrientedMask[Orientation];
+            Orientation = NonUniformTile.GetRotationOrientation(rotation);
+            var vm = NonUniformTile.OrientedMask[Orientation];
             ShapeXyz = new int[] { vm.GetLength(1), vm.GetLength(0), vm.GetLength(2) };
 
             VoidMask = vmData.VoidMasks[Orientation];

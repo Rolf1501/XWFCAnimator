@@ -107,7 +107,7 @@ namespace XWFC
             return _grid[y, x, z];
         }
 
-        public T Get(Vector3 coord)
+        public T Get(Vector3Int coord)
         {
             var (x, y, z) = Vector3Util.CastInt(coord);
             return Get(x, y, z);
@@ -121,7 +121,7 @@ namespace XWFC
             }
         }
 
-        public void Set(Vector3 coord, T value)
+        public void Set(Vector3Int coord, T value)
         {
             var (x, y, z) = Vector3Util.CastInt(coord);
             Set(x, y, z, value);
