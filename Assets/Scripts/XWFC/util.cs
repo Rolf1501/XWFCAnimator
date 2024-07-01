@@ -10,6 +10,11 @@ namespace XWFC
             return vec * -1;
         }
 
+        public static Vector3Int Negate(Vector3Int vec)
+        {
+            return vec * -1;
+        }
+
         public static (int, int, int) CastInt(Vector3 vec)
         {
             return ((int)vec.x, (int)vec.y, (int)vec.z);
@@ -36,11 +41,6 @@ namespace XWFC
         public static Vector3 Scale(Vector3 v, float scalar)
         {
             return new Vector3(v.x * scalar, v.y * scalar, v.z * scalar);
-        }
-
-        public static Vector3Int ScaleInt(Vector3Int v, int scalar)
-        {
-            return new Vector3Int(v.x * scalar, v.y * scalar, v.z * scalar);
         }
 
         public static string Vector3ToString(Vector3 v)
