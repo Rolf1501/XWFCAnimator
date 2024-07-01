@@ -443,14 +443,20 @@ namespace XWFC
             }
         }
 
+        public static int GetOffsetDirectionIndex(Vector3 offset)
+        {
+            var (ox, oy, oz) = Vector3Util.CastInt(offset);
+            var offsetDirectionIndex = Array.FindIndex(new int[] { ox, oy, oz }, e => e != 0);
+            return offsetDirectionIndex;
+        }
+
         private void InferAtomAdjacencyWithVoidMask(int thisId, int thatId, Vector3 offset, float weight, int[] thatRotations)
         {
             /*
              * Slides one of the two tiles along the other tile at the given offset.
              * Uses void masks to infer the offset required in case of concave tiles. 
              */
-            var (ox, oy, oz) = Vector3Util.CastInt(offset);
-            int offsetDirectionIndex = Array.FindIndex(new int[] { ox, oy, oz }, e => e != 0);
+            var offsetDirectionIndex = GetOffsetDirectionIndex(offset);
             Tile thisT = TileSet[thisId];
             Tile thatT = TileSet[thatId];
             var thisVmAdj = new VoidMaskAdjacencyData(

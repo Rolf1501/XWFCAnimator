@@ -38,6 +38,11 @@ namespace XWFC
             return new Vector3(v.x * scalar, v.y * scalar, v.z * scalar);
         }
 
+        public static Vector3Int ScaleInt(Vector3Int v, int scalar)
+        {
+            return new Vector3Int(v.x * scalar, v.y * scalar, v.z * scalar);
+        }
+
         public static string Vector3ToString(Vector3 v)
         {
             return $"<{v.x},{v.y},{v.z}>";

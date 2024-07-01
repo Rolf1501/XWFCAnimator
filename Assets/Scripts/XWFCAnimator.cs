@@ -36,7 +36,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private StateFlag _activeStateFlag = 0;
     
-    private ExpressiveWFC _xwfc;
+    private XWFC.XWFC _xwfc;
 
     private Grid<Drawing> _drawnGrid;
     private HashSetAdjacency _adjacency;
@@ -102,7 +102,7 @@ public class XWFCAnimator : MonoBehaviour
 
         var (sample, ids) = InputHandler.ToSampleGrid(brickPattern, TileSet, "");
 
-        var extractor = new PatternMatrix(_xwfc.AdjMatrix.AtomizeSample(sample), new Vector3Int(2,1,2), _xwfc.AdjMatrix);
+        var patternMatrix = new PatternMatrix(_xwfc.AdjMatrix.AtomizeSample(sample), new Vector3Int(2,1,2), _xwfc.AdjMatrix);
         // _xwfc.CollapseAutomatic();
 
         // if (!FindConfigFileNames().Any()) SaveConfig();
@@ -710,7 +710,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFCInput(TileSet tiles, Vector3Int gridExtent, SampleGrid[] inputGrids, float[] weights)
     {
-        _xwfc = new ExpressiveWFC(tiles, gridExtent, inputGrids, AdjacencyMatrix.ToWeightDictionary(weights, tiles));
+        _xwfc = new XWFC.XWFC(tiles, gridExtent, inputGrids, AdjacencyMatrix.ToWeightDictionary(weights, tiles));
         UpdateExtent(gridExtent);
     }
 
@@ -718,7 +718,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFComponent(ref Component component)
     {
-        _xwfc = new ExpressiveWFC(component.AdjacencyMatrix, ref component.Grid);
+        _xwfc = new XWFC.XWFC(component.AdjacencyMatrix, ref component.Grid);
         UpdateExtent(component.Grid.GetExtent());
     }
 
@@ -726,7 +726,7 @@ public class XWFCAnimator : MonoBehaviour
     {
         try
         {
-            _xwfc = new ExpressiveWFC(TileSet, _adjacency, extent);
+            _xwfc = new XWFC.XWFC(TileSet, _adjacency, extent);
 
         }
         catch (Exception exception)
@@ -986,7 +986,7 @@ public class XWFCAnimator : MonoBehaviour
                     // if (gridValue != grid.DefaultFillValue) DrawAtom(new Vector3(x,y,z),gridValue);
 
                     var blockedCellId =
-                        ExpressiveWFC.BlockedCellId(grid.DefaultFillValue, _xwfc.AdjMatrix.TileSet.Keys);
+                        XWFC.XWFC.BlockedCellId(grid.DefaultFillValue, _xwfc.AdjMatrix.TileSet.Keys);
                     var coord = new Vector3(x, y, z);
                     if (gridValue == grid.DefaultFillValue && drawing.Atom != null)
                     {

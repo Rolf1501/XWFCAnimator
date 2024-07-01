@@ -3,4 +3,5 @@
   &lt;Assembly Path="C:\Users\Rolf\Documents\Delft\Thesis\XWFC\XWFCAnimator\Assets\Plugins\Microsoft.Toolkit.HighPerformance.dll" /&gt;&#xD;
   &lt;Assembly Path="C:\Users\Rolf\Documents\Delft\Thesis\XWFC\XWFCAnimator\Assets\Plugins\XWFC.dll" /&gt;&#xD;
 &lt;/AssemblyExplorer&gt;</s:String>
-	<s:Boolean x:Key="/Default/UserDictionary/Words/=coord/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=coord/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=XWFC/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

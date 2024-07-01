@@ -68,9 +68,9 @@
     <Compile Include="Assets\TabbedMenu\TabbedMenuController.cs" />
     <Compile Include="Assets\Scripts\XWFC\Tile.cs" />
     <Compile Include="Assets\Scripts\XWFC\Ranges.cs" />
+    <Compile Include="Assets\Scripts\XWFC\XWFC.cs" />
     <Compile Include="Assets\Scripts\StringUtil.cs" />
     <Compile Include="Assets\Scripts\XWFCRunner.cs" />
-    <Compile Include="Assets\Scripts\XWFC\ExpressiveWFC.cs" />
     <Compile Include="Assets\Scripts\XWFC\relation.cs" />
     <Compile Include="Assets\Scripts\XWFC\ComponentManager.cs" />
     <Compile Include="Assets\Scripts\XWFC\atom.cs" />

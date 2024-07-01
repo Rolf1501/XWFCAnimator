@@ -195,7 +195,7 @@ namespace XWFC
              */
             var intersections = Intersections[componentId];
             var component = Components[componentId];
-            var blockedCellId = ExpressiveWFC.BlockedCellId(component.Grid.DefaultFillValue,
+            var blockedCellId = XWFC.BlockedCellId(component.Grid.DefaultFillValue,
                 component.AdjacencyMatrix.TileSet.Keys);
 
             var solved = GetSolvedIds();
