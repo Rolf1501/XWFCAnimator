@@ -1,25 +1,25 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-
+using AtomMapping = XWFC.Bidict<(int tileId, UnityEngine.Vector3Int atomCoord, int orientation),int>;
 namespace XWFC
 {
     public class PatternMatrix
     {
         public Dictionary<int, Bidict<Vector3Int, HashSet<int>>> AtomPatternMapping;
         public List<int[,,]> Patterns;
-        private readonly AtomGrid _atomizedSample;
+        private readonly AtomGrid[] _atomizedSamples;
         private readonly Vector3Int _kernelSize;
-        private readonly AdjacencyMatrix _adjacencyMatrix;
+        private readonly  AtomMapping _atomMapping;
         private Dictionary<Vector3Int, Range3D> _offsetRangeMapping;
         private IEnumerable<Vector3Int> _offsets;
         public Dictionary<Vector3Int, bool[,]> PatternAdjacencyMatrix;
 
 
-        public PatternMatrix(AtomGrid atomizedSample, Vector3Int kernelSize, AdjacencyMatrix adjacencyMatrix)
+        public PatternMatrix(AtomGrid[] atomizedSamples, Vector3Int kernelSize, AtomMapping atomMapping)
         {
-            _atomizedSample = atomizedSample;
+            _atomizedSamples = atomizedSamples;
             _kernelSize = kernelSize;
-            _adjacencyMatrix = adjacencyMatrix;
+            _atomMapping = atomMapping;
             _offsets = OffsetFactory.GetOffsets(3);
             Patterns = new List<int[,,]>();
             PatternAdjacencyMatrix = new Dictionary<Vector3Int, bool[,]>();
@@ -67,7 +67,7 @@ namespace XWFC
                         if (!IsCompatible(thisPattern, thatPattern, offset)) continue;
                         
                         PatternAdjacencyMatrix[offset][i, j] = true;
-                        PatternAdjacencyMatrix[Vector3Util.ScaleInt(offset, -1)][j, i] = true;
+                        PatternAdjacencyMatrix[Vector3Util.Negate(offset)][j, i] = true;
                     }
                 }
             }
@@ -76,7 +76,7 @@ namespace XWFC
         private bool IsCompatible(int[,,] thisPattern, int[,,] thatPattern, Vector3Int offset)
         {
             var ranges = _offsetRangeMapping[offset];
-            var rangeComplement = _offsetRangeMapping[Vector3Util.ScaleInt(offset, -1)];
+            var rangeComplement = _offsetRangeMapping[Vector3Util.Negate(offset)];
             
             // Ranges denote min and max indices here. So, length is max index + 1.
             var xLength = ranges.XRange.GetLength() + 1;
@@ -153,7 +153,7 @@ namespace XWFC
         private void InitMapping()
         {
             AtomPatternMapping = new Dictionary<int, Bidict<Vector3Int, HashSet<int>>>();
-            foreach (var atom in _adjacencyMatrix.AtomMapping.GetValues())
+            foreach (var atom in _atomMapping.GetValues())
             {
                 var value = new Bidict<Vector3Int, HashSet<int>>();
                 foreach (var offset in GetPatternOffsets())
@@ -185,55 +185,89 @@ namespace XWFC
         private void CalcPatterns()
         {
 
-            var offsets = GetPatternOffsets();
+            var patternOffsets = GetPatternOffsets();
             
             /*
              * Map each atom id to a list of patterns said atom occurs in.
              * Index by the relative location of the atom in the pattern for easy retrieval.
              */
-            var e = _atomizedSample.GetExtent();
-            
-            // The last layers cannot contain full patterns. Minimal pattern size is 2x2x2 in 3D. 2x1x2 in 2D. 2x1x1 in 1D.
-            // Infer dimension from kernel size.
-            for (int x = 0; x < e.x - (_kernelSize.x > 1 ?  1 : 0); x++)
+            // TODO: iterate over all patterns.
+
+            foreach (var atomizedSample in _atomizedSamples)
             {
-                for (int y = 0; y < e.y - (_kernelSize.y > 1 ?  1 : 0); y++)
+                var e = atomizedSample.GetExtent();
+                
+                // The last layers cannot contain full patterns. Minimal pattern size is 2x2x2 in 3D. 2x1x2 in 2D. 2x1x1 in 1D.
+                // Infer dimension from kernel size.
+                for (int x = 0; x < e.x - (_kernelSize.x > 1 ? 1 : 0); x++)
                 {
-                    for (int z = 0; z < e.z - (_kernelSize.z > 1 ?  1 : 0); z++)
+                    for (int y = 0; y < e.y - (_kernelSize.y > 1 ? 1 : 0); y++)
                     {
-                        var c = new Vector3Int(x, y, z);
-                        
-                        // // Only consider patterns that completely fit in the grid.
-                        // if (!_atomizedSample.WithinBounds(c + maxOffsetIndex)) continue;
-                        
-                        var pattern = new int[_kernelSize.y, _kernelSize.x, _kernelSize.z];
-                        
-                        // Construct pattern.
-                        foreach (var offset in offsets)
+                        for (int z = 0; z < e.z - (_kernelSize.z > 1 ? 1 : 0); z++)
                         {
-                            var atomId = _atomizedSample.Get(c + offset)[0]; // TODO: consider multiple atoms per cell.
-                            pattern[offset.y, offset.x, offset.z] = atomId;
+                            var c = new Vector3Int(x, y, z);
+
+                            var pattern = new int[_kernelSize.y, _kernelSize.x, _kernelSize.z];
+
+                            var validPattern = true;
+                            // Construct pattern.
+                            foreach (var offset in patternOffsets)
+                            {
+                                Debug.Log($"{c}, {offset}, {e}");
+                                var atomIds = atomizedSample.Get(c + offset);
+                                if (atomIds.Count == 0)
+                                {
+                                    validPattern = false;
+                                    break;
+                                }
+                                // TODO: consider multiple atoms per cell.
+                                pattern[offset.y, offset.x, offset.z] = atomIds[0];
+                            }
+                            
+                            // If the input contains cells with no specified atom, pattern is invalid.
+                            if (!validPattern) continue;
+
+                            // If the pattern already exists, the atom pattern mapping was already done.
+                            if (Patterns.Contains(pattern)) continue;
+
+                            var patternId = Patterns.Count;
+
+                            // Add the pattern to the mapping for the corresponding atom ids and add to pattern list.
+                            foreach (var offset in patternOffsets)
+                            {
+                                var patternAtom = pattern[offset.y, offset.x, offset.z];
+                                AtomPatternMapping[patternAtom].GetValue(offset).Add(patternId);
+                            }
+
+                            Patterns.Add(pattern);
                         }
-
-                        // If the pattern already exists, the atom pattern mapping was already done.
-                        if (Patterns.Contains(pattern))
-                        {
-                            continue;
-                        }
-
-                        var patternId = Patterns.Count;
-
-                        // Add the pattern to the mapping for the corresponding atom ids and add to pattern list.
-                        foreach (var offset in offsets)
-                        {
-                            var patternAtom = pattern[offset.y, offset.x, offset.z];
-                            AtomPatternMapping[patternAtom].GetValue(offset).Add(patternId);
-                        }
-
-                        Patterns.Add(pattern);
                     }
                 }
             }
         }
+        public float MaxEntropy()
+        {
+            return AdjacencyMatrix.CalcEntropy(Patterns.Count);
+        }
+
+        public int GetPatternAtomAtCoordinate(int patternId, Vector3Int coord)
+        {
+            return Patterns[patternId][coord.y, coord.x, coord.z];
+        }
+
+        public IEnumerable<bool> GetRow(int patternId, Vector3Int offset)
+        {
+            var adjacency = PatternAdjacencyMatrix[offset];
+            for (int i = 0; i < adjacency.GetLength(1); i++)
+            {
+                yield return adjacency[patternId, i];
+            }
+        }
+
+        public bool GetAdjacency(int patternId, int otherId, Vector3Int offset)
+        {
+            return PatternAdjacencyMatrix[offset][patternId, otherId];
+        }
     }
+    
 }
