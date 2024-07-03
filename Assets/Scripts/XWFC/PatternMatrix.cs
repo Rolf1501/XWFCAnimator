@@ -10,7 +10,7 @@ namespace XWFC
         private readonly AtomGrid[] _atomizedSamples;
         private readonly Vector3Int _kernelSize;
         public readonly  AtomMapping AtomMapping;
-        private Dictionary<Vector3Int, Range3D> _offsetRangeMapping;
+        public Dictionary<Vector3Int, Range3D> OffsetRangeMapping;
         private IEnumerable<Vector3Int> _offsets;
         public Dictionary<Vector3Int, bool[,]> PatternAdjacencyMatrix;
 
@@ -36,7 +36,7 @@ namespace XWFC
              * Precalculates the layer ranges given an offset.
              */
             var offsets = OffsetFactory.GetOffsets(3);
-            _offsetRangeMapping = new Dictionary<Vector3Int, Range3D>();
+            OffsetRangeMapping = new Dictionary<Vector3Int, Range3D>();
             foreach (var offset in offsets)
             {
                 var offsetDirectionIndex = AdjacencyMatrix.GetOffsetDirectionIndex(offset);
@@ -44,7 +44,7 @@ namespace XWFC
                 
                 var ranges = CalcLayerRanges3D(sign, offsetDirectionIndex);
                 var range3d = new Range3D(ranges[0], ranges[1], ranges[2]);
-                _offsetRangeMapping[offset] = range3d;
+                OffsetRangeMapping[offset] = range3d;
             }
         }
 
@@ -75,8 +75,8 @@ namespace XWFC
 
         private bool IsCompatible(int[,,] thisPattern, int[,,] thatPattern, Vector3Int offset)
         {
-            var ranges = _offsetRangeMapping[offset];
-            var rangeComplement = _offsetRangeMapping[Vector3Util.Negate(offset)];
+            var ranges = OffsetRangeMapping[offset];
+            var rangeComplement = OffsetRangeMapping[Vector3Util.Negate(offset)];
             
             // Ranges denote min and max indices here. So, length is max index + 1.
             var xLength = ranges.XRange.GetLength() + 1;

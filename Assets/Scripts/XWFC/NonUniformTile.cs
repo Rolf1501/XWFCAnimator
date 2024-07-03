@@ -10,7 +10,7 @@ namespace XWFC
 {
     public class NonUniformTile
     {
-        public Vector3 Extent { get; }
+        public Vector3Int Extent { get; }
         public Color Color { get; private set; }
         public bool[,,] Mask { get; }
         
@@ -28,7 +28,7 @@ namespace XWFC
         public int NAtoms { get; private set; }
 
         #nullable enable
-        public NonUniformTile(Vector3 extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
+        public NonUniformTile(Vector3Int extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
             string description = "", bool computeAtomEdges=true)
         {
             Extent = extent;
@@ -46,7 +46,7 @@ namespace XWFC
              */
             AtomValues = atomValues;
             var (x, y, z) = (atomValues.GetLength(1), atomValues.GetLength(0), atomValues.GetLength(2));
-            Extent = new Vector3(x,y,z);
+            Extent = new Vector3Int(x,y,z);
             Mask = new bool[y,x,z];
             for (int i = 0; i < y; i++)
             {
@@ -65,7 +65,7 @@ namespace XWFC
             Init(computeAtomEdges, distinctOrientations, color);
         }
 
-        public NonUniformTile(string uniformAtomValue, Vector3 extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
+        public NonUniformTile(string uniformAtomValue, Vector3Int extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
             bool computeAtomEdges = true, string description="", bool isEmptyTile=false)
         {
             Description = description;
@@ -75,12 +75,12 @@ namespace XWFC
                 var (x, y, z) = Vector3Util.CastInt(extent);
                 AtomValues = Util.Populate3D(x, y, z, uniformAtomValue);
                 Mask = Util.Populate3D(x, y, z, true);
-                Extent = new Vector3(x, y, z);
+                Extent = new Vector3Int(x, y, z);
             }
             else
             {
                 var (x, y, z) = (Mask.GetLength(1), Mask.GetLength(0), Mask.GetLength(2));
-                Extent = new Vector3(x, y, z);
+                Extent = new Vector3Int(x, y, z);
                 AtomValues = new string[y, x, z];
                 for (int i = 0; i < y; i++)
                 {
@@ -129,7 +129,7 @@ namespace XWFC
         
         public static NonUniformTile FromJson(Dictionary<string, string> jsn)
         {
-            var extent = Vector3Util.Vector3FromString(jsn["extent"]);
+            var extent = Vector3Util.VectorToVectorInt(Vector3Util.Vector3FromString(jsn["extent"]));
             return new NonUniformTile(
                 extent,
                 ColorUtil.ColorFromString(jsn["color"]),
@@ -163,7 +163,7 @@ namespace XWFC
             return builder.ToString();
         }
 
-        private static bool[,,] MaskFromString(string s, Vector3 extent)
+        private static bool[,,] MaskFromString(string s, Vector3Int extent)
         {
             var trimmed = s.Trim(new char[] { '[', ']' });
             var split = trimmed.Split(",");
