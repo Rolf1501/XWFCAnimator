@@ -4,6 +4,7 @@ using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
 using PatternWave = XWFC.Grid<bool[]>;
+using Random = System.Random;
 
 namespace XWFC
 {
@@ -18,22 +19,93 @@ namespace XWFC
         private Queue<Vector3Int> _propagationQueue = new();
         private readonly Vector3Int _patternAtomCoord;
 
-        public XWFCOverlappingModel([NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, forceCompleteTiles)
+        private Random _random;
+        private int _randomSeed = 1;
+
+        public XWFCOverlappingModel(AtomGrid[] atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, forceCompleteTiles)
         {
-            PatternMatrix = new PatternMatrix(adjacencyMatrix.AtomizedSamples, kernelSize, adjacencyMatrix.AtomMapping);
+            PatternMatrix = new PatternMatrix(atomizedSamples, kernelSize, adjacencyMatrix.AtomMapping);
             AdjacencyMatrix = adjacencyMatrix;
             
             _nPatterns = PatternMatrix.Patterns.Count;
+            CollapseQueue = new CollapsePriorityQueue();
+
+            // _randomSeed = new Random().Next();
+            _random = new Random(_randomSeed);
             
             // Initialize wave in superposition.
-            _patternWave = new PatternWave(seededGrid.GetExtent(), SuperImposedWave());
-            _atomGrid = new Grid<int>(seededGrid.GetExtent(), seededGrid.DefaultFillValue);
+            var extent = seededGrid.GetExtent();
+            // extent = new Vector3Int(5, 1, 5);
+            _patternWave = new PatternWave(extent, SuperImposedWave());
+            _atomGrid = new Grid<int>(extent, seededGrid.DefaultFillValue);
+            
+            PrintAdjacencyData();
             
             CollapseQueue.Insert(new Vector3Int(0,0,0), AdjacencyMatrix.CalcEntropy(_nPatterns));
-            Collapse(CollapseQueue.DeleteHead().Coord);
+
+            while (!CollapseQueue.IsDone())
+            {
+                Collapse(CollapseQueue.DeleteHead().Coord);
+            }
 
             // This coordinate is used to set the base for the patterns; due to how patterns are constructed, the relative coordinate is always the same for each pattern. 
             _patternAtomCoord = new Vector3Int(0, 0, 0);
+            
+            Debug.Log(GridToString(_atomGrid));
+        }
+
+        private string GridToString<T>(Grid<T> grid)
+        {
+            string s = "";
+            var matrix = grid.GetGrid();
+            for (int y = 0; y < matrix.GetLength(0); y++)
+            {
+                s += "[\n";
+                for (int x = 0; x < matrix.GetLength(1); x++)
+                {
+                    s += "[";
+                    for (int z = 0; z < matrix.GetLength(2); z++)
+                    {
+                        s += matrix[y, x, z] + ", ";
+                    }
+                    s += "]\n";
+                }
+                s += "\n]\n";
+            }
+
+            return s;
+        }
+        
+        private void PrintAdjacencyData()
+        {
+            foreach (var o in Offsets)
+            {
+                var x = PatternMatrix.PatternAdjacencyMatrix[o];
+                var s = "" + o + "\n";
+                var ss = "\t";
+                for (int k = 0; k < x.GetLength(0); k++)
+                {
+                    ss += k + "\t";
+                }
+                s += ss + "\n";
+                for (var i = 0; i < x.GetLength(0);i++)
+                {
+                    s += $"{i}\t";
+                    for (var j = 0; j < x.GetLength(1); j++)
+                    {
+                        s += x[i, j] + "\t";
+                    }
+                    s += "\n";
+                }
+                Debug.Log(s);
+        
+            }
+            
+            
+            foreach (var (k,v) in PatternMatrix.AtomMapping.Dict)
+            {
+                Debug.Log($"{k}: {v}");
+            }
         }
         
         private bool[] SuperImposedWave()
@@ -48,22 +120,13 @@ namespace XWFC
 
         private void Collapse(Vector3Int coord)
         {
+            if (_atomGrid.Get(coord) != _atomGrid.DefaultFillValue) return;
+            
             var choices = _patternWave.Get(coord);
 
-            var chosenPatternId = RandomChoice(choices, Enumerable.Repeat(1.0f, _nPatterns).ToArray());
+            var uniformWeights = Enumerable.Repeat(1.0f, _nPatterns).ToArray();
+            var chosenPatternId = RandomChoice(choices, uniformWeights, _random);
             var chosenAtom = PatternMatrix.GetPatternAtomAtCoordinate(chosenPatternId, _patternAtomCoord);
-            
-            /*
-             */
-            var (tileId, atomCoord, orientation) = AdjacencyMatrix.AtomMapping.Get(chosenAtom);
-            var atomCoords = AdjacencyMatrix.TileSet[tileId].OrientedIndices[0];
-            
-            foreach (var ac in atomCoords)
-            {
-                var relativePosition = ac - atomCoord;
-                if (!_atomGrid.WithinBounds(coord + relativePosition)) continue;
-                _atomGrid.Set(relativePosition, AdjacencyMatrix.AtomMapping.Get((tileId, ac, orientation)));
-            }
             
             /*
              * TODO: propagation after tile placement.
@@ -135,13 +198,19 @@ namespace XWFC
                     }
 
                     if (preIsPost) continue;
+                    
+                    /*
+                     * Update neighbor.
+                     */
+                    _patternWave.Set(neighbor, post);
+                    
                     if (remainingChoiceCount == 1)
                     {
                         /*
                          * Can already collapse the neighbor if there's only one choice remaining.
                          */
-                        Collapse(neighbor);
-                        return;
+                        CollapseQueue.Insert(neighbor, AdjacencyMatrix.CalcEntropy(1));
+                        continue;
                     }
 
                     if (remainingChoiceCount == 0)
@@ -152,10 +221,6 @@ namespace XWFC
                         throw new NoMoreChoicesException($"No more choices remain for {neighbor}");
                     }
                     
-                    /*
-                     * Update neighbor and propagate.
-                     */
-                    _patternWave.Set(neighbor, post);
                     _propagationQueue.Enqueue(neighbor);
                 }
             }

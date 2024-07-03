@@ -9,7 +9,7 @@ namespace XWFC
         public List<int[,,]> Patterns;
         private readonly AtomGrid[] _atomizedSamples;
         private readonly Vector3Int _kernelSize;
-        private readonly  AtomMapping _atomMapping;
+        public readonly  AtomMapping AtomMapping;
         private Dictionary<Vector3Int, Range3D> _offsetRangeMapping;
         private IEnumerable<Vector3Int> _offsets;
         public Dictionary<Vector3Int, bool[,]> PatternAdjacencyMatrix;
@@ -19,7 +19,7 @@ namespace XWFC
         {
             _atomizedSamples = atomizedSamples;
             _kernelSize = kernelSize;
-            _atomMapping = atomMapping;
+            AtomMapping = atomMapping;
             _offsets = OffsetFactory.GetOffsets(3);
             Patterns = new List<int[,,]>();
             PatternAdjacencyMatrix = new Dictionary<Vector3Int, bool[,]>();
@@ -153,7 +153,7 @@ namespace XWFC
         private void InitMapping()
         {
             AtomPatternMapping = new Dictionary<int, Bidict<Vector3Int, HashSet<int>>>();
-            foreach (var atom in _atomMapping.GetValues())
+            foreach (var atom in AtomMapping.GetValues())
             {
                 var value = new Bidict<Vector3Int, HashSet<int>>();
                 foreach (var offset in GetPatternOffsets())

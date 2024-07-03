@@ -254,11 +254,11 @@ namespace XWFC
             if (!(GridManager.WithinBounds(tileSource) && GridManager.WithinBounds(tileEnd))) return false;
 
             // Also check if all other cells in the tile's area are not blocked.
-            for (int x = (int)tileSource.x; x <= tileEnd.x; x++)
+            for (int x = tileSource.x; x <= tileEnd.x; x++)
             {
-                for (int y = (int)tileSource.y; y <= tileEnd.y; y++)
+                for (int y = tileSource.y; y <= tileEnd.y; y++)
                 {
-                    for (int z = (int)tileSource.z; z <= tileEnd.z; z++)
+                    for (int z = tileSource.z; z <= tileEnd.z; z++)
                     {
                         if (seededGrid.Get(x, y, z) != seededGrid.DefaultFillValue) return false;
                     }
@@ -440,7 +440,7 @@ namespace XWFC
             _propQueue.Clear();
         }
 
-        protected static int RandomChoice(IEnumerable<bool> choices, IEnumerable<float> weights)
+        protected static int RandomChoice(IEnumerable<bool> choices, IEnumerable<float> weights, Random? random = null)
         {
             /*
              * Chooses a random atom from the set of allowed atom choices.
@@ -451,12 +451,13 @@ namespace XWFC
 
             if (total <= 0) return -1;
 
-            var random = new Random().NextDouble() * total;
+            random ??= new Random();
+            var randChoice = random.NextDouble() * total;
             float acc = 0;
             for (int i = 0; i < choiceWeights.Length; i++)
             {
                 acc += choiceWeights[i];
-                if (acc >= random) return i;
+                if (acc >= randChoice) return i;
             }
 
             return -1;

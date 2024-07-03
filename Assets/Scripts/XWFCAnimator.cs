@@ -67,45 +67,50 @@ public class XWFCAnimator : MonoBehaviour
         TileSet = new TileSet();
 
         _adjacency = new HashSetAdjacency();
-        
+
         // InitXWFC();
 
         var houseComponents = HouseComponents();
 
         _componentManager = new ComponentManager(houseComponents);
-        
+
         LoadNextComponent();
-        
+
         TileSet = _xwfc.AdjMatrix.TileSet;
         CompleteTileSet = _xwfc.AdjMatrix.TileSet;
-        
+
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
-        
+
         PrintAdjacencyData();
 
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
-        
+
         // Set for keeping track of drawn terminals.
         _drawnTiles = new HashSet<GameObject>();
-        
+
         DrawTiles();
-        
+
         var brickPattern = new Patterns()
         {
+            //  b,b,b,b
             // b1,b,b,b1
             //  b,b,b,b
-            (0, new Vector3Int(2,0,0)),
-            (0, new Vector3Int(0,0,0)),
-            (0, new Vector3Int(1,0,1)),
-            (4, new Vector3Int(0,0,1)),
-            (4, new Vector3Int(3,0,1)),
+            (0, new Vector3Int(2, 0, 0)),
+            (0, new Vector3Int(0, 0, 0)),
+            (0, new Vector3Int(2, 0, 2)),
+            (0, new Vector3Int(0, 0, 2)),
+            (0, new Vector3Int(1, 0, 1)),
+            // (4, new Vector3Int(0,0,1)),
+            // (4, new Vector3Int(3,0,1)),
         };
 
         var (sample, ids) = InputHandler.ToSampleGrid(brickPattern, TileSet, "");
 
-        _patternMatrix = new PatternMatrix(_xwfc.AdjMatrix.AtomizedSamples, new Vector3Int(2,1,2), _xwfc.AdjMatrix.AtomMapping);
-        _xwfc = new XWFCOverlappingModel(_currentComponent.AdjacencyMatrix, ref _currentComponent.Grid, new Vector3Int(2, 1, 2));
+        var atomized = new AtomGrid[] { _currentComponent.AdjacencyMatrix.AtomizeSample(sample) };
+
+        _patternMatrix = new PatternMatrix(atomized, new Vector3Int(2,1,2), _xwfc.AdjMatrix.AtomMapping);
+        _xwfc = new XWFCOverlappingModel(atomized, _currentComponent.AdjacencyMatrix, ref _currentComponent.Grid, new Vector3Int(2, 1, 2));
         // _xwfc.CollapseAutomatic();
 
         // if (!FindConfigFileNames().Any()) SaveConfig();
