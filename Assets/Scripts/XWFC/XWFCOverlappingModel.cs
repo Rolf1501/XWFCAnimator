@@ -207,10 +207,9 @@ namespace XWFC
                     if (remainingChoiceCount == 1)
                     {
                         /*
-                         * Can already collapse the neighbor if there's only one choice remaining.
+                         * TODO: Can already collapse the neighbor if there's only one choice remaining.
                          */
-                        CollapseQueue.Insert(neighbor, AdjacencyMatrix.CalcEntropy(1));
-                        continue;
+                        //continue;
                     }
 
                     if (remainingChoiceCount == 0)
@@ -221,6 +220,7 @@ namespace XWFC
                         throw new NoMoreChoicesException($"No more choices remain for {neighbor}");
                     }
                     
+                    CollapseQueue.Insert(neighbor, AdjacencyMatrix.CalcEntropy(remainingChoiceCount));
                     _propagationQueue.Enqueue(neighbor);
                 }
             }

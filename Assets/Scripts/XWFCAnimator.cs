@@ -104,8 +104,27 @@ public class XWFCAnimator : MonoBehaviour
             // (4, new Vector3Int(0,0,1)),
             // (4, new Vector3Int(3,0,1)),
         };
+        
+        var brickPattern2 = new Patterns()
+        {
+            //    b1,b ,b ,b1
+            // b ,b ,b1,b1,b ,b
+            //    b1,b ,b ,b1
+            (0, new Vector3Int(0, 0, 1)),
+            (0, new Vector3Int(4, 0, 1)),
+            (0, new Vector3Int(2, 0, 0)),
+            (0, new Vector3Int(2, 0, 2)),
+            (4, new Vector3Int(1, 0, 0)),
+            (4, new Vector3Int(1, 0, 2)),
+            (4, new Vector3Int(4, 0, 0)),
+            (4, new Vector3Int(4, 0, 2)),
+            (4, new Vector3Int(2, 0, 1)),
+            (4, new Vector3Int(3, 0, 1)),
+            // (4, new Vector3Int(0,0,1)),
+            // (4, new Vector3Int(3,0,1)),
+        };
 
-        var (sample, ids) = InputHandler.ToSampleGrid(brickPattern, TileSet, "");
+        var (sample, ids) = InputHandler.ToSampleGrid(brickPattern2, TileSet, "");
 
         var atomized = new AtomGrid[] { _currentComponent.AdjacencyMatrix.AtomizeSample(sample) };
 
