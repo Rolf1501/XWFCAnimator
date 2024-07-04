@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -23,6 +24,7 @@ namespace XWFC
 
         private Random _random;
         private int _randomSeed = 1;
+        public readonly Dictionary<int, HashSet<(Vector3Int, bool[])>> TilePatternMasks;
 
         public XWFCOverlappingModel(AtomGrid[] atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, forceCompleteTiles)
         {
@@ -38,11 +40,13 @@ namespace XWFC
             
             // Initialize wave in superposition.
             var extent = seededGrid.GetExtent();
-            // extent = new Vector3Int(5, 1, 5);
+            extent = new Vector3Int(5, 1, 5);
             _patternWave = new PatternWave(extent, SuperImposedWave());
             _atomGrid = new Grid<int>(extent, seededGrid.DefaultFillValue);
             
             PrintAdjacencyData();
+            
+            TilePatternMasks = CalcNutPatternPropagation();
             
             CollapseQueue.Insert(new Vector3Int(0,0,0), AdjacencyMatrix.CalcEntropy(_nPatterns));
 
@@ -52,11 +56,11 @@ namespace XWFC
             }
             
             Debug.Log(GridToString(_atomGrid));
-            CalcNutPatternPropagation();
         }
 
-        private void CalcNutPatternPropagation()
+        private Dictionary<int, HashSet<(Vector3Int, bool[])>> CalcNutPatternPropagation()
         {
+            var tilePatternMasks = new Dictionary<int, HashSet<(Vector3Int, bool[])>>();
             var tileSet = AdjacencyMatrix.TileSet;
             foreach (var (tileId, tile) in tileSet)
             {
@@ -134,11 +138,35 @@ namespace XWFC
                     }
                 }
 
-                Propagate(propQueue, ref tileWave, Offsets, ref tileAtomGrid, PatternMatrix);
-                /*
-                 * TODO: inspect result of propagation here. 
-                 */
+                try
+                {
+                    // Skip tiles that are in the tile set, but not present in the patterns.
+                    Propagate(propQueue, ref tileWave, Offsets, ref tileAtomGrid, PatternMatrix);
+                }
+                catch
+                {
+                    continue;
+                }
+                var e = tileWave.GetExtent(); 
+                tilePatternMasks[tileId] = new HashSet<(Vector3Int, bool[])>();
+                for (int x = 0; x < e.x; x++)
+                {
+                    for (int y = 0; y < e.y; y++)
+                    {
+                        for (int z = 0; z < e.z; z++)
+                        {
+                            var gridCoord = new Vector3Int(x, y, z);
+                            var relativeCoord = gridCoord - tileOrigin;
+                            
+                            // Atoms belonging to the tile require no precomputed mask.
+                            if (PatternMatrix.AtomMapping.ContainsKey((tileId, relativeCoord, orientation))) continue;
+                            tilePatternMasks[tileId].Add((relativeCoord, tileWave.Get(gridCoord)));
+                        }
+                    }
+                }
             }
+
+            return tilePatternMasks;
         }
 
         private string GridToString<T>(Grid<T> grid)
@@ -213,18 +241,45 @@ namespace XWFC
             var uniformWeights = Enumerable.Repeat(1.0f, _nPatterns).ToArray();
             var chosenPatternId = RandomChoice(choices, uniformWeights, _random);
             var chosenAtom = PatternMatrix.GetPatternAtomAtCoordinate(chosenPatternId, _patternAtomCoord);
+
+            /*
+             * For each tile atom, find its grid coordinate and collapse those to the corresponding atom id. 
+             */
+            var (tileId, chosenAtomCoord, orientation) = PatternMatrix.AtomMapping.GetKey(chosenAtom);
+            var tile = AdjacencyMatrix.TileSet[tileId];
+            var atomCoords = tile.OrientedIndices[orientation];
+            var tilePatternMask = TilePatternMasks[tileId];
+            
+            foreach (var atomCoord in atomCoords)
+            {
+                var gridCoord = coord + atomCoord - chosenAtomCoord;
+                _atomGrid.Set(gridCoord, PatternMatrix.AtomMapping.GetValue((tileId, atomCoord, orientation)));
+            }
             
             /*
-             * TODO: propagation after tile placement.
-             * TODO: precompute the pattern masks per tile.
-             */
-            
-            var updatedWave = EmptyWave();
-            updatedWave[chosenPatternId] = true;
-            _patternWave.Set(coord, updatedWave);
-            _atomGrid.Set(coord, chosenAtom);
+             * For each atom affected by tile placement, update with precomputed propagated pattern wave.
+             */ 
+            foreach (var (relativeCoord, wave) in tilePatternMask)
+            {
+                var gridCoord = coord + relativeCoord - chosenAtomCoord;
+                
+                if (!_patternWave.WithinBounds(gridCoord)) continue;
+                
+                var updatedWave = EmptyWave();
+                var pre = _patternWave.Get(gridCoord);
+                var preIsPost = true;
+                for (var i = 0; i < wave.Length; i++)
+                {
+                    updatedWave[i] = pre[i] && wave[i];
+                    if (updatedWave[i] != pre[i]) preIsPost = false;
+                }
+                if (!preIsPost) _propagationQueue.Enqueue(gridCoord);
+                
+                // Cells added through mask overlay have to be added manually.
+                CollapseQueue.Insert(gridCoord, AdjacencyMatrix.CalcEntropy(updatedWave.Count(x=>x)));
+                _patternWave.Set(gridCoord, updatedWave);
+            }
 
-            _propagationQueue.Enqueue(coord);
             var collapseItems = Propagate(_propagationQueue, ref _patternWave, Offsets, ref _atomGrid, PatternMatrix);
             
             foreach (var (cell, entropy) in collapseItems)
