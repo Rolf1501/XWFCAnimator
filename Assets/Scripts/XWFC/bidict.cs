@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace XWFC
 {
@@ -58,6 +59,10 @@ namespace XWFC
         {
             return _inverse.Keys.Contains(value);
         }
+        public bool ContainsKey(TKey valueTuple)
+        {
+            return Dict.ContainsKey(valueTuple);
+        }
 
         public int GetNEntries()
         {
@@ -68,5 +73,6 @@ namespace XWFC
         {
             return _inverse.Keys.ToList();
         }
+
     }
 }
