@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -18,7 +17,9 @@ namespace XWFC
         private readonly Vector3Int _kernelSize;
 
         private Queue<Vector3Int> _propagationQueue = new();
-        private readonly Vector3Int _patternAtomCoord;
+        
+        // This coordinate is used to set the base for the patterns; due to how patterns are constructed, the relative coordinate is always the same for each pattern. 
+        private readonly Vector3Int _patternAtomCoord = new Vector3Int(0, 0, 0);
 
         private Random _random;
         private int _randomSeed = 1;
@@ -49,11 +50,9 @@ namespace XWFC
             {
                 Collapse(CollapseQueue.DeleteHead().Coord);
             }
-
-            // This coordinate is used to set the base for the patterns; due to how patterns are constructed, the relative coordinate is always the same for each pattern. 
-            _patternAtomCoord = new Vector3Int(0, 0, 0);
             
             Debug.Log(GridToString(_atomGrid));
+            CalcNutPatternPropagation();
         }
 
         private void CalcNutPatternPropagation()
@@ -88,24 +87,47 @@ namespace XWFC
 
                     foreach (var offset in Offsets)
                     {
+                        var n = atomCoord + offset;
+                        var gridCoord = n + tileOrigin;
+
+                        if (!tileAtomGrid.WithinBounds(gridCoord)) continue;
+                        // If neighbor is another tile atom, then pattern finding is redundant. Atoms are immediately collapsed. 
+                        if (PatternMatrix.AtomMapping.ContainsKey((tileId, n, orientation))) continue;
+                        
                         var offsetDirectionIndex = AdjacencyMatrix.GetOffsetDirectionIndex(offset);
                         var sign = offset[offsetDirectionIndex];
-                        var localAtomCoord = new Vector3Int(0, 0, 0)
-                        {
-                            [offsetDirectionIndex] = sign < 0 ? 1 : 0
-                        };
+                        var localAtomCoord = _patternAtomCoord;
+
+                        localAtomCoord[offsetDirectionIndex] = sign < 0 ? 1 : 0;
                         
                         // If the atom coordinate is not within the bounds of a pattern, continue.
                         if (localAtomCoord[offsetDirectionIndex] >= _kernelSize[offsetDirectionIndex]) continue;
                         
+                        /*
+                         * Find the patterns that contain the atom.
+                         * The set of allowed patterns for its neighbors depends on the sets allowed for itself.
+                         * The set of neighbor patterns are those where the neighbors are at the 0,0,0 coord.
+                         */
                         var allowedPatterns = PatternMatrix.AtomPatternMapping[atomId].Get(localAtomCoord);
                         var wave = EmptyWave();
                         foreach (var allowedPattern in allowedPatterns)
                         {
-                            wave[allowedPattern] = true;
+                            // Find the patterns where the neighbor atom id is at the reference coordinate.
+                            if (sign < 0)
+                            {
+                                wave[allowedPattern] = true;
+                            }
+                            else
+                            {
+                                // If the current atom is at the pattern atom coord, then the patterns that may be adjacent are those that are allowed at the given offset.
+                                var row = PatternMatrix.GetRow(allowedPattern, offset).ToArray();
+                                for (var i = 0; i < row.Length; i++)
+                                {
+                                    if (row[i]) wave[i] = true;
+                                }
+                            }
                         }
 
-                        var gridCoord = atomCoord + tileOrigin + offset;
                         tileWave.Set(gridCoord, wave);
                         
                         propQueue.Enqueue(gridCoord);
