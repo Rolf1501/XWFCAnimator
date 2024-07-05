@@ -6,7 +6,7 @@ using Random = System.Random;
 
 namespace XWFC
 {
-    public class XWFC
+    public class XwfcStm
     {
         private readonly TileSet _tileSet;
         public Vector3Int GridExtent;
@@ -21,12 +21,11 @@ namespace XWFC
         private Queue<Propagation> _propQueue = new();
         private SavePointManager _savePointManager;
         private int _counter;
-        public Stack<Occupation> OccupationLog = new();
         private bool _forceCompleteTiles;
         private SavePoint _rootSave;
 
         #nullable enable
-        public XWFC(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
+        public XwfcStm(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
             Vector3Int gridExtent, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true)
         {
             /*
@@ -48,7 +47,7 @@ namespace XWFC
             _rootSave = new SavePoint(GridManager, CollapseQueue, _counter);
         }
 
-        public XWFC(TileSet tileSet, Vector3Int extent, SampleGrid[] inputGrids, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true)
+        public XwfcStm(TileSet tileSet, Vector3Int extent, SampleGrid[] inputGrids, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true)
         {
             /*
              * Constructor for XWFC with a list of grids with preset tile ids and instance ids to learn from.
@@ -67,7 +66,7 @@ namespace XWFC
             _rootSave = new SavePoint(GridManager, CollapseQueue, _counter);
         }
 
-        public XWFC(AdjacencyMatrix adjacencyMatrix, ref Grid<int> seededGrid, bool forceCompleteTiles = true)
+        public XwfcStm(AdjacencyMatrix adjacencyMatrix, ref Grid<int> seededGrid, bool forceCompleteTiles = true)
         {
             AdjMatrix = adjacencyMatrix;
             GridExtent = seededGrid.GetExtent();
@@ -319,73 +318,55 @@ namespace XWFC
             Debug.Log("All done!");
         }
 
-        public HashSet<Occupation> CollapseOnce()
+        public void CollapseOnce()
         {
             /*
              * Performs a single collapse and outputs the affected cells' coordinates.
              * It is up to the caller to refer to the grid to find the cell's contents.
              */
-            var affectedCells = new HashSet<Occupation>();
-            if (CollapseQueue.IsDone()) return affectedCells;
+            if (CollapseQueue.IsDone()) return;
 
             var head = CollapseQueue.DeleteHead();
-            if (CollapseList.IsDefaultCoord(head.Coord)) return affectedCells;
+            if (CollapseList.IsDefaultCoord(head.Coord)) return;
             
-            Vector3 coll = head.Coord;
-            if (!GridManager.WithinBounds(coll)) return affectedCells;
+            var coll = head.Coord;
+            if (!GridManager.WithinBounds(coll)) return;
             
             while ((!GridManager.WithinBounds(coll) || GridManager.Grid.IsOccupied(coll)) && !CollapseQueue.IsDone())
             {
                 coll = CollapseQueue.DeleteHead().Coord;
             }
-
-            var (x, y, z) = Vector3Util.CastInt(coll);
-
-            Vector3 tCoord;
-            int tId;
+            
             try
             {
-                (tCoord, tId) = Collapse(x, y, z);
+                Collapse(coll);
             }
             catch (NoMoreChoicesException)
             {
-                int undoneCells = RestoreSavePoint();
+                RestoreSavePoint();
                 Debug.Log($"Restoring to earlier state... At progress {_progress}");
                 
                 // When rewinding, pass the coordinates of the cells that changed.
                 // The caller can then refer the grid manager to find what the values of the cells should be. 
-                while (undoneCells > 0 && OccupationLog.Count > 0)
-                {
-                    affectedCells.Add(OccupationLog.Pop());
-                    undoneCells--;
-                }
-                return affectedCells;
+                
+                return;
             }
 
             Propagate();
-            var occupation = new Occupation(tCoord, tId);
-            affectedCells.Add(occupation);
-            
-            // Keep track of cell occupation by atom placement.
-            OccupationLog.Push(occupation);
-            
-            return affectedCells;
         }
 
-        private (Vector3, int) Collapse(int x, int y, int z)
+        private void Collapse(Vector3Int coord)
         {
             /*
              * Collapse the cell at the given coordinate.
              */
-            var coord = new Vector3Int(x, y, z);
-            if (!GridManager.WithinBounds(coord)) return (new Vector3(), -1);
+            if (!GridManager.WithinBounds(coord)) return;
 
-            if (GridManager.Grid.IsOccupied(x, y, z)) return (new Vector3(), -1);
+            if (GridManager.Grid.IsOccupied(coord)) return;
 
-            var choiceId = Choose(x, y, z); // Throws exception; handled by CollapsedOnce.
+            var choiceId = Choose(coord); // Throws exception; handled by CollapsedOnce.
 
             SetOccupied(coord, choiceId);
-            return (coord, choiceId);
         }
 
         private void SetOccupied(Vector3Int coord, int id)
@@ -401,19 +382,19 @@ namespace XWFC
             UpdateProgress();
         }
 
-        private int Choose(int x, int y, int z)
+        private int Choose(Vector3Int coord)
         {
             /*
              * Finds an allowed atom to place at the given coordinate.
              */
-            var wave = GridManager.Wave.Get(x, y, z);
-            var choiceIds = GridManager.ChoiceIds.Get(x, y, z);
-            var choiceWeights = GridManager.ChoiceWeights.Get(x, y, z);
+            var wave = GridManager.Wave.Get(coord);
+            var choiceIds = GridManager.ChoiceIds.Get(coord);
+            var choiceWeights = GridManager.ChoiceWeights.Get(coord);
 
             int chosenIndex = RandomChoice(wave, choiceWeights);
 
             // TODO: move this to propagation instead for early conflict detection.
-            if (chosenIndex < 0) throw new NoMoreChoicesException($"No more choice remain for cell {x}, {y}, {z}.");
+            if (chosenIndex < 0) throw new NoMoreChoicesException($"No more choice remain for cell {coord}.");
 
             return choiceIds[chosenIndex];
         }
@@ -613,22 +594,4 @@ namespace XWFC
             Coord = coord;
         }
     };
-
-    public record Occupation
-    {
-        /*
-         * Record for storing information about cell occupation.
-         * Contains a coordinate, atom id and addition flag (true = addition, false = removal).
-         */
-        public Vector3 Coord;
-        public int Id;
-        public bool Addition; 
-        
-        public Occupation(Vector3 coord, int id, bool addition = true)
-        {
-            Coord = coord;
-            Id = id;
-            Addition = addition;
-        }
-    }
 }

@@ -10,7 +10,7 @@ using Random = System.Random;
 
 namespace XWFC
 {
-    public class XWFCOverlappingModel : XWFC
+    public class XWFCOverlappingModel : XwfcStm
     {
         public readonly PatternMatrix PatternMatrix;
         public AdjacencyMatrix AdjacencyMatrix;

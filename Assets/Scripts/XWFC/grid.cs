@@ -170,7 +170,7 @@ namespace XWFC
                 : choice != null;
         }
 
-        public bool IsOccupied(Vector3 coord)
+        public bool IsOccupied(Vector3Int coord)
         {
             var (x, y, z) = Vector3Util.CastInt(coord);
             return IsOccupied(x, y, z);
@@ -346,10 +346,9 @@ namespace XWFC
             return x < Width && y < Height && z < Depth && x >= 0 && y >= 0 && z >= 0;
         }
 
-        public bool WithinBounds(Vector3 coord)
+        public bool WithinBounds(Vector3Int coord)
         {
-            var (x, y, z) = Vector3Util.CastInt(coord);
-            return WithinBounds(x, y, z);
+            return WithinBounds(coord.x, coord.y, coord.z);
         }
     }
 }
