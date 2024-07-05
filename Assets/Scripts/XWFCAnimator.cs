@@ -36,7 +36,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private StateFlag _activeStateFlag = 0;
     
-    private XWFC.XWFC _xwfc;
+    private XWFC.XwfcStm _xwfcStm;
 
     private Grid<Drawing> _drawnGrid;
     private HashSetAdjacency _adjacency;
@@ -76,8 +76,8 @@ public class XWFCAnimator : MonoBehaviour
 
         LoadNextComponent();
 
-        TileSet = _xwfc.AdjMatrix.TileSet;
-        CompleteTileSet = _xwfc.AdjMatrix.TileSet;
+        TileSet = _xwfcStm.AdjMatrix.TileSet;
+        CompleteTileSet = _xwfcStm.AdjMatrix.TileSet;
 
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
@@ -101,8 +101,8 @@ public class XWFCAnimator : MonoBehaviour
             (0, new Vector3Int(2, 0, 2)),
             (0, new Vector3Int(0, 0, 2)),
             (0, new Vector3Int(1, 0, 1)),
-            // (4, new Vector3Int(0,0,1)),
-            // (4, new Vector3Int(3,0,1)),
+            (4, new Vector3Int(0,0,1)),
+            (4, new Vector3Int(3,0,1)),
         };
         
         var brickPattern2 = new Patterns()
@@ -120,16 +120,143 @@ public class XWFCAnimator : MonoBehaviour
             (4, new Vector3Int(4, 0, 2)),
             (4, new Vector3Int(2, 0, 1)),
             (4, new Vector3Int(3, 0, 1)),
+        };
+
+        var brickDoorPattern = new Patterns
+        {
+            /*
+             * b ,b ,b ,b ,b ,b
+             *   ,b1,d ,d ,d ,b , b
+             * b ,b ,d ,d ,d ,b1,
+             *   ,b1,d ,d ,d ,b , b
+             * b ,b ,d ,d ,d ,b1,
+             *   ,b1,d ,d ,d ,b , b
+             */
+            (0, new Vector3Int(0,0,1)),
+            (0, new Vector3Int(0,0,3)),
+            (0, new Vector3Int(0,0,5)),
+            (0, new Vector3Int(2,0,5)),
+            (0, new Vector3Int(4,0,5)),
+            (0, new Vector3Int(5,0,4)),
+            (0, new Vector3Int(5,0,2)),
+            (0, new Vector3Int(5,0,0)),
+            
+            (4, new Vector3Int(1,0,0)),
+            (4, new Vector3Int(1,0,2)),
+            (4, new Vector3Int(1,0,4)),
+            (4, new Vector3Int(5,0,1)),
+            (4, new Vector3Int(5,0,3)),
+            
+            (5, new Vector3Int(2,0,0))
+        };
+
+        var brickPattern3 = new Patterns
+        {
+            //  b,b,b,b
+            // b1,b,b,b1
+            //  b,b,b,b
+            (0, new Vector3Int(2, 0, 0)),
+            (0, new Vector3Int(0, 0, 0)),
+            (0, new Vector3Int(2, 0, 2)),
+            (0, new Vector3Int(0, 0, 2)),
+            (0, new Vector3Int(1, 0, 1)),
             // (4, new Vector3Int(0,0,1)),
             // (4, new Vector3Int(3,0,1)),
         };
 
-        var (sample, ids) = InputHandler.ToSampleGrid(brickPattern2, TileSet, "");
+        var brickDoorPattern2 = new Patterns
+        {
+            /*
+             *    b ,b ,b ,b ,b ,b
+             * b ,b ,b1,d ,d ,d ,b ,b
+             *   ,b ,b ,d ,d ,d ,b1,b ,b
+             * b ,b ,b1,d ,d ,d ,b ,b
+             *    b ,b ,d ,d ,d ,b1,b ,b
+             * b ,b ,b1,d ,d ,d ,b ,b
+             */
+            (0, new Vector3Int(0, 0, 0)),
+            (0, new Vector3Int(0, 0, 2)),
+            (0, new Vector3Int(0, 0, 4)),
+            (0, new Vector3Int(1, 0, 1)),
+            (0, new Vector3Int(1, 0, 3)),
+            (0, new Vector3Int(1, 0, 5)),
+            (0, new Vector3Int(3, 0, 5)),
+            (0, new Vector3Int(5, 0, 5)),
+            (0, new Vector3Int(6, 0, 4)),
+            (0, new Vector3Int(6, 0, 2)),
+            (0, new Vector3Int(6, 0, 0)),
+            (0, new Vector3Int(7, 0, 1)),
+            (0, new Vector3Int(7, 0, 3)),
 
-        var atomized = new AtomGrid[] { _currentComponent.AdjacencyMatrix.AtomizeSample(sample) };
+            (4, new Vector3Int(2, 0, 0)),
+            (4, new Vector3Int(2, 0, 2)),
+            (4, new Vector3Int(2, 0, 4)),
+            (4, new Vector3Int(6, 0, 1)),
+            (4, new Vector3Int(6, 0, 3)),
 
-        _patternMatrix = new PatternMatrix(atomized, new Vector3Int(2,1,2), _xwfc.AdjMatrix.AtomMapping);
-        _xwfc = new XWFCOverlappingModel(atomized, _currentComponent.AdjacencyMatrix, ref _currentComponent.Grid, new Vector3Int(2, 1, 2));
+            (5, new Vector3Int(3, 0, 0))
+        };
+
+
+        var simpleDoor = new Patterns
+        {
+            /* 
+             * b1,b1,b1,b1,b1
+             * b1,d ,d ,d ,b1
+             * b1,d ,d ,d ,b1
+             * b1,d ,d ,d ,b1
+             * b1,d ,d ,d ,b1
+             * b1,d ,d ,d ,b1
+             */
+            (5, new Vector3Int(1, 0, 0)),
+
+            (4, new Vector3Int(0, 0, 0)),
+            (4, new Vector3Int(0, 0, 1)),
+            (4, new Vector3Int(0, 0, 2)),
+            (4, new Vector3Int(0, 0, 3)),
+            (4, new Vector3Int(0, 0, 4)),
+            
+            (4, new Vector3Int(0, 0, 5)),
+            (4, new Vector3Int(1, 0, 5)),
+            (4, new Vector3Int(2, 0, 5)),
+            (4, new Vector3Int(3, 0, 5)),
+            (4, new Vector3Int(4, 0, 5)),
+            
+            (4, new Vector3Int(4, 0, 4)),
+            (4, new Vector3Int(4, 0, 3)),
+            (4, new Vector3Int(4, 0, 2)),
+            (4, new Vector3Int(4, 0, 1)),
+            (4, new Vector3Int(4, 0, 0)),
+
+        };
+
+        var simpleBrick = new Patterns
+        {
+            (4, new Vector3Int(0, 0, 0)),
+            (4, new Vector3Int(0, 0, 1)),
+            (4, new Vector3Int(0, 0, 2)),
+            (4, new Vector3Int(1, 0, 0)),
+            (4, new Vector3Int(1, 0, 1)),
+            (4, new Vector3Int(1, 0, 2)),
+            (4, new Vector3Int(2, 0, 0)),
+            (4, new Vector3Int(2, 0, 1)),
+            (4, new Vector3Int(2, 0, 2)),
+        };
+
+        var patterns = new Patterns[] { brickPattern, brickDoorPattern };
+        var atomized = new List<AtomGrid>();
+        
+        foreach (var p in patterns)
+        {
+            var (sample, _) = InputHandler.ToSampleGrid(p, _currentComponent.AdjacencyMatrix.TileSet, "");
+            var atomizedSample = _currentComponent.AdjacencyMatrix.AtomizeSample(sample);
+            atomized.Add(atomizedSample);
+        }
+        // var (sample, ids) = InputHandler.ToSampleGrid(brickPattern2, TileSet, "");
+
+        // var atomized = new AtomGrid[] { _currentComponent.AdjacencyMatrix.AtomizeSample(sample) };
+
+        _xwfcStm = new XWFCOverlappingModel(atomized, _currentComponent.AdjacencyMatrix, ref _currentComponent.Grid, new Vector3Int(2, 1, 2));
         // _xwfc.CollapseAutomatic();
 
         // if (!FindConfigFileNames().Any()) SaveConfig();
@@ -154,7 +281,7 @@ public class XWFCAnimator : MonoBehaviour
         //     Drawing.DestroyAtom(drawing);
         // }
         
-        var defaultValue = _xwfc.GridManager.Grid.DefaultFillValue;
+        var defaultValue = _xwfcStm.GridManager.Grid.DefaultFillValue;
         _drawnGrid = new Grid<Drawing>(max, new Drawing(defaultValue, null));
             
         foreach (var component in _componentManager.Components)
@@ -283,8 +410,13 @@ public class XWFCAnimator : MonoBehaviour
             new Vector3Int(1,1,1), 
             color: new Color(0.4f,0.6f,0.4f,1)
         );
+        var doorTile = new NonUniformTile(
+            "d", 
+            new Vector3Int(3, 1, 5), 
+            new Color(0, 0, 0.8f)
+        );
 
-        return new NonUniformTile[] { brickTile, grassTile, soilTile, emptyTile, halfBrickTile };
+        return new NonUniformTile[] { brickTile, grassTile, soilTile, emptyTile, halfBrickTile, doorTile };
     }
 
     private List<Patterns> BasePatterns()
@@ -468,9 +600,9 @@ public class XWFCAnimator : MonoBehaviour
     
     private void PrintAdjacencyData()
     {
-        foreach (var o in _xwfc.Offsets)
+        foreach (var o in _xwfcStm.Offsets)
         {
-            var x = _xwfc.AdjMatrix.AtomAdjacencyMatrix[o];
+            var x = _xwfcStm.AdjMatrix.AtomAdjacencyMatrix[o];
             var s = "" + o + "\n";
             var ss = "\t";
             for (int k = 0; k < x.GetLength(0); k++)
@@ -491,7 +623,7 @@ public class XWFCAnimator : MonoBehaviour
         
         }
         
-        foreach (var (k,v) in _xwfc.AdjMatrix.AtomMapping.Dict)
+        foreach (var (k,v) in _xwfcStm.AdjMatrix.AtomMapping.Dict)
         {
             Debug.Log($"{k}: {v}");
         }
@@ -737,7 +869,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFCInput(TileSet tiles, Vector3Int gridExtent, SampleGrid[] inputGrids, float[] weights)
     {
-        _xwfc = new XWFC.XWFC(tiles, gridExtent, inputGrids, AdjacencyMatrix.ToWeightDictionary(weights, tiles));
+        _xwfcStm = new XWFC.XwfcStm(tiles, gridExtent, inputGrids, AdjacencyMatrix.ToWeightDictionary(weights, tiles));
         UpdateExtent(gridExtent);
     }
 
@@ -745,7 +877,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFComponent(ref Component component)
     {
-        _xwfc = new XWFC.XWFC(component.AdjacencyMatrix, ref component.Grid);
+        _xwfcStm = new XWFC.XwfcStm(component.AdjacencyMatrix, ref component.Grid);
         UpdateExtent(component.Grid.GetExtent());
     }
 
@@ -753,7 +885,7 @@ public class XWFCAnimator : MonoBehaviour
     {
         try
         {
-            _xwfc = new XWFC.XWFC(TileSet, _adjacency, extent);
+            _xwfcStm = new XWFC.XwfcStm(TileSet, _adjacency, extent);
 
         }
         catch (Exception exception)
@@ -767,14 +899,14 @@ public class XWFCAnimator : MonoBehaviour
     
     public void SaveComponent()
     {
-        if (_xwfc == null) return;
-        _currentComponent.Grid = _xwfc.GridManager.Grid.Deepcopy();
-        _xwfc.RemoveEmpty(ref _currentComponent.Grid);
+        if (_xwfcStm == null) return;
+        _currentComponent.Grid = _xwfcStm.GridManager.Grid.Deepcopy();
+        _xwfcStm.RemoveEmpty(ref _currentComponent.Grid);
     }
 
     public void UpdateAdjacencyConstraints(HashSetAdjacency adjacency)
     {
-        var tempXWFC = _xwfc;
+        var tempXWFC = _xwfcStm;
         try
         {
             _adjacency = adjacency;
@@ -784,13 +916,13 @@ public class XWFCAnimator : MonoBehaviour
         catch
         {
             Debug.Log("Failed to update adjacency constraints.");
-            _xwfc = tempXWFC;
+            _xwfcStm = tempXWFC;
         }
     }
 
     public void UpdateTileSet(TileSet newTileSet)
     {
-        var tempXWFC = _xwfc;
+        var tempXWFC = _xwfcStm;
         try
         {
             TileSet = newTileSet;
@@ -801,7 +933,7 @@ public class XWFCAnimator : MonoBehaviour
         catch
         {
             Debug.Log("Failed to update terminals.");
-            _xwfc = tempXWFC;
+            _xwfcStm = tempXWFC;
         }
     }
 
@@ -851,9 +983,9 @@ public class XWFCAnimator : MonoBehaviour
 
     private Grid<Drawing> InitDrawGrid()
     {
-        var e = _xwfc.GridExtent;
+        var e = _xwfcStm.GridExtent;
         if (_drawnGrid != null) e = _drawnGrid.GetExtent(); 
-        return new Grid<Drawing>(e, new Drawing(_xwfc.GridManager.Grid.DefaultFillValue, null));
+        return new Grid<Drawing>(e, new Drawing(_xwfcStm.GridManager.Grid.DefaultFillValue, null));
     }
 
     public Vector3 GetUnitSize()
@@ -863,7 +995,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public Vector3Int[] GetOffsets()
     {
-        return _xwfc.Offsets;
+        return _xwfcStm.Offsets;
     }
 
     public Dictionary<int, NonUniformTile> GetTiles()
@@ -873,12 +1005,12 @@ public class XWFCAnimator : MonoBehaviour
 
     public HashSetAdjacency GetTileAdjacencyConstraints()
     {
-        return _xwfc.AdjMatrix.TileAdjacencyConstraints;
+        return _xwfcStm.AdjMatrix.TileAdjacencyConstraints;
     }
 
     public bool IsDone()
     {
-        return _xwfc.IsDone();
+        return _xwfcStm.IsDone();
     }
 
     public bool ToggleCollapseMode()
@@ -924,7 +1056,7 @@ public class XWFCAnimator : MonoBehaviour
         {
             string s = DrawnGridIdsToString();
             Debug.Log("DRAWN GRID:\n" + s);
-            Debug.Log("XWFC GRID:\n" + _xwfc.GridManager.Grid.GridToString());
+            Debug.Log("XWFC GRID:\n" + _xwfcStm.GridManager.Grid.GridToString());
         }
     }
 
@@ -965,7 +1097,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public void CollapseOnce()
     {
-        if (MayCollapse()) _xwfc.CollapseOnce();
+        if (MayCollapse()) _xwfcStm.CollapseOnce();
     }
 
     public void CollapseAndDrawOnce()
@@ -983,7 +1115,7 @@ public class XWFCAnimator : MonoBehaviour
         /*
          * Determines whether a single collapse may be done.
          */
-        return !_xwfc.IsDone();
+        return !_xwfcStm.IsDone();
     }
 
     private bool MayIterate()
@@ -999,7 +1131,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void Draw(Vector3Int origin)
     {
-        var grid = _xwfc.GridManager.Grid;
+        var grid = _xwfcStm.GridManager.Grid;
         var gridExtent = grid.GetExtent();
         for (int y = 0; y < gridExtent.y; y++)
         {
@@ -1013,7 +1145,7 @@ public class XWFCAnimator : MonoBehaviour
                     // if (gridValue != grid.DefaultFillValue) DrawAtom(new Vector3(x,y,z),gridValue);
 
                     var blockedCellId =
-                        XWFC.XWFC.BlockedCellId(grid.DefaultFillValue, _xwfc.AdjMatrix.TileSet.Keys);
+                        XWFC.XwfcStm.BlockedCellId(grid.DefaultFillValue, _xwfcStm.AdjMatrix.TileSet.Keys);
                     var coord = new Vector3Int(x, y, z);
                     if (gridValue == grid.DefaultFillValue && drawing.Atom != null)
                     {
@@ -1031,7 +1163,7 @@ public class XWFCAnimator : MonoBehaviour
                         {
                             Drawing.DestroyAtom(drawing);
                         }
-                        DrawAtom(coord, gridValue, origin, _xwfc.AdjMatrix);
+                        DrawAtom(coord, gridValue, origin, _xwfcStm.AdjMatrix);
                     }
                     
                     if (_drawnGrid.Get(coord).Id != grid.Get(coord))
@@ -1132,7 +1264,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public void Reset()
     {
-        _xwfc?.UpdateExtent(extent);
+        _xwfcStm?.UpdateExtent(extent);
         ResetDrawnGrid();
         _activeStateFlag = 0;
     }
@@ -1168,7 +1300,7 @@ public class XWFCAnimator : MonoBehaviour
          * This contains the tileset, the tile id mapping and the adjacency constraints.
          * From those, the parameters for recreating config can be restored.
          */
-        var adjs = _xwfc.AdjMatrix.TileAdjacencyConstraints;
+        var adjs = _xwfcStm.AdjMatrix.TileAdjacencyConstraints;
         var tiles = TileSet;
         var config = new AdjacencyMatrixJsonFormatter(adjs, tiles).ToJson();
         var path = CreateSaveConfigPath();
