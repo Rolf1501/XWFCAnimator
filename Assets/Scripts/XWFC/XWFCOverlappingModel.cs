@@ -30,7 +30,7 @@ namespace XWFC
 
         private List<(int[,,] patternWave, Grid<int> atomGrid)> _saveStates = new();
 
-        public XWFCOverlappingModel(AtomGrid[] atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, forceCompleteTiles)
+        public XWFCOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, forceCompleteTiles)
         {
             PatternMatrix = new PatternMatrix(atomizedSamples, kernelSize, adjacencyMatrix.AtomMapping);
             AdjacencyMatrix = adjacencyMatrix;

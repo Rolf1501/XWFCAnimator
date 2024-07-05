@@ -7,7 +7,7 @@ namespace XWFC
     {
         public Dictionary<int, Bidict<Vector3Int, HashSet<int>>> AtomPatternMapping;
         public readonly List<int[,,]> Patterns;
-        private readonly AtomGrid[] _atomizedSamples;
+        private readonly IEnumerable<AtomGrid> _atomizedSamples;
         private readonly Vector3Int _kernelSize;
         public readonly  AtomMapping AtomMapping;
         public Dictionary<Vector3Int, Range3D> OffsetRangeMapping;
@@ -15,7 +15,7 @@ namespace XWFC
         public readonly Dictionary<Vector3Int, bool[,]> PatternAdjacencyMatrix;
 
 
-        public PatternMatrix(AtomGrid[] atomizedSamples, Vector3Int kernelSize, AtomMapping atomMapping)
+        public PatternMatrix(IEnumerable<AtomGrid> atomizedSamples, Vector3Int kernelSize, AtomMapping atomMapping)
         {
             _atomizedSamples = atomizedSamples;
             _kernelSize = kernelSize;
