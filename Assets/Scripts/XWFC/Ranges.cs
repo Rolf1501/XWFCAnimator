@@ -46,9 +46,9 @@ namespace XWFC
             return Start == range.Start && End == range.End;
         }
 
-        public static bool InRange(int value, int start, int end)
+        public static bool InRange(int value, Range range)
         {
-            return value >= start && value < end;
+            return value >= range.Start && value < range.End;
         }
     }
     

@@ -334,7 +334,7 @@ namespace XWFC
             Vector3 coll = head.Coord;
             if (!GridManager.WithinBounds(coll)) return affectedCells;
             
-            while ((!GridManager.WithinBounds(coll) || GridManager.Grid.IsChosen(coll)) && !CollapseQueue.IsDone())
+            while ((!GridManager.WithinBounds(coll) || GridManager.Grid.IsOccupied(coll)) && !CollapseQueue.IsDone())
             {
                 coll = CollapseQueue.DeleteHead().Coord;
             }
@@ -380,7 +380,7 @@ namespace XWFC
             var coord = new Vector3Int(x, y, z);
             if (!GridManager.WithinBounds(coord)) return (new Vector3(), -1);
 
-            if (GridManager.Grid.IsChosen(x, y, z)) return (new Vector3(), -1);
+            if (GridManager.Grid.IsOccupied(x, y, z)) return (new Vector3(), -1);
 
             var choiceId = Choose(x, y, z); // Throws exception; handled by CollapsedOnce.
 
@@ -523,7 +523,7 @@ namespace XWFC
                     var n = coord + offset;
 
                     // No need to consider out of bounds or occupied neighbors.
-                    if (!GridManager.WithinBounds(n) || GridManager.Grid.IsChosen(n))
+                    if (!GridManager.WithinBounds(n) || GridManager.Grid.IsOccupied(n))
                         continue;
 
                     var remainingChoices = UnionChoices(cs, offset);
@@ -569,11 +569,11 @@ namespace XWFC
                             SetOccupied(n, neighborWChoicesI[0]);
                         }
 
-                        if (!GridManager.Grid.IsChosen(n))
+                        if (!GridManager.Grid.IsOccupied(n))
                             _propQueue.Enqueue(new Propagation(neighborWChoicesI.ToArray(), n));
                     }
 
-                    if (!GridManager.Grid.IsChosen(n))
+                    if (!GridManager.Grid.IsOccupied(n))
                         CollapseQueue.Insert(n, GridManager.Entropy.Get(n));
                 }
             }

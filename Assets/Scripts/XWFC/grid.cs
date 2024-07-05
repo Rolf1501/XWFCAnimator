@@ -161,7 +161,7 @@ namespace XWFC
 
         public Grid(T[,,] grid, T defaultFilValue) : base(grid, defaultFilValue){}
         
-        public bool IsChosen(int x, int y, int z)
+        public bool IsOccupied(int x, int y, int z)
         {
             var choice = Get(x, y, z);
             // Larger than 0: choice != default
@@ -170,10 +170,10 @@ namespace XWFC
                 : choice != null;
         }
 
-        public bool IsChosen(Vector3 coord)
+        public bool IsOccupied(Vector3 coord)
         {
             var (x, y, z) = Vector3Util.CastInt(coord);
-            return IsChosen(x, y, z);
+            return IsOccupied(x, y, z);
         }
 
         public Grid<T> Deepcopy()

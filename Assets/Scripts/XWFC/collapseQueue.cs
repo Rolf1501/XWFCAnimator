@@ -116,6 +116,11 @@ namespace XWFC
             var output = new CollapsePriorityQueue(copy);
             return output;
         }
+
+        public bool Contains(Vector3Int coord)
+        {
+            return _enqueuedCells.ContainsKey(coord);
+        }
         
     }
     

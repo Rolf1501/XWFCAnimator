@@ -6,13 +6,13 @@ namespace XWFC
     public class PatternMatrix
     {
         public Dictionary<int, Bidict<Vector3Int, HashSet<int>>> AtomPatternMapping;
-        public List<int[,,]> Patterns;
+        public readonly List<int[,,]> Patterns;
         private readonly AtomGrid[] _atomizedSamples;
         private readonly Vector3Int _kernelSize;
         public readonly  AtomMapping AtomMapping;
         public Dictionary<Vector3Int, Range3D> OffsetRangeMapping;
         private IEnumerable<Vector3Int> _offsets;
-        public Dictionary<Vector3Int, bool[,]> PatternAdjacencyMatrix;
+        public readonly Dictionary<Vector3Int, bool[,]> PatternAdjacencyMatrix;
 
 
         public PatternMatrix(AtomGrid[] atomizedSamples, Vector3Int kernelSize, AtomMapping atomMapping)
@@ -57,7 +57,7 @@ namespace XWFC
                  * Find compatible patterns...
                  * Two patterns are said to be compatible if, given an offset, the layers orthogonal to that offset given the sign of direction are shared.
                  */
-                foreach (var offset in _offsets)
+                 foreach (var offset in _offsets)
                 {
                     // Note no  i + 1 here, pattern can be compatible with itself.
                     for (int j = i; j < Patterns.Count; j++)
@@ -142,7 +142,6 @@ namespace XWFC
 
         private void InitPatternMatrix()
         {
-            PatternAdjacencyMatrix = new Dictionary<Vector3Int, bool[,]>();
             var nPatterns = Patterns.Count;
             foreach (var offset in _offsets)
             {
@@ -213,7 +212,6 @@ namespace XWFC
                             // Construct pattern.
                             foreach (var offset in patternOffsets)
                             {
-                                Debug.Log($"{c}, {offset}, {e}");
                                 var atomIds = atomizedSample.Get(c + offset);
                                 if (atomIds.Count == 0)
                                 {
@@ -227,8 +225,14 @@ namespace XWFC
                             // If the input contains cells with no specified atom, pattern is invalid.
                             if (!validPattern) continue;
 
-                            // If the pattern already exists, the atom pattern mapping was already done.
-                            if (Patterns.Contains(pattern)) continue;
+                            // Prevent duplicate patterns.
+                            var patternExists = false; 
+                            foreach (var p in Patterns)
+                            {
+                                patternExists = PatternEquals(pattern, p);
+                                if (patternExists) break;
+                            }
+                            if (patternExists) continue;
 
                             var patternId = Patterns.Count;
 
@@ -267,6 +271,22 @@ namespace XWFC
         public bool GetAdjacency(int patternId, int otherId, Vector3Int offset)
         {
             return PatternAdjacencyMatrix[offset][patternId, otherId];
+        }
+
+        private static bool PatternEquals(int[,,] p0, int[,,] p1)
+        {
+            for (int px = 0; px < p0.GetLength(1); px++)
+            {
+                for (int py = 0; py < p0.GetLength(0); py++)
+                {
+                    for (int pz = 0; pz < p0.GetLength(2); pz++)
+                    {
+                        if (p0[py, px, pz] != p1[py, px, pz]) return false;
+                    }
+                }
+            }
+
+            return true;
         }
     }
     
