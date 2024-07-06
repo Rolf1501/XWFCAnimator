@@ -10,7 +10,7 @@ using Random = System.Random;
 
 namespace XWFC
 {
-    public class XWFCOverlappingModel : XwfcStm
+    public class XwfcOverlappingModel : XwfcStm
     {
         public readonly PatternMatrix PatternMatrix;
         public AdjacencyMatrix AdjacencyMatrix;
@@ -30,7 +30,7 @@ namespace XWFC
 
         private List<(int[,,] patternWave, Grid<int> atomGrid)> _saveStates = new();
 
-        public XWFCOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, forceCompleteTiles)
+        public XwfcOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, forceCompleteTiles)
         {
             PatternMatrix = new PatternMatrix(atomizedSamples, kernelSize, adjacencyMatrix.AtomMapping);
             AdjacencyMatrix = adjacencyMatrix;
@@ -43,8 +43,9 @@ namespace XWFC
             _random = new Random(_randomSeed);
             
             // Initialize wave in superposition.
-            var extent = seededGrid.GetExtent() * 2  - 1 * new Vector3Int(0,seededGrid.GetExtent().y, 0);
-            extent = new Vector3Int(18,1,10);
+            var extent = seededGrid.GetExtent();
+            // var extent = seededGrid.GetExtent() * 2  - 1 * new Vector3Int(0,seededGrid.GetExtent().y, 0);
+            // extent = new Vector3Int(18,1,10);
             _patternWave = new PatternWave(extent, SuperImposedWave());
             _atomGrid = new Grid<int>(extent, seededGrid.DefaultFillValue);
             
@@ -56,12 +57,22 @@ namespace XWFC
             
             CollapseQueue.Insert(new Vector3Int(0,0,0), AdjacencyMatrix.CalcEntropy(_nPatterns));
 
-            while (!CollapseQueue.IsDone())
-            {
-                Collapse(CollapseQueue.DeleteHead().Coord);
-            }
+            // while (!CollapseQueue.IsDone())
+            // {
+            //     Collapse(CollapseQueue.DeleteHead().Coord);
+            // }
             
             Debug.Log(GridToString(_atomGrid));
+        }
+
+        public override Grid<int> GetGrid()
+        {
+            return _atomGrid;
+        }
+
+        public override Grid<bool[]> GetWave()
+        {
+            return _patternWave;
         }
 
         private Dictionary<int, HashSet<(Vector3Int, bool[])>> CalcNutPatternPropagation()
@@ -319,7 +330,7 @@ namespace XWFC
             return true;
         }
 
-        private void Collapse(Vector3Int coord)
+        protected override void Collapse(Vector3Int coord)
         {
             if (_atomGrid.Get(coord) != _atomGrid.DefaultFillValue) return;
             
@@ -444,6 +455,11 @@ namespace XWFC
                 CollapseQueue.Insert(cell, entropy);
             }
         }
+
+        // protected override void Propagate()
+        // {
+        //     Propagate(_propagationQueue, ref _patternWave, Offsets, ref _atomGrid, PatternMatrix);
+        // }
 
         private HashSet<(Vector3Int, float)> Propagate(Queue<Vector3Int> propQueue, ref PatternWave patternWave, IEnumerable<Vector3Int> offsets, ref Grid<int> atomGrid, PatternMatrix patternMatrix, bool ignoreConflict=false)
         {

@@ -13,8 +13,8 @@ namespace XWFC
         private Vector3Int _startCoord;
         private readonly Dictionary<int, float> _defaultWeights;
         private float _progress = 0;
-        public readonly AdjacencyMatrix AdjMatrix;
-        public GridManager GridManager;
+        public AdjacencyMatrix AdjMatrix;
+        private GridManager _gridManager;
         private readonly float _maxEntropy;
         protected CollapsePriorityQueue CollapseQueue;
         public readonly Vector3Int[] Offsets;
@@ -44,7 +44,17 @@ namespace XWFC
             Offsets = OffsetFactory.GetOffsets(3);
 
             Clean();
-            _rootSave = new SavePoint(GridManager, CollapseQueue, _counter);
+            _rootSave = new SavePoint(_gridManager, CollapseQueue, _counter);
+        }
+
+        public virtual Grid<int> GetGrid()
+        {
+            return _gridManager.Grid;
+        }
+
+        public virtual Grid<bool[]> GetWave()
+        {
+            return _gridManager.Wave;
         }
 
         public XwfcStm(TileSet tileSet, Vector3Int extent, SampleGrid[] inputGrids, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true)
@@ -63,7 +73,7 @@ namespace XWFC
             
             Offsets = OffsetFactory.GetOffsets(3);
             Clean();
-            _rootSave = new SavePoint(GridManager, CollapseQueue, _counter);
+            _rootSave = new SavePoint(_gridManager, CollapseQueue, _counter);
         }
 
         public XwfcStm(AdjacencyMatrix adjacencyMatrix, ref Grid<int> seededGrid, bool forceCompleteTiles = true)
@@ -77,7 +87,7 @@ namespace XWFC
             
             Offsets = OffsetFactory.GetOffsets(3);
             
-            GridManager = new GridManager(seededGrid, _defaultWeights, _maxEntropy);
+            _gridManager = new GridManager(seededGrid, _defaultWeights, _maxEntropy);
             _startCoord = CenterCoord();
             CleanState();
             
@@ -85,10 +95,10 @@ namespace XWFC
             var blockedCells = BlockOccupiedSeeds(ref seededGrid);
             seededGrid = EliminateIncompleteBlockedCellNeighbors(blockedCells, seededGrid);
 
-            GridManager.Grid = seededGrid;
+            _gridManager.Grid = seededGrid;
             CleanIncompleteTiles();
             
-            _rootSave = new SavePoint(GridManager, CollapseQueue, _counter);
+            _rootSave = new SavePoint(_gridManager, CollapseQueue, _counter);
         }
 
         public static int BlockedCellId(int defaultFillValue, IEnumerable<int> tileIds)
@@ -153,7 +163,7 @@ namespace XWFC
                 foreach (var offset in Offsets)
                 {
                     var n = cell + offset;
-                    if (!neighbors.Contains(n) && !cells.Contains(n) && GridManager.WithinBounds(n))
+                    if (!neighbors.Contains(n) && !cells.Contains(n) && _gridManager.WithinBounds(n))
                     {
                         neighbors.Add(n);
                     }
@@ -225,14 +235,14 @@ namespace XWFC
         
         private Grid<int> EliminateIncompleteAtoms(Vector3Int coord, Grid<int> grid)
         {
-            var choices = GridManager.Wave.Get(coord);
+            var choices = _gridManager.Wave.Get(coord);
             for (int i = 0; i < choices.Length; i++)
             {
                 if (!choices[i] || TileFits(i, coord, grid)) continue;
                 // If the allowed atom's tile does not fit, eliminate from choices and propagate. 
                 choices[i] = false;
             }
-            GridManager.Wave.Set(coord, choices);
+            _gridManager.Wave.Set(coord, choices);
             var choiceList = new List<int>();
             for (var j = 0; j < choices.Length; j++)
             {
@@ -250,7 +260,7 @@ namespace XWFC
             var tileSource = coord - atomCoord;
             var tileEnd = tileSource + AdjMatrix.TileSet[tileId].Extent - new Vector3Int(1, 1, 1);
             
-            if (!(GridManager.WithinBounds(tileSource) && GridManager.WithinBounds(tileEnd))) return false;
+            if (!(_gridManager.WithinBounds(tileSource) && _gridManager.WithinBounds(tileEnd))) return false;
 
             // Also check if all other cells in the tile's area are not blocked.
             for (int x = tileSource.x; x <= tileEnd.x; x++)
@@ -282,21 +292,21 @@ namespace XWFC
         private void CleanState()
         {
             CollapseQueue = new CollapsePriorityQueue();
-            CollapseQueue.Insert(_startCoord, GridManager.Entropy.Get(_startCoord));
+            CollapseQueue.Insert(_startCoord, _gridManager.Entropy.Get(_startCoord));
             _savePointManager = new SavePointManager();
 
             _counter = 0;
             _progress = 0;
 
-            _savePointManager.Save(_progress, GridManager, CollapseQueue, _counter);
+            _savePointManager.Save(_progress, _gridManager, CollapseQueue, _counter);
         }
 
         private void CleanGrids()
         {
             var (x, y, z) = Vector3Util.CastInt(GridExtent);
-            GridManager = new GridManager(x, y, z);
-            GridManager.InitEntropy(_maxEntropy);
-            GridManager.InitChoiceWeights(_defaultWeights);
+            _gridManager = new GridManager(x, y, z);
+            _gridManager.InitEntropy(_maxEntropy);
+            _gridManager.InitChoiceWeights(_defaultWeights);
             _startCoord = CenterCoord();
         }
 
@@ -304,7 +314,7 @@ namespace XWFC
         {
             if (_forceCompleteTiles)
             {
-                GridManager.Grid = EliminateIncompleteTiles(GridManager.Grid);
+                _gridManager.Grid = EliminateIncompleteTiles(_gridManager.Grid);
             }
         }
 
@@ -330,9 +340,9 @@ namespace XWFC
             if (CollapseList.IsDefaultCoord(head.Coord)) return;
             
             var coll = head.Coord;
-            if (!GridManager.WithinBounds(coll)) return;
+            if (!_gridManager.WithinBounds(coll)) return;
             
-            while ((!GridManager.WithinBounds(coll) || GridManager.Grid.IsOccupied(coll)) && !CollapseQueue.IsDone())
+            while ((!_gridManager.WithinBounds(coll) || _gridManager.Grid.IsOccupied(coll)) && !CollapseQueue.IsDone())
             {
                 coll = CollapseQueue.DeleteHead().Coord;
             }
@@ -355,14 +365,14 @@ namespace XWFC
             Propagate();
         }
 
-        private void Collapse(Vector3Int coord)
+        protected virtual void Collapse(Vector3Int coord)
         {
             /*
              * Collapse the cell at the given coordinate.
              */
-            if (!GridManager.WithinBounds(coord)) return;
+            if (!_gridManager.WithinBounds(coord)) return;
 
-            if (GridManager.Grid.IsOccupied(coord)) return;
+            if (_gridManager.Grid.IsOccupied(coord)) return;
 
             var choiceId = Choose(coord); // Throws exception; handled by CollapsedOnce.
 
@@ -371,11 +381,11 @@ namespace XWFC
 
         private void SetOccupied(Vector3Int coord, int id)
         {
-            GridManager.Grid.Set(coord, id);
+            _gridManager.Grid.Set(coord, id);
             var updatedWave = new bool[AdjMatrix.GetNAtoms()];
             updatedWave[id] = true;
-            GridManager.Wave.Set(coord, updatedWave);
-            GridManager.Entropy.Set(coord, AdjacencyMatrix.CalcEntropy(1));
+            _gridManager.Wave.Set(coord, updatedWave);
+            _gridManager.Entropy.Set(coord, AdjacencyMatrix.CalcEntropy(1));
             _propQueue.Enqueue(new Propagation(new int[] { id }, coord));
             
             // Whenever a cell is set to be occupied, progress is made and needs to be updated.
@@ -387,9 +397,9 @@ namespace XWFC
             /*
              * Finds an allowed atom to place at the given coordinate.
              */
-            var wave = GridManager.Wave.Get(coord);
-            var choiceIds = GridManager.ChoiceIds.Get(coord);
-            var choiceWeights = GridManager.ChoiceWeights.Get(coord);
+            var wave = _gridManager.Wave.Get(coord);
+            var choiceIds = _gridManager.ChoiceIds.Get(coord);
+            var choiceWeights = _gridManager.ChoiceWeights.Get(coord);
 
             int chosenIndex = RandomChoice(wave, choiceWeights);
 
@@ -412,7 +422,7 @@ namespace XWFC
 
         private void LoadSavePoint(SavePoint savePoint)
         {
-            GridManager = savePoint.GridManager.Deepcopy();
+            _gridManager = savePoint.GridManager.Deepcopy();
             CollapseQueue = savePoint.CollapseQueue.Copy();
             _counter = savePoint.Counter;
 
@@ -457,7 +467,7 @@ namespace XWFC
             _progress = CalcProgress();
             PrintProgressUpdate(_progress);
 
-            _savePointManager.Save(_progress, GridManager, CollapseQueue, _counter);
+            _savePointManager.Save(_progress, _gridManager, CollapseQueue, _counter);
         }
 
         private float CalcProgress()
@@ -492,7 +502,7 @@ namespace XWFC
             return true;
         }
 
-        public void Propagate()
+        protected virtual void Propagate()
         {
             while (_propQueue.Count > 0)
             {
@@ -504,14 +514,14 @@ namespace XWFC
                     var n = coord + offset;
 
                     // No need to consider out of bounds or occupied neighbors.
-                    if (!GridManager.WithinBounds(n) || GridManager.Grid.IsOccupied(n))
+                    if (!_gridManager.WithinBounds(n) || _gridManager.Grid.IsOccupied(n))
                         continue;
 
                     var remainingChoices = UnionChoices(cs, offset);
 
                     // Find the set of choices currently allowed for the neighbor.
-                    float[] neighborWChoices = GridManager.ChoiceWeights.Get(n);
-                    bool[] neighborWave = GridManager.Wave.Get(n);
+                    float[] neighborWChoices = _gridManager.ChoiceWeights.Get(n);
+                    bool[] neighborWave = _gridManager.Wave.Get(n);
 
                     var post = new bool[AdjMatrix.GetNAtoms()];
                     for (int i = 0; i < remainingChoices.Length; i++)
@@ -523,12 +533,12 @@ namespace XWFC
                         for (int i = 0; i < neighborWChoices.Length; i++) neighborWChoices[i] += cW[i];
                     }
 
-                    GridManager.ChoiceWeights.Set(n, neighborWChoices);
+                    _gridManager.ChoiceWeights.Set(n, neighborWChoices);
 
                     // If pre is not post, update.
                     if (!ArrayEquals(neighborWave, post))
                     {
-                        GridManager.Wave.Set(n, post);
+                        _gridManager.Wave.Set(n, post);
 
                         // Calculate entropy and get indices of allowed neighbor terminals.
                         var neighborWChoicesI = new List<int>();
@@ -539,10 +549,10 @@ namespace XWFC
 
                         var nChoices = neighborWChoicesI.Count;
 
-                        GridManager.Entropy.Set(n, AdjacencyMatrix.CalcEntropy(nChoices));
+                        _gridManager.Entropy.Set(n, AdjacencyMatrix.CalcEntropy(nChoices));
 
                         // If all terminals are allowed, then the entropy does not change. There is nothing to propagate.
-                        if (Math.Abs(GridManager.Entropy.Get(n) - _maxEntropy) < 0.0001)
+                        if (Math.Abs(_gridManager.Entropy.Get(n) - _maxEntropy) < 0.0001)
                             continue;
 
                         if (nChoices == 1)
@@ -550,12 +560,12 @@ namespace XWFC
                             SetOccupied(n, neighborWChoicesI[0]);
                         }
 
-                        if (!GridManager.Grid.IsOccupied(n))
+                        if (!_gridManager.Grid.IsOccupied(n))
                             _propQueue.Enqueue(new Propagation(neighborWChoicesI.ToArray(), n));
                     }
 
-                    if (!GridManager.Grid.IsOccupied(n))
-                        CollapseQueue.Insert(n, GridManager.Entropy.Get(n));
+                    if (!_gridManager.Grid.IsOccupied(n))
+                        CollapseQueue.Insert(n, _gridManager.Entropy.Get(n));
                 }
             }
         }

@@ -36,7 +36,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private StateFlag _activeStateFlag = 0;
     
-    private XWFC.XwfcStm _xwfcStm;
+    private XwfcStm _xwfc;
 
     private Grid<Drawing> _drawnGrid;
     private HashSetAdjacency _adjacency;
@@ -75,9 +75,9 @@ public class XWFCAnimator : MonoBehaviour
         _componentManager = new ComponentManager(houseComponents);
 
         LoadNextComponent();
-
-        TileSet = _xwfcStm.AdjMatrix.TileSet;
-        CompleteTileSet = _xwfcStm.AdjMatrix.TileSet;
+        
+        TileSet = _xwfc.AdjMatrix.TileSet;
+        CompleteTileSet = _xwfc.AdjMatrix.TileSet;
 
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
@@ -256,7 +256,10 @@ public class XWFCAnimator : MonoBehaviour
 
         // var atomized = new AtomGrid[] { _currentComponent.AdjacencyMatrix.AtomizeSample(sample) };
 
-        _xwfcStm = new XWFCOverlappingModel(atomized, _currentComponent.AdjacencyMatrix, ref _currentComponent.Grid, new Vector3Int(2, 1, 2));
+        _xwfc = new XwfcOverlappingModel(atomized, _currentComponent.AdjacencyMatrix, ref _currentComponent.Grid, new Vector3Int(2, 1, 2));
+
+        var w = _xwfc.GetWave();
+        var g = _xwfc.GetGrid();
         // _xwfc.CollapseAutomatic();
 
         // if (!FindConfigFileNames().Any()) SaveConfig();
@@ -281,7 +284,7 @@ public class XWFCAnimator : MonoBehaviour
         //     Drawing.DestroyAtom(drawing);
         // }
         
-        var defaultValue = _xwfcStm.GridManager.Grid.DefaultFillValue;
+        var defaultValue = _xwfc.GetGrid().DefaultFillValue;
         _drawnGrid = new Grid<Drawing>(max, new Drawing(defaultValue, null));
             
         foreach (var component in _componentManager.Components)
@@ -600,9 +603,9 @@ public class XWFCAnimator : MonoBehaviour
     
     private void PrintAdjacencyData()
     {
-        foreach (var o in _xwfcStm.Offsets)
+        foreach (var o in _xwfc.Offsets)
         {
-            var x = _xwfcStm.AdjMatrix.AtomAdjacencyMatrix[o];
+            var x = _xwfc.AdjMatrix.AtomAdjacencyMatrix[o];
             var s = "" + o + "\n";
             var ss = "\t";
             for (int k = 0; k < x.GetLength(0); k++)
@@ -623,7 +626,7 @@ public class XWFCAnimator : MonoBehaviour
         
         }
         
-        foreach (var (k,v) in _xwfcStm.AdjMatrix.AtomMapping.Dict)
+        foreach (var (k,v) in _xwfc.AdjMatrix.AtomMapping.Dict)
         {
             Debug.Log($"{k}: {v}");
         }
@@ -869,7 +872,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFCInput(TileSet tiles, Vector3Int gridExtent, SampleGrid[] inputGrids, float[] weights)
     {
-        _xwfcStm = new XWFC.XwfcStm(tiles, gridExtent, inputGrids, AdjacencyMatrix.ToWeightDictionary(weights, tiles));
+        _xwfc = new XWFC.XwfcStm(tiles, gridExtent, inputGrids, AdjacencyMatrix.ToWeightDictionary(weights, tiles));
         UpdateExtent(gridExtent);
     }
 
@@ -877,7 +880,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFComponent(ref Component component)
     {
-        _xwfcStm = new XWFC.XwfcStm(component.AdjacencyMatrix, ref component.Grid);
+        _xwfc = new XwfcStm(component.AdjacencyMatrix, ref component.Grid);
         UpdateExtent(component.Grid.GetExtent());
     }
 
@@ -885,7 +888,7 @@ public class XWFCAnimator : MonoBehaviour
     {
         try
         {
-            _xwfcStm = new XWFC.XwfcStm(TileSet, _adjacency, extent);
+            _xwfc = new XWFC.XwfcStm(TileSet, _adjacency, extent);
 
         }
         catch (Exception exception)
@@ -899,14 +902,14 @@ public class XWFCAnimator : MonoBehaviour
     
     public void SaveComponent()
     {
-        if (_xwfcStm == null) return;
-        _currentComponent.Grid = _xwfcStm.GridManager.Grid.Deepcopy();
-        _xwfcStm.RemoveEmpty(ref _currentComponent.Grid);
+        if (_xwfc == null) return;
+        _currentComponent.Grid = _xwfc.GetGrid().Deepcopy();
+        _xwfc.RemoveEmpty(ref _currentComponent.Grid);
     }
 
     public void UpdateAdjacencyConstraints(HashSetAdjacency adjacency)
     {
-        var tempXWFC = _xwfcStm;
+        var tempXWFC = _xwfc;
         try
         {
             _adjacency = adjacency;
@@ -916,13 +919,13 @@ public class XWFCAnimator : MonoBehaviour
         catch
         {
             Debug.Log("Failed to update adjacency constraints.");
-            _xwfcStm = tempXWFC;
+            _xwfc = tempXWFC;
         }
     }
 
     public void UpdateTileSet(TileSet newTileSet)
     {
-        var tempXWFC = _xwfcStm;
+        var tempXWFC = _xwfc;
         try
         {
             TileSet = newTileSet;
@@ -933,7 +936,7 @@ public class XWFCAnimator : MonoBehaviour
         catch
         {
             Debug.Log("Failed to update terminals.");
-            _xwfcStm = tempXWFC;
+            _xwfc = tempXWFC;
         }
     }
 
@@ -983,9 +986,9 @@ public class XWFCAnimator : MonoBehaviour
 
     private Grid<Drawing> InitDrawGrid()
     {
-        var e = _xwfcStm.GridExtent;
+        var e = _xwfc.GridExtent;
         if (_drawnGrid != null) e = _drawnGrid.GetExtent(); 
-        return new Grid<Drawing>(e, new Drawing(_xwfcStm.GridManager.Grid.DefaultFillValue, null));
+        return new Grid<Drawing>(e, new Drawing(_xwfc.GetGrid().DefaultFillValue, null));
     }
 
     public Vector3 GetUnitSize()
@@ -995,7 +998,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public Vector3Int[] GetOffsets()
     {
-        return _xwfcStm.Offsets;
+        return _xwfc.Offsets.ToArray();
     }
 
     public Dictionary<int, NonUniformTile> GetTiles()
@@ -1005,12 +1008,12 @@ public class XWFCAnimator : MonoBehaviour
 
     public HashSetAdjacency GetTileAdjacencyConstraints()
     {
-        return _xwfcStm.AdjMatrix.TileAdjacencyConstraints;
+        return _xwfc.AdjMatrix.TileAdjacencyConstraints;
     }
 
     public bool IsDone()
     {
-        return _xwfcStm.IsDone();
+        return _xwfc.IsDone();
     }
 
     public bool ToggleCollapseMode()
@@ -1056,7 +1059,7 @@ public class XWFCAnimator : MonoBehaviour
         {
             string s = DrawnGridIdsToString();
             Debug.Log("DRAWN GRID:\n" + s);
-            Debug.Log("XWFC GRID:\n" + _xwfcStm.GridManager.Grid.GridToString());
+            Debug.Log("XWFC GRID:\n" + _xwfc.GetGrid().GridToString());
         }
     }
 
@@ -1097,7 +1100,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public void CollapseOnce()
     {
-        if (MayCollapse()) _xwfcStm.CollapseOnce();
+        if (MayCollapse()) _xwfc.CollapseOnce();
     }
 
     public void CollapseAndDrawOnce()
@@ -1115,7 +1118,7 @@ public class XWFCAnimator : MonoBehaviour
         /*
          * Determines whether a single collapse may be done.
          */
-        return !_xwfcStm.IsDone();
+        return !_xwfc.IsDone();
     }
 
     private bool MayIterate()
@@ -1131,7 +1134,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void Draw(Vector3Int origin)
     {
-        var grid = _xwfcStm.GridManager.Grid;
+        var grid = _xwfc.GetGrid();
         var gridExtent = grid.GetExtent();
         for (int y = 0; y < gridExtent.y; y++)
         {
@@ -1145,7 +1148,7 @@ public class XWFCAnimator : MonoBehaviour
                     // if (gridValue != grid.DefaultFillValue) DrawAtom(new Vector3(x,y,z),gridValue);
 
                     var blockedCellId =
-                        XWFC.XwfcStm.BlockedCellId(grid.DefaultFillValue, _xwfcStm.AdjMatrix.TileSet.Keys);
+                        XwfcStm.BlockedCellId(grid.DefaultFillValue, _xwfc.AdjMatrix.TileSet.Keys);
                     var coord = new Vector3Int(x, y, z);
                     if (gridValue == grid.DefaultFillValue && drawing.Atom != null)
                     {
@@ -1163,7 +1166,7 @@ public class XWFCAnimator : MonoBehaviour
                         {
                             Drawing.DestroyAtom(drawing);
                         }
-                        DrawAtom(coord, gridValue, origin, _xwfcStm.AdjMatrix);
+                        DrawAtom(coord, gridValue, origin, _xwfc.AdjMatrix);
                     }
                     
                     if (_drawnGrid.Get(coord).Id != grid.Get(coord))
@@ -1200,12 +1203,14 @@ public class XWFCAnimator : MonoBehaviour
         
         var edges = adjacencyMatrix.TileSet[terminalId].AtomEdges;
         var edgeObjects = new HashSet<GameObject>();
+        var edgeColor = new Color(0, 0, 0);
         if (edges == null) return edgeObjects;
 
-        var atomEdges = edges[new Vector3Int((int)atomIndex.x, (int)atomIndex.y, (int)atomIndex.z)];
+        var atomEdges = edges[atomIndex];
         foreach (var atomEdge in atomEdges)
         {
             var edge = Instantiate(edgePrefab);
+            edge.GetComponent<Renderer>().material.color = edgeColor;
             var edgeCenter = Vector3Util.Scale(atomEdge.GetDistance(), 0.5f);
             
             // Edge pos, account for origin being center of object. 
@@ -1264,7 +1269,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public void Reset()
     {
-        _xwfcStm?.UpdateExtent(extent);
+        _xwfc?.UpdateExtent(extent);
         ResetDrawnGrid();
         _activeStateFlag = 0;
     }
@@ -1300,7 +1305,7 @@ public class XWFCAnimator : MonoBehaviour
          * This contains the tileset, the tile id mapping and the adjacency constraints.
          * From those, the parameters for recreating config can be restored.
          */
-        var adjs = _xwfcStm.AdjMatrix.TileAdjacencyConstraints;
+        var adjs = _xwfc.AdjMatrix.TileAdjacencyConstraints;
         var tiles = TileSet;
         var config = new AdjacencyMatrixJsonFormatter(adjs, tiles).ToJson();
         var path = CreateSaveConfigPath();

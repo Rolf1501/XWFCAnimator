@@ -56,10 +56,12 @@
     <Compile Include="Assets\Scripts\XWFC\PatternMatrix.cs" />
     <Compile Include="Assets\Scripts\XWFC\collapseQueue.cs" />
     <Compile Include="Assets\Scripts\XWFC\HashSetAdjacency.cs" />
+    <Compile Include="Assets\Scripts\XWFC\XwfcStm.cs" />
     <Compile Include="Assets\Scripts\XWFC\TileSet.cs" />
     <Compile Include="Assets\Scripts\XWFC\VoidMasks.cs" />
     <Compile Include="Assets\Scripts\XWFCAnimator.cs" />
     <Compile Include="Assets\Scripts\TileTexture.cs" />
+    <Compile Include="Assets\Scripts\XWFC\XwfcOverlappingModel.cs" />
     <Compile Include="Assets\Scripts\XWFC\adjacency.cs" />
     <Compile Include="Assets\Scripts\XWFC\savePoint.cs" />
     <Compile Include="Assets\Scripts\UIHandler.cs" />
@@ -68,7 +70,6 @@
     <Compile Include="Assets\TabbedMenu\TabbedMenuController.cs" />
     <Compile Include="Assets\Scripts\XWFC\Ranges.cs" />
     <Compile Include="Assets\Scripts\XWFC\NonUniformTile.cs" />
-    <Compile Include="Assets\Scripts\XWFC\XWFC.cs" />
     <Compile Include="Assets\Scripts\StringUtil.cs" />
     <Compile Include="Assets\Scripts\XWFCRunner.cs" />
     <Compile Include="Assets\Scripts\XWFC\relation.cs" />
@@ -82,7 +83,6 @@
     <Compile Include="Assets\Scripts\XWFC\timer.cs" />
     <Compile Include="Assets\TabbedMenu\AdjacencyGridController.cs" />
     <Compile Include="Assets\Scripts\XWFC\InputHandler.cs" />
-    <Compile Include="Assets\Scripts\XWFC\XWFCOverlappingModel.cs" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Overlay.shader" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />
