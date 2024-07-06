@@ -13,7 +13,7 @@ namespace XWFC
         public Dictionary<Vector3Int, Range3D> OffsetRangeMapping;
         private IEnumerable<Vector3Int> _offsets;
         public readonly Dictionary<Vector3Int, bool[,]> PatternAdjacencyMatrix;
-
+ 
 
         public PatternMatrix(IEnumerable<AtomGrid> atomizedSamples, Vector3Int kernelSize, AtomMapping atomMapping)
         {

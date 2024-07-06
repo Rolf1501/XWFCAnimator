@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using JetBrains.Annotations;
-using Unity.Jobs.LowLevel.Unsafe;
 using UnityEngine;
 using PatternWave = XWFC.Grid<bool[]>;
 using Random = System.Random;
@@ -25,12 +23,11 @@ namespace XWFC
         private readonly Vector3Int _patternAtomCoord = new Vector3Int(0, 0, 0);
 
         private Random _random;
-        private int _randomSeed = 1;
         public readonly Dictionary<int, HashSet<(Vector3Int, bool[])>> TilePatternMasks;
 
-        private List<(int[,,] patternWave, Grid<int> atomGrid)> _saveStates = new();
-
-        public XwfcOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, forceCompleteTiles)
+        private (Grid<int> atoms, PatternWave wave) _rootSave;
+        
+        public XwfcOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, int randomSeed, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, forceCompleteTiles)
         {
             PatternMatrix = new PatternMatrix(atomizedSamples, kernelSize, adjacencyMatrix.AtomMapping);
             AdjacencyMatrix = adjacencyMatrix;
@@ -39,8 +36,11 @@ namespace XWFC
             _nPatterns = PatternMatrix.Patterns.Count;
             CollapseQueue = new CollapsePriorityQueue();
 
-            // _randomSeed = new Random().Next();
-            _random = new Random(_randomSeed);
+            RandomSeed = randomSeed;
+            Debug.Log($"Random Seed: {RandomSeed}");
+            // 316068766
+            //874075968
+            _random = new Random(RandomSeed);
             
             // Initialize wave in superposition.
             var extent = seededGrid.GetExtent();
@@ -57,10 +57,12 @@ namespace XWFC
             
             CollapseQueue.Insert(new Vector3Int(0,0,0), AdjacencyMatrix.CalcEntropy(_nPatterns));
 
-            // while (!CollapseQueue.IsDone())
-            // {
-            //     Collapse(CollapseQueue.DeleteHead().Coord);
-            // }
+            _rootSave = (_atomGrid.Deepcopy(), _patternWave.Deepcopy());
+            
+            while (!CollapseQueue.IsDone())
+            {
+                Collapse(CollapseQueue.DeleteHead().Coord);
+            }
             
             Debug.Log(GridToString(_atomGrid));
         }
@@ -74,6 +76,18 @@ namespace XWFC
         {
             return _patternWave;
         }
+
+        protected override void Reset()
+        {
+            _atomGrid = _rootSave.atoms.Deepcopy();
+            _patternWave = _rootSave.wave.Deepcopy();
+            _random = new Random(RandomSeed);
+            CollapseQueue.Clear();
+            CollapseQueue.Insert(new Vector3Int(0,0,0), AdjacencyMatrix.CalcEntropy(_nPatterns));
+            _propagationQueue.Clear();
+            Debug.Log($"RESET OVERLAPPING MODEL; RANDOM SEED: {RandomSeed}");
+        }
+    
 
         private Dictionary<int, HashSet<(Vector3Int, bool[])>> CalcNutPatternPropagation()
         {
@@ -330,7 +344,7 @@ namespace XWFC
             return true;
         }
 
-        protected override void Collapse(Vector3Int coord)
+        protected sealed override void Collapse(Vector3Int coord)
         {
             if (_atomGrid.Get(coord) != _atomGrid.DefaultFillValue) return;
             
@@ -448,7 +462,7 @@ namespace XWFC
             // }
             //
             
-            var collapseItems = Propagate(_propagationQueue, ref _patternWave, Offsets, ref _atomGrid, PatternMatrix);
+            var collapseItems = Propagate();
             
             foreach (var (cell, entropy) in collapseItems)
             {
@@ -456,13 +470,15 @@ namespace XWFC
             }
         }
 
-        // protected override void Propagate()
-        // {
-        //     Propagate(_propagationQueue, ref _patternWave, Offsets, ref _atomGrid, PatternMatrix);
-        // }
+        protected override HashSet<(Vector3Int, float)> Propagate()
+        {
+            return Propagate(_propagationQueue, ref _patternWave, Offsets, ref _atomGrid, PatternMatrix);
+        }
 
         private HashSet<(Vector3Int, float)> Propagate(Queue<Vector3Int> propQueue, ref PatternWave patternWave, IEnumerable<Vector3Int> offsets, ref Grid<int> atomGrid, PatternMatrix patternMatrix, bool ignoreConflict=false)
         {
+            if (patternWave == null) return new HashSet<(Vector3Int, float)>();
+            
             var nPatterns = patternWave.Get(0, 0, 0).Length;
             var collapseItems = new HashSet<(Vector3Int, float)>();
             var offsetArray = offsets.ToArray();
@@ -515,7 +531,8 @@ namespace XWFC
                         }
                     }
                     
-                    if (!CollapseQueue.Contains(neighbor) || !preIsPost) collapseItems.Add((neighbor, AdjacencyMatrix.CalcEntropy(remainingChoiceCount)));
+                    if (!CollapseQueue.Contains(neighbor) || !preIsPost) 
+                        collapseItems.Add((neighbor, AdjacencyMatrix.CalcEntropy(remainingChoiceCount)));
                     
                     if (preIsPost) continue;
                     

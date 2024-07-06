@@ -19,6 +19,7 @@ public class XWFCAnimator : MonoBehaviour
     [SerializeField] private GameObject unitTilePrefab;
     [SerializeField] private GameObject edgePrefab;
     [SerializeField] private Canvas tileLabelPrefab;
+    [SerializeField] private int RandomSeed;
     public Vector3Int extent;
     public float stepSize;
     public TileSet TileSet;
@@ -35,6 +36,7 @@ public class XWFCAnimator : MonoBehaviour
     private int _iterationsDone;
 
     private StateFlag _activeStateFlag = 0;
+    private XwfcModel _activeModel = XwfcModel.Overlapping;
     
     private XwfcStm _xwfc;
 
@@ -47,11 +49,20 @@ public class XWFCAnimator : MonoBehaviour
     private Component _currentComponent;
 
     private PatternMatrix _patternMatrix;
+
+    private Vector3Int _kernelSize = new Vector3Int(2, 1, 2);
     
     [Flags]
     private enum StateFlag
     {
         Collapsing = 1 << 0
+    }
+
+    [Flags]
+    private enum XwfcModel
+    {
+        Overlapping = 1 << 0,
+        SimpleTiled = 1 << 1
     }
     
     // Singleton assurance.
@@ -91,175 +102,11 @@ public class XWFCAnimator : MonoBehaviour
 
         DrawTiles();
 
-        var brickPattern = new Patterns()
-        {
-            //  b,b,b,b
-            // b1,b,b,b1
-            //  b,b,b,b
-            (0, new Vector3Int(2, 0, 0)),
-            (0, new Vector3Int(0, 0, 0)),
-            (0, new Vector3Int(2, 0, 2)),
-            (0, new Vector3Int(0, 0, 2)),
-            (0, new Vector3Int(1, 0, 1)),
-            (4, new Vector3Int(0,0,1)),
-            (4, new Vector3Int(3,0,1)),
-        };
         
-        var brickPattern2 = new Patterns()
-        {
-            //    b1,b ,b ,b1
-            // b ,b ,b1,b1,b ,b
-            //    b1,b ,b ,b1
-            (0, new Vector3Int(0, 0, 1)),
-            (0, new Vector3Int(4, 0, 1)),
-            (0, new Vector3Int(2, 0, 0)),
-            (0, new Vector3Int(2, 0, 2)),
-            (4, new Vector3Int(1, 0, 0)),
-            (4, new Vector3Int(1, 0, 2)),
-            (4, new Vector3Int(4, 0, 0)),
-            (4, new Vector3Int(4, 0, 2)),
-            (4, new Vector3Int(2, 0, 1)),
-            (4, new Vector3Int(3, 0, 1)),
-        };
-
-        var brickDoorPattern = new Patterns
-        {
-            /*
-             * b ,b ,b ,b ,b ,b
-             *   ,b1,d ,d ,d ,b , b
-             * b ,b ,d ,d ,d ,b1,
-             *   ,b1,d ,d ,d ,b , b
-             * b ,b ,d ,d ,d ,b1,
-             *   ,b1,d ,d ,d ,b , b
-             */
-            (0, new Vector3Int(0,0,1)),
-            (0, new Vector3Int(0,0,3)),
-            (0, new Vector3Int(0,0,5)),
-            (0, new Vector3Int(2,0,5)),
-            (0, new Vector3Int(4,0,5)),
-            (0, new Vector3Int(5,0,4)),
-            (0, new Vector3Int(5,0,2)),
-            (0, new Vector3Int(5,0,0)),
-            
-            (4, new Vector3Int(1,0,0)),
-            (4, new Vector3Int(1,0,2)),
-            (4, new Vector3Int(1,0,4)),
-            (4, new Vector3Int(5,0,1)),
-            (4, new Vector3Int(5,0,3)),
-            
-            (5, new Vector3Int(2,0,0))
-        };
-
-        var brickPattern3 = new Patterns
-        {
-            //  b,b,b,b
-            // b1,b,b,b1
-            //  b,b,b,b
-            (0, new Vector3Int(2, 0, 0)),
-            (0, new Vector3Int(0, 0, 0)),
-            (0, new Vector3Int(2, 0, 2)),
-            (0, new Vector3Int(0, 0, 2)),
-            (0, new Vector3Int(1, 0, 1)),
-            // (4, new Vector3Int(0,0,1)),
-            // (4, new Vector3Int(3,0,1)),
-        };
-
-        var brickDoorPattern2 = new Patterns
-        {
-            /*
-             *    b ,b ,b ,b ,b ,b
-             * b ,b ,b1,d ,d ,d ,b ,b
-             *   ,b ,b ,d ,d ,d ,b1,b ,b
-             * b ,b ,b1,d ,d ,d ,b ,b
-             *    b ,b ,d ,d ,d ,b1,b ,b
-             * b ,b ,b1,d ,d ,d ,b ,b
-             */
-            (0, new Vector3Int(0, 0, 0)),
-            (0, new Vector3Int(0, 0, 2)),
-            (0, new Vector3Int(0, 0, 4)),
-            (0, new Vector3Int(1, 0, 1)),
-            (0, new Vector3Int(1, 0, 3)),
-            (0, new Vector3Int(1, 0, 5)),
-            (0, new Vector3Int(3, 0, 5)),
-            (0, new Vector3Int(5, 0, 5)),
-            (0, new Vector3Int(6, 0, 4)),
-            (0, new Vector3Int(6, 0, 2)),
-            (0, new Vector3Int(6, 0, 0)),
-            (0, new Vector3Int(7, 0, 1)),
-            (0, new Vector3Int(7, 0, 3)),
-
-            (4, new Vector3Int(2, 0, 0)),
-            (4, new Vector3Int(2, 0, 2)),
-            (4, new Vector3Int(2, 0, 4)),
-            (4, new Vector3Int(6, 0, 1)),
-            (4, new Vector3Int(6, 0, 3)),
-
-            (5, new Vector3Int(3, 0, 0))
-        };
-
-
-        var simpleDoor = new Patterns
-        {
-            /* 
-             * b1,b1,b1,b1,b1
-             * b1,d ,d ,d ,b1
-             * b1,d ,d ,d ,b1
-             * b1,d ,d ,d ,b1
-             * b1,d ,d ,d ,b1
-             * b1,d ,d ,d ,b1
-             */
-            (5, new Vector3Int(1, 0, 0)),
-
-            (4, new Vector3Int(0, 0, 0)),
-            (4, new Vector3Int(0, 0, 1)),
-            (4, new Vector3Int(0, 0, 2)),
-            (4, new Vector3Int(0, 0, 3)),
-            (4, new Vector3Int(0, 0, 4)),
-            
-            (4, new Vector3Int(0, 0, 5)),
-            (4, new Vector3Int(1, 0, 5)),
-            (4, new Vector3Int(2, 0, 5)),
-            (4, new Vector3Int(3, 0, 5)),
-            (4, new Vector3Int(4, 0, 5)),
-            
-            (4, new Vector3Int(4, 0, 4)),
-            (4, new Vector3Int(4, 0, 3)),
-            (4, new Vector3Int(4, 0, 2)),
-            (4, new Vector3Int(4, 0, 1)),
-            (4, new Vector3Int(4, 0, 0)),
-
-        };
-
-        var simpleBrick = new Patterns
-        {
-            (4, new Vector3Int(0, 0, 0)),
-            (4, new Vector3Int(0, 0, 1)),
-            (4, new Vector3Int(0, 0, 2)),
-            (4, new Vector3Int(1, 0, 0)),
-            (4, new Vector3Int(1, 0, 1)),
-            (4, new Vector3Int(1, 0, 2)),
-            (4, new Vector3Int(2, 0, 0)),
-            (4, new Vector3Int(2, 0, 1)),
-            (4, new Vector3Int(2, 0, 2)),
-        };
-
-        var patterns = new Patterns[] { brickPattern, brickDoorPattern };
-        var atomized = new List<AtomGrid>();
-        
-        foreach (var p in patterns)
-        {
-            var (sample, _) = InputHandler.ToSampleGrid(p, _currentComponent.AdjacencyMatrix.TileSet, "");
-            var atomizedSample = _currentComponent.AdjacencyMatrix.AtomizeSample(sample);
-            atomized.Add(atomizedSample);
-        }
         // var (sample, ids) = InputHandler.ToSampleGrid(brickPattern2, TileSet, "");
 
         // var atomized = new AtomGrid[] { _currentComponent.AdjacencyMatrix.AtomizeSample(sample) };
 
-        _xwfc = new XwfcOverlappingModel(atomized, _currentComponent.AdjacencyMatrix, ref _currentComponent.Grid, new Vector3Int(2, 1, 2));
-
-        var w = _xwfc.GetWave();
-        var g = _xwfc.GetGrid();
         // _xwfc.CollapseAutomatic();
 
         // if (!FindConfigFileNames().Any()) SaveConfig();
@@ -426,79 +273,138 @@ public class XWFCAnimator : MonoBehaviour
     {
         var grassBrickPattern = new Patterns()
         {
-            // b,b
-            // g,g
+            // b,b,b,b,b1,b,b
+            // g,g,g,g,g ,g,g
             (0, new Vector3Int(0, 0, 1)),
+            (0, new Vector3Int(2, 0, 1)),
+            (4, new Vector3Int(4, 0, 1)),
+            (0, new Vector3Int(5, 0, 1)),
             (1, new Vector3Int(0, 0, 0)),
             (1, new Vector3Int(1, 0, 0)),
+            (1, new Vector3Int(2, 0, 0)),
+            (1, new Vector3Int(3, 0, 0)),
+            (1, new Vector3Int(4, 0, 0)),
+            (1, new Vector3Int(5, 0, 0)),
+            (1, new Vector3Int(6, 0, 0)),
         };
 
         var brickPattern = new Patterns()
         {
+            //  b,b,b,b
             // b1,b,b,b1
             //  b,b,b,b
-            (0, new Vector3Int(2,0,0)),
-            (0, new Vector3Int(0,0,0)),
-            (0, new Vector3Int(1,0,1)),
+            (0, new Vector3Int(2, 0, 0)),
+            (0, new Vector3Int(0, 0, 0)),
+            (0, new Vector3Int(2, 0, 2)),
+            (0, new Vector3Int(0, 0, 2)),
+            (0, new Vector3Int(1, 0, 1)),
             (4, new Vector3Int(0,0,1)),
             (4, new Vector3Int(3,0,1)),
         };
-
-        var brickPattern1 = new Patterns()
+        
+        var brickDoorPattern = new Patterns
         {
-            // b1      ,b1
-            // b0,b0,b0,b0
-            // b1      ,b1
-            (4, new Vector3Int(0, 0, 0)),
-            (4, new Vector3Int(0, 0, 2)),
-            (0, new Vector3Int(0, 0, 1)),
-            (0, new Vector3Int(2, 0, 1)),
-            (4, new Vector3Int(3, 0, 0)),
-            (4, new Vector3Int(3, 0, 2)),
+            /*
+             * b ,b ,b ,b ,b ,b
+             *   ,b1,d ,d ,d ,b , b
+             * b ,b ,d ,d ,d ,b1,
+             *   ,b1,d ,d ,d ,b , b
+             * b ,b ,d ,d ,d ,b1,
+             *   ,b1,d ,d ,d ,b , b
+             */
+            (0, new Vector3Int(0,0,1)),
+            (0, new Vector3Int(0,0,3)),
+            (0, new Vector3Int(0,0,5)),
+            (0, new Vector3Int(2,0,5)),
+            (0, new Vector3Int(4,0,5)),
+            (0, new Vector3Int(5,0,4)),
+            (0, new Vector3Int(5,0,2)),
+            (0, new Vector3Int(5,0,0)),
+            
+            (4, new Vector3Int(1,0,0)),
+            (4, new Vector3Int(1,0,2)),
+            (4, new Vector3Int(1,0,4)),
+            (4, new Vector3Int(5,0,1)),
+            (4, new Vector3Int(5,0,3)),
+            
+            (5, new Vector3Int(2,0,0))
+        };
+
+        var doorGrassPattern = new Patterns
+        {
+            /*
+             *    d,d,d
+             *    d,d,d
+             *    d,d,d
+             *    d,d,d
+             * b1,d,d,d,b,b
+             * g ,g,g,g,g,g
+             */
+            (5, new Vector3Int(1, 0, 1)),
+
+            (4, new Vector3Int(0, 0, 1)),
+            (0, new Vector3Int(4, 0, 1)),
+
+            (1, new Vector3Int(0, 0, 0)),
+            (1, new Vector3Int(1, 0, 0)),
+            (1, new Vector3Int(2, 0, 0)),
+            (1, new Vector3Int(3, 0, 0)),
+            (1, new Vector3Int(4, 0, 0)),
+            (1, new Vector3Int(5, 0, 0)),
         };
 
         var grassSoilPattern = new Patterns()
         {
-            // g,g,s
-            // s,s,s
+            // g,g,s,s
+            // s,s,s,s
             (1, new Vector3Int(0,0,1)),
             (1, new Vector3Int(1,0,1)),
             (2, new Vector3Int(0,0,0)),
             (2, new Vector3Int(1,0,0)),
             (2, new Vector3Int(2,0,1)),
             (2, new Vector3Int(2,0,0)),
+            (2, new Vector3Int(3,0,0)),
+            (2, new Vector3Int(3,0,1)),
         };
 
         var emptyGrassPattern = new Patterns()
         {
-            // e
-            // g
+            // e,e
+            // g,g
             (3, new Vector3Int(0, 0, 1)),
-            (1, new Vector3Int(0, 0, 0))
+            (3, new Vector3Int(1, 0, 1)),
+            (1, new Vector3Int(0, 0, 0)),
+            (1, new Vector3Int(1, 0, 0))
         };
 
         var emptyBrickPattern = new Patterns()
         {
-            //   e,e
-            // e,b,b,e
+            // e,e,e,e,e,e
+            // e,b,b,b,b,e
             (0, new Vector3Int(1, 0, 0)),
+            (0, new Vector3Int(3, 0, 0)),
             (3, new Vector3Int(0, 0, 0)),
-            (3, new Vector3Int(3, 0, 0)),
+            (3, new Vector3Int(5, 0, 0)),
+            (3, new Vector3Int(0, 0, 1)),
             (3, new Vector3Int(1, 0, 1)),
-            (3, new Vector3Int(1, 0, 2)),
+            (3, new Vector3Int(2, 0, 1)),
+            (3, new Vector3Int(3, 0, 1)),
+            (3, new Vector3Int(4, 0, 1)),
+            (3, new Vector3Int(5, 0, 1)),
         };
 
         var emptyEmptyPattern = new Patterns()
         {
-            // e
+            // e,e
             // e,e
             (3, new Vector3Int(0, 0, 0)),
             (3, new Vector3Int(0, 0, 1)),
             (3, new Vector3Int(1, 0, 0)),
+            (3, new Vector3Int(1, 0, 1)),
         };
 
         return new List<Patterns>()
-            { brickPattern, emptyBrickPattern, emptyEmptyPattern, emptyGrassPattern, grassBrickPattern, grassSoilPattern, brickPattern1 };
+            { brickPattern, emptyBrickPattern, emptyEmptyPattern, emptyGrassPattern, grassBrickPattern, grassSoilPattern, doorGrassPattern, brickDoorPattern };
     }
 
     private NonUniformTile[] FloorTiles()
@@ -537,68 +443,72 @@ public class XWFCAnimator : MonoBehaviour
     {
         var brickPattern = new Patterns()
         {
+            //  b,b,b,b
             // b1,b,b,b1
             //  b,b,b,b
-            (0, new Vector3Int(2,0,0)),
-            (0, new Vector3Int(0,0,0)),
-            (0, new Vector3Int(1,0,1)),
+            (0, new Vector3Int(2, 0, 0)),
+            (0, new Vector3Int(0, 0, 0)),
+            (0, new Vector3Int(2, 0, 2)),
+            (0, new Vector3Int(0, 0, 2)),
+            (0, new Vector3Int(1, 0, 1)),
             (1, new Vector3Int(0,0,1)),
             (1, new Vector3Int(3,0,1)),
         };
 
-        var brickPattern1 = new Patterns()
-        {
-            // b1      ,b1
-            // b0,b0,b0,b0
-            // b1      ,b1
-            (1, new Vector3Int(0, 0, 0)),
-            (1, new Vector3Int(0, 0, 2)),
-            (0, new Vector3Int(0, 0, 1)),
-            (0, new Vector3Int(2, 0, 1)),
-            (1, new Vector3Int(3, 0, 0)),
-            (1, new Vector3Int(3, 0, 2)),
-        };
-        
         var emptyBrickPattern = new Patterns()
         {
-            //   e,e
-            // e,b,b,e
+            // e,e,e,e,e,e
+            // e,b,b,b,b,e
             (0, new Vector3Int(1, 0, 0)),
+            (0, new Vector3Int(3, 0, 0)),
             (3, new Vector3Int(0, 0, 0)),
-            (3, new Vector3Int(3, 0, 0)),
+            (3, new Vector3Int(5, 0, 0)),
+            (3, new Vector3Int(0, 0, 1)),
             (3, new Vector3Int(1, 0, 1)),
-            (3, new Vector3Int(1, 0, 2)),
+            (3, new Vector3Int(2, 0, 1)),
+            (3, new Vector3Int(3, 0, 1)),
+            (3, new Vector3Int(4, 0, 1)),
+            (3, new Vector3Int(5, 0, 1)),
         };
 
         var emptyEmptyPattern = new Patterns()
         {
-            // e
+            // e,e
             // e,e
             (3, new Vector3Int(0, 0, 0)),
             (3, new Vector3Int(0, 0, 1)),
             (3, new Vector3Int(1, 0, 0)),
+            (3, new Vector3Int(1, 0, 1)),
         };
         
         var windowBrickPattern = new Patterns()
         {
+            /* b,b ,b,b,b,b
+             *   b1,w,w,w,b ,b
+             * b,b ,w,w,w,b1
+             *   b1,w,w,w,b ,b
+             * b,b ,b,b,b,b    
+             */
             (2, new Vector3Int(2, 0, 1)),
 
             (1, new Vector3Int(1, 0, 1)),
             (0, new Vector3Int(0, 0, 2)),
             (1, new Vector3Int(1, 0, 3)),
             
-            (1, new Vector3Int(5, 0, 1)),
-            (0, new Vector3Int(5, 0, 2)),
-            (1, new Vector3Int(5, 0, 3)),
+            (0, new Vector3Int(5, 0, 1)),
+            (1, new Vector3Int(5, 0, 2)),
+            (0, new Vector3Int(5, 0, 3)),
 
+            (0, new Vector3Int(0, 0, 0)),
             (0, new Vector3Int(2, 0, 0)),
-            (1, new Vector3Int(4, 0, 0)),
+            (0, new Vector3Int(4, 0, 0)),
             
-            (1, new Vector3Int(2, 0, 4)),
-            (0, new Vector3Int(3, 0, 4)),
+            (0, new Vector3Int(0, 0, 4)),
+            (0, new Vector3Int(2, 0, 4)),
+            (0, new Vector3Int(4, 0, 4)),
         };
 
-        return new List<Patterns>() { brickPattern, emptyBrickPattern, brickPattern1, windowBrickPattern, emptyEmptyPattern };
+        return new List<Patterns>() { brickPattern, emptyBrickPattern, windowBrickPattern, emptyEmptyPattern };
     }
     
     private void PrintAdjacencyData()
@@ -880,7 +790,15 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFComponent(ref Component component)
     {
-        _xwfc = new XwfcStm(component.AdjacencyMatrix, ref component.Grid);
+        if (_activeModel == XwfcModel.Overlapping)
+        {
+            _xwfc = new XwfcOverlappingModel(component.AdjacencyMatrix.AtomizedSamples, component.AdjacencyMatrix,
+                ref component.Grid, _kernelSize, RandomSeed);
+        }
+        else
+        {
+            _xwfc = new XwfcStm(component.AdjacencyMatrix, ref component.Grid);
+        }
         UpdateExtent(component.Grid.GetExtent());
     }
 
@@ -1087,6 +1005,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private void Update()
     {
+        _xwfc.RandomSeed = RandomSeed;
         if (_updateDeltaTime >= delay)
         {
             Iterate();

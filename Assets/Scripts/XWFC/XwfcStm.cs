@@ -23,6 +23,7 @@ namespace XWFC
         private int _counter;
         private bool _forceCompleteTiles;
         private SavePoint _rootSave;
+        public int RandomSeed = 3;
 
         #nullable enable
         public XwfcStm(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
@@ -362,7 +363,11 @@ namespace XWFC
                 return;
             }
 
-            Propagate();
+            var collapseItems = Propagate();
+            foreach (var (coord, entropy) in collapseItems)
+            {
+                CollapseQueue.Insert(coord, entropy);
+            }
         }
 
         protected virtual void Collapse(Vector3Int coord)
@@ -502,8 +507,9 @@ namespace XWFC
             return true;
         }
 
-        protected virtual void Propagate()
+        protected virtual HashSet<(Vector3Int, float)> Propagate()
         {
+            var collapseItems = new HashSet<(Vector3Int, float)>();
             while (_propQueue.Count > 0)
             {
                 var coord = _propQueue.Dequeue();
@@ -572,9 +578,12 @@ namespace XWFC
                     }
 
                     if (!_gridManager.Grid.IsOccupied(n))
-                        CollapseQueue.Insert(n, _gridManager.Entropy.Get(n));
+                        // CollapseQueue.Insert(n, _gridManager.Entropy.Get(n));
+                        collapseItems.Add((n, _gridManager.Entropy.Get(n)));
                 }
             }
+
+            return collapseItems;
         }
 
         public bool IsDone()
@@ -593,7 +602,7 @@ namespace XWFC
             Reset();
         }
 
-        public void Reset()
+        protected virtual void Reset()
         {
             LoadSavePoint(_rootSave);
             // Clean();

@@ -121,6 +121,12 @@ namespace XWFC
         {
             return _enqueuedCells.ContainsKey(coord);
         }
+
+        public void Clear()
+        {
+            _list.Clear();
+            _enqueuedCells.Clear();
+        }
         
     }
     

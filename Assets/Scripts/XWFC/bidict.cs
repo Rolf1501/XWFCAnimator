@@ -15,6 +15,12 @@ namespace XWFC
             _inverse = new Dictionary<TValue, TKey>();
         }
 
+        public void Clear()
+        {
+            Dict.Clear();
+            _inverse.Clear();
+        }
+
         public void AddPair(TKey key, TValue value)
         {
             if (Dict.Keys.Contains(key))
