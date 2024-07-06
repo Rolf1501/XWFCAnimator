@@ -18,7 +18,7 @@ namespace XWFC
         private readonly float _maxEntropy;
         protected CollapsePriorityQueue CollapseQueue;
         public readonly Vector3Int[] Offsets;
-        private Queue<Propagation> _propQueue = new();
+        private Queue<Vector3Int> _propQueue = new();
         private SavePointManager _savePointManager;
         private int _counter;
         private bool _forceCompleteTiles;
@@ -248,7 +248,7 @@ namespace XWFC
             {
                 if (choices[j]) choiceList.Add(j);
             }
-            _propQueue.Enqueue(new Propagation(choiceList.ToArray(), coord));
+            _propQueue.Enqueue(coord);
             Propagate();
 
             return grid;
@@ -386,7 +386,7 @@ namespace XWFC
             updatedWave[id] = true;
             _gridManager.Wave.Set(coord, updatedWave);
             _gridManager.Entropy.Set(coord, AdjacencyMatrix.CalcEntropy(1));
-            _propQueue.Enqueue(new Propagation(new int[] { id }, coord));
+            _propQueue.Enqueue(coord);
             
             // Whenever a cell is set to be occupied, progress is made and needs to be updated.
             UpdateProgress();
@@ -506,8 +506,15 @@ namespace XWFC
         {
             while (_propQueue.Count > 0)
             {
-                var p = _propQueue.Dequeue();
-                var (cs, coord) = (p.Choices, p.Coord);
+                var coord = _propQueue.Dequeue();
+                var wave = _gridManager.Wave.Get(coord);
+                var list = new List<int>();
+                for (var i = 0; i < wave.Length; i++)
+                {
+                    if (wave[i]) list.Add(i);
+                }
+
+                var cs = list.ToArray();
                 
                 foreach (var offset in Offsets)
                 {
@@ -561,7 +568,7 @@ namespace XWFC
                         }
 
                         if (!_gridManager.Grid.IsOccupied(n))
-                            _propQueue.Enqueue(new Propagation(neighborWChoicesI.ToArray(), n));
+                            _propQueue.Enqueue(n);
                     }
 
                     if (!_gridManager.Grid.IsOccupied(n))
@@ -592,16 +599,4 @@ namespace XWFC
             // Clean();
         }
     }
-
-    public record Propagation
-    {
-        public int[] Choices; 
-        public Vector3Int Coord;
-
-        public Propagation(int[] choices, Vector3Int coord)
-        {
-            Choices = choices;
-            Coord = coord;
-        }
-    };
 }
