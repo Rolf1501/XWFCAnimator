@@ -102,6 +102,11 @@ public class XWFCAnimator : MonoBehaviour
 
         DrawTiles();
 
+        /*
+         *
+         * TODO: Complete last layers in grid once solved!!!
+         * Alternatively, Collapse all atoms in pattern upon pattern selection.
+         */
         
         // var (sample, ids) = InputHandler.ToSampleGrid(brickPattern2, TileSet, "");
 
@@ -376,21 +381,25 @@ public class XWFCAnimator : MonoBehaviour
             (1, new Vector3Int(0, 0, 0)),
             (1, new Vector3Int(1, 0, 0))
         };
-
+        
         var emptyBrickPattern = new Patterns()
         {
-            // e,e,e,e,e,e
+            //   e,e,e,e
+            // e,e,b,b,e,e
             // e,b,b,b,b,e
             (0, new Vector3Int(1, 0, 0)),
             (0, new Vector3Int(3, 0, 0)),
+            (0, new Vector3Int(2, 0, 1)),
             (3, new Vector3Int(0, 0, 0)),
             (3, new Vector3Int(5, 0, 0)),
             (3, new Vector3Int(0, 0, 1)),
             (3, new Vector3Int(1, 0, 1)),
-            (3, new Vector3Int(2, 0, 1)),
-            (3, new Vector3Int(3, 0, 1)),
             (3, new Vector3Int(4, 0, 1)),
             (3, new Vector3Int(5, 0, 1)),
+            (3, new Vector3Int(1, 0, 2)),
+            (3, new Vector3Int(2, 0, 2)),
+            (3, new Vector3Int(3, 0, 2)),
+            (3, new Vector3Int(4, 0, 2)),
         };
 
         var emptyEmptyPattern = new Patterns()
