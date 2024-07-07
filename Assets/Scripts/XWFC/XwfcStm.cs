@@ -10,7 +10,7 @@ namespace XWFC
     {
         private readonly TileSet _tileSet;
         public Vector3Int GridExtent;
-        private Vector3Int _startCoord;
+        protected Vector3Int StartCoord;
         private readonly Dictionary<int, float> _defaultWeights;
         private float _progress = 0;
         public AdjacencyMatrix AdjMatrix;
@@ -89,7 +89,7 @@ namespace XWFC
             Offsets = OffsetFactory.GetOffsets(3);
             
             _gridManager = new GridManager(seededGrid, _defaultWeights, _maxEntropy);
-            _startCoord = CenterCoord();
+            StartCoord = CenterCoord();
             CleanState();
             
             RemoveEmpty(ref seededGrid);
@@ -293,7 +293,7 @@ namespace XWFC
         private void CleanState()
         {
             CollapseQueue = new CollapsePriorityQueue();
-            CollapseQueue.Insert(_startCoord, _gridManager.Entropy.Get(_startCoord));
+            CollapseQueue.Insert(StartCoord, _gridManager.Entropy.Get(StartCoord));
             _savePointManager = new SavePointManager();
 
             _counter = 0;
@@ -308,7 +308,7 @@ namespace XWFC
             _gridManager = new GridManager(x, y, z);
             _gridManager.InitEntropy(_maxEntropy);
             _gridManager.InitChoiceWeights(_defaultWeights);
-            _startCoord = CenterCoord();
+            StartCoord = CenterCoord();
         }
 
         private void CleanIncompleteTiles()
