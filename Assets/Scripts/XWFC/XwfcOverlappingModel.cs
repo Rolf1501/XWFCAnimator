@@ -79,7 +79,35 @@ namespace XWFC
 
         private void FillInBlanks()
         {
-            throw new System.NotImplementedException();
+            var e = _atomGrid.GetExtent();
+            for (int x = 0; x < e.x; x++)
+            {
+                for (int y = 0; y < e.y; y++)
+                {
+                    for (int z = 0; z < e.z; z++)
+                    {
+                        if (_atomGrid.IsOccupied(x,y,z)) continue;
+                        var coord = new Vector3Int(x, y, z);
+                        var v = e - _kernelSize - coord;
+                        var kernelCoordDelta = new Vector3Int(0, 0, 0);
+                        if (v.x < 0) kernelCoordDelta.x = v.x;
+                        if (v.y < 0) kernelCoordDelta.y = v.y;
+                        if (v.z < 0) kernelCoordDelta.z = v.z;
+                        
+                        Collapse(coord + kernelCoordDelta);
+                        Propagate();
+
+                    }
+                }
+            }
+        }
+
+        private bool IsAtKernelBoundary(Vector3Int coord)
+        {
+            var e = _atomGrid.GetExtent();
+            var v = e - _kernelSize - coord;
+            return v.x <= 0 || v.y <= 0 || v.z <= 0;
+            
         }
 
         public override Grid<int> GetGrid()
@@ -398,9 +426,14 @@ namespace XWFC
             return true;
         }
 
+        private bool MayCollapse(Vector3Int coord)
+        {
+            return !_atomGrid.IsOccupied(coord) ||
+                   (_atomGrid.Get(coord) == _blockedCellId && IsAtKernelBoundary(coord));
+        }
         protected sealed override void Collapse(Vector3Int coord)
         {
-            if (_atomGrid.Get(coord) != _atomGrid.DefaultFillValue) return;
+            if (!MayCollapse(coord)) return;
             
             var choices = _patternWave.Get(coord);
 
@@ -409,16 +442,12 @@ namespace XWFC
 
             var wave = EmptyWave();
             wave[chosenPatternId] = true;
-            _atomGrid.Set(coord, PatternMatrix.GetPatternAtomAtCoordinate(chosenPatternId, _patternAtomCoord));
             _patternWave.Set(coord, wave);
             _propagationQueue.Enqueue(coord);
             
             /*
              * If near the bounds of the grid, collapse the remaining atoms immediately. Assumes pattern atom coordinate 0,0,0.
              */
-            // var boundary = _atomGrid.GetExtent() - _kernelSize;
-            // if (!(coord.x == boundary.x || coord.y == boundary.y || coord.z == boundary.z)) return;
-            
             var coordPatterns = coord + _kernelSize;
             var e = _atomGrid.GetExtent();
             var xBound = coordPatterns.x == e.x ? _kernelSize.x : 1;
@@ -432,13 +461,11 @@ namespace XWFC
                 {
                     for (int z = 0; z < zBound; z++)
                     {
-                        _atomGrid.Set(coord.x + x, coord.y + y, coord.z + z, pattern[y,x,z]);
+                        var n = new Vector3Int(coord.x + x, coord.y + y, coord.z + z);
+                        if (!_atomGrid.IsOccupied(n)) _atomGrid.Set(n, pattern[y,x,z]);
                     }
                 }
             }
-            
-            
-            
             
             /*
              * Collapse an entire pattern at once; this is allowed because when the pattern reference may be placed, so may the others by construction of the patterns.
@@ -547,6 +574,8 @@ namespace XWFC
             {
                 CollapseQueue.Insert(cell, entropy);
             }
+            
+            if (CollapseQueue.IsDone()) FillInBlanks();
         }
 
         protected override HashSet<(Vector3Int, float)> Propagate()
@@ -575,8 +604,14 @@ namespace XWFC
                     // The outer positive layers can be ignored, those are filled in post-processing. Assumes pattern atom coord of 0,0,0.
                     if (!atomGrid.WithinBounds(neighbor) || !atomGrid.WithinBounds(neighbor + _kernelSize - new Vector3Int(1,1,1))) continue;
                     
-                    // Only consider uncollapsed cells.
-                    if (atomGrid.Get(neighbor) != atomGrid.DefaultFillValue) continue;
+                    // Edge case: if using a seeded grid, then the cells at the most positive layers are not propagated to.
+                    // It could be that there's a gap smaller than the kernel size, resulting in an uncollapse cell.
+                    // So, perform propagation to those cells and perform tile fitting check.
+                    var coordExtent = neighbor + _kernelSize;
+                    var atBounds = !atomGrid.WithinBounds(coordExtent);
+                    
+                    // Only consider uncollapsed cells not at the boundaries.
+                    if (!atBounds && atomGrid.IsOccupied(neighbor)) continue;
                     
                     // Get union of allowed neighbors of the current cell.
                     var allowedNeighbors = new bool[nPatterns];
@@ -610,7 +645,7 @@ namespace XWFC
                         }
                     }
                     
-                    if (!CollapseQueue.Contains(neighbor) || !preIsPost) 
+                    if (!atomGrid.IsOccupied(neighbor) && (!CollapseQueue.Contains(neighbor) || !preIsPost)) 
                         collapseItems.Add((neighbor, AdjacencyMatrix.CalcEntropy(remainingChoiceCount)));
                     
                     if (preIsPost) continue;
