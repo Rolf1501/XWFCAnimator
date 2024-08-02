@@ -31,13 +31,12 @@ namespace XWFC
         {
             
             Init(tileSet, offsetsDimensions);
-
-            TileWeigths = ExpandDefaultWeights(defaultWeights);
             TileAdjacencyConstraints = tileAdjacencyConstraints;
             
             InitTileAdjacency();
             InferTileAdjacencyConstraints(TileAdjacencyConstraints);
             InferAtomAdjacencyConstraints();
+            TileWeigths = ExpandDefaultWeights(defaultWeights);
         }
         
         public AdjacencyMatrix(TileSet tiles, SampleGrid[] grids, [CanBeNull] Dictionary<int, float> tileWeights)
@@ -88,11 +87,21 @@ namespace XWFC
         public static Dictionary<int, float> ToWeightDictionary(float[] weights, TileSet tileSet)
         {
             var dictionary = new Dictionary<int, float>();
-            int i = 0;
-            foreach (var tilesKey in tileSet.Keys)
+            if (weights == null || weights.Length < tileSet.Count)
             {
-                dictionary[tilesKey] = weights[i];
-                i++;
+                foreach (var tilesKey in tileSet.Keys)
+                {
+                    dictionary[tilesKey] = 1;
+                }
+            }
+            else
+            {
+                int i = 0;
+                foreach (var tilesKey in tileSet.Keys)
+                {
+                    dictionary[tilesKey] = weights[i];
+                    i++;
+                }
             }
 
             return dictionary;
@@ -389,9 +398,9 @@ namespace XWFC
             /*
              * Formalizes the atom atom adjacency constraints within a molecule.
              */
-            foreach (int p in TileSet.Keys.ToArray())
+            foreach (var (p, t) in TileSet)
             {
-                NonUniformTile t = TileSet[p];
+                // NonUniformTile t = TileSet[p];
                 CreatePartToIndexEntry(p, t);
 
                 foreach (int d in t.DistinctOrientations)
@@ -427,6 +436,7 @@ namespace XWFC
                 for (int i = 0; i < t.OrientedIndices[d].Length; i++)
                 {
                     var index = t.OrientedIndices[d][i];
+                    if (AtomMapping.ContainsKey((tileId, index, d))) continue;
                     var newKeyEntry = AtomMapping.GetNEntries();
                     AtomMapping.AddPair((tileId, index, d), newKeyEntry);
                 }

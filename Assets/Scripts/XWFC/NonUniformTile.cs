@@ -79,6 +79,7 @@ namespace XWFC
             }
             else
             {
+                Mask = mask;
                 var (x, y, z) = (Mask.GetLength(1), Mask.GetLength(0), Mask.GetLength(2));
                 Extent = new Vector3Int(x, y, z);
                 AtomValues = new string[y, x, z];
@@ -88,7 +89,7 @@ namespace XWFC
                     {
                         for (int k = 0; k < z; k++)
                         {
-                            AtomValues[y, x, z] = Mask[y, x, z] ? uniformAtomValue : "";
+                            AtomValues[i,j,k] = Mask[i,j,k] ? uniformAtomValue : "";
                         }
                     }
                 }

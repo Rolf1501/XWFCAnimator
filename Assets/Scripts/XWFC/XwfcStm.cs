@@ -95,7 +95,7 @@ namespace XWFC
             RemoveEmpty(ref seededGrid);
             var blockedCells = BlockOccupiedSeeds(ref seededGrid);
             seededGrid = EliminateIncompleteBlockedCellNeighbors(blockedCells, seededGrid);
-
+            
             _gridManager.Grid = seededGrid;
             CleanIncompleteTiles();
             

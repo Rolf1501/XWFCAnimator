@@ -27,6 +27,16 @@ namespace XWFC
             AdjacencyMatrix = new AdjacencyMatrix(tileSet, inputGrids, AdjacencyMatrix.ToWeightDictionary(tileWeights, tileSet));
         }
 
+        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, HashSetAdjacency adjacencyConstraints,
+            float[] tileWeights=null)
+        {
+            Origin = origin;
+            Extent = extent;
+            Tiles = tileSet;
+            Grid = new Grid<int>(Extent, -1);
+            AdjacencyMatrix = new AdjacencyMatrix(adjacencyConstraints, tileSet, new Dictionary<int, float>());
+        }
+
         public Range XRange()
         {
             return new Range(Origin.x, Origin.x + Extent.x);

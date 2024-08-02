@@ -80,10 +80,23 @@ public class XWFCAnimator : MonoBehaviour
         _adjacency = new HashSetAdjacency();
 
         // InitXWFC();
+        // _activeModel = XwfcModel.SimpleTiled;
 
-        var houseComponents = HouseComponents();
 
-        _componentManager = new ComponentManager(houseComponents);
+        if (_activeModel == XwfcModel.SimpleTiled)
+        {
+            var adjMat = ReadConfig();   
+            var tetrisComp = new Component[] { new Component(new Vector3Int(0, 0, 0), new Vector3Int(20, 1, 20), adjMat.TileSet, adjMat.TileAdjacencyConstraints
+            )};
+            _componentManager = new ComponentManager(tetrisComp);
+        }
+        else
+        {
+            var houseComponents = HouseComponents();
+            _componentManager = new ComponentManager(houseComponents);
+        }
+        
+        
 
         LoadNextComponent();
         
@@ -272,6 +285,20 @@ public class XWFCAnimator : MonoBehaviour
         );
 
         return new NonUniformTile[] { brickTile, grassTile, soilTile, emptyTile, halfBrickTile, doorTile };
+    }
+
+    private List<Patterns> TetrisPatterns()
+    {
+        /*             
+         * 0: tileL,
+         * 1: tileT,
+         * 2: tileJ,
+         * 3: tileI,
+         * 4: tileS,
+         * 5: tileZ,
+         * 6: tileO
+         */
+        return null;
     }
 
     private List<Patterns> BasePatterns()
@@ -728,16 +755,19 @@ public class XWFCAnimator : MonoBehaviour
         };
         return patterns;
     }
-    private NonUniformTile[] GetTetrisTiles()
+    private TileSet GetTetrisTileSet()
     {
         var tileL = new NonUniformTile(
-            new Vector3Int(2, 1, 3),
+            "L",
+        new Vector3Int(2, 1, 3),
             new Color(240 / 255.0f, 160 / 255.0f, 0),
             new bool[,,] { { { true, true, true }, { true, false, false } } },
             null,
+            
             computeAtomEdges:true
         );
         var tileT = new NonUniformTile(
+            "T",
             new Vector3Int(2, 1, 3),
             new Color(160 / 255.0f, 0, 240/255.0f),
             new bool[,,] { { { false, true, false }, { true, true, true }} },
@@ -746,6 +776,7 @@ public class XWFCAnimator : MonoBehaviour
         );
         
         var tileJ = new NonUniformTile(
+            "J",
             new Vector3Int(2, 1, 3),
             new Color(0, 0, 240 / 255.0f),
             new bool[,,] { { { true, false, false }, { true, true, true } } },
@@ -754,6 +785,7 @@ public class XWFCAnimator : MonoBehaviour
         );
         
         var tileI = new NonUniformTile(
+            "I",
             new Vector3Int(4, 1, 1),
             new Color(120 / 255.0f, 120 / 255.0f, 1 / 255.0f),
             new bool[,,] { { { true }, { true }, { true }, { true } } },
@@ -762,6 +794,7 @@ public class XWFCAnimator : MonoBehaviour
         );
         
         var tileS = new NonUniformTile(
+            "S",
             new Vector3Int(2, 1, 3),
             new Color(0, 240 / 255.0f, 0),
             new bool[,,] { { { true, true, false }, { false, true, true }} },
@@ -769,6 +802,7 @@ public class XWFCAnimator : MonoBehaviour
             computeAtomEdges:true
         );
         var tileZ = new NonUniformTile(
+            "Z",
             new Vector3Int(2, 1, 3),
             new Color(240 / 255.0f, 0, 0),
             new bool[,,] { { { false, true, true }, { true, true, false }} },
@@ -776,6 +810,7 @@ public class XWFCAnimator : MonoBehaviour
             computeAtomEdges:true
         );
         var tileO = new NonUniformTile(
+            "O",
             new Vector3Int(2, 1, 2),
             new Color(0, 240 / 255.0f, 240 / 255.0f),
 
@@ -786,7 +821,12 @@ public class XWFCAnimator : MonoBehaviour
         );
 
         var tetrisTiles = new NonUniformTile[] { tileL, tileT, tileJ, tileI, tileS, tileZ, tileO };
-        return tetrisTiles;
+        var tileSet = new TileSet();
+        for (var i = 0; i < tetrisTiles.Length; i++)
+        {
+            tileSet[i] = tetrisTiles[i];
+        }
+        return tileSet;
     }
 
     private void InitXWFCInput(TileSet tiles, Vector3Int gridExtent, SampleGrid[] inputGrids, float[] weights)
@@ -1248,6 +1288,14 @@ public class XWFCAnimator : MonoBehaviour
 
     public void LoadConfig(string fileName="")
     {
+
+        var adjMat = ReadConfig(fileName);
+        UpdateTileSet(adjMat.TileSet);
+        UpdateAdjacencyConstraints(adjMat.TileAdjacencyConstraints);
+    }
+
+    private AdjacencyMatrix ReadConfig(string fileName="")
+    {
         var extension = ".json";
         
         var path = "";
@@ -1263,9 +1311,8 @@ public class XWFCAnimator : MonoBehaviour
         }
         var contents = FileUtil.ReadFromFile(path);
         var adjMat = AdjacencyMatrixJsonFormatter.FromJson(contents);
-        
-        UpdateTileSet(adjMat.TileSet);
-        UpdateAdjacencyConstraints(adjMat.TileAdjacencyConstraints);
+
+        return adjMat;
     }
 
     private string CreateSaveConfigPath()
