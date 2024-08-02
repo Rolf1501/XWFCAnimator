@@ -51,6 +51,8 @@ public class TabbedMenu : MonoBehaviour
     private VisualElement _configContainer;
     private VisualElement _tilesetListContainer;
 
+    private Vector3Int _savedExtent;
+
 
     private void OnEnable()
     {
@@ -101,13 +103,28 @@ public class TabbedMenu : MonoBehaviour
             if (XWFCAnimator.Instance.HasNextComponent())
             {
                 XWFCAnimator.Instance.LoadNextComponent();
+                
             }
             else
             {
                 XWFCAnimator.Instance.SaveComponent();
                 XWFCAnimator.Instance.Assemble();
             }
+
+            SyncSliders();
+            
         };
+    }
+
+    private void SyncSliders()
+    {
+        if (XWFCAnimator.Instance.extent != new Vector3Int(_wSlider.value, _hSlider.value, _dSlider.value))
+        {
+            var e = XWFCAnimator.Instance.extent;
+            _wSlider.value = e.x;
+            _hSlider.value = e.y;
+            _dSlider.value = e.z;
+        }
     }
 
     private void Start()
@@ -123,6 +140,9 @@ public class TabbedMenu : MonoBehaviour
         _stepSize.value = XWFCAnimator.Instance.stepSize.ToString("0");
         _delay.value = XWFCAnimator.Instance.delay.ToString("0.0");
         AddCollapseListeners();
+
+        _savedExtent = XWFCAnimator.Instance.extent;
+        SyncSliders();
 
     }
 
@@ -256,6 +276,8 @@ public class TabbedMenu : MonoBehaviour
 
     private void InitAdjacencyGrid()
     {
+        if (XWFCAnimator.Instance.activeModel != XWFCAnimator.XwfcModel.SimpleTiled) return;
+        
         _adjGrid = _root.Q<VisualElement>(_adjacencyGridName);
         InitAdjacencyDropDown();
         InitAdjacencyToggles(XWFCAnimator.Instance.GetTiles().Keys.ToList(), XWFCAnimator.Instance.GetTileAdjacencyConstraints(), XWFCAnimator.Instance.GetOffsets());
@@ -416,17 +438,17 @@ public class TabbedMenu : MonoBehaviour
             ToggleEnabled(_collapseOnceButton);
         }
 
-        if (XWFCAnimator.Instance.extent != new Vector3Int(_wSlider.value, _hSlider.value, _dSlider.value))
-        {
-            var e = XWFCAnimator.Instance.extent;
-            _wSlider.value = e.x;
-            _hSlider.value = e.y;
-            _dSlider.value = e.z;
-        }
+        
         
         if (!XWFCAnimator.Instance.HasNextComponent())
         {
             _loadNextComponentButton.text = "Assemble!";
+        }
+
+        if (!_savedExtent.Equals(XWFCAnimator.Instance.extent))
+        {
+            SyncSliders();
+            _savedExtent = XWFCAnimator.Instance.extent;
         }
     }
 }

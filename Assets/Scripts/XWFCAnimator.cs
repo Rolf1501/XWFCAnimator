@@ -13,6 +13,7 @@ using Random = System.Random;
 using Vector3 = UnityEngine.Vector3;
 
 using Patterns = System.Collections.Generic.List<(int,UnityEngine.Vector3Int)>;
+using Timer = System.Timers.Timer;
 
 public class XWFCAnimator : MonoBehaviour
 {
@@ -36,7 +37,7 @@ public class XWFCAnimator : MonoBehaviour
     private int _iterationsDone;
 
     private StateFlag _activeStateFlag = 0;
-    private XwfcModel _activeModel = XwfcModel.Overlapping;
+    public XwfcModel activeModel = XwfcModel.Overlapping;
     
     private XwfcStm _xwfc;
 
@@ -51,6 +52,8 @@ public class XWFCAnimator : MonoBehaviour
     private PatternMatrix _patternMatrix;
 
     private Vector3Int _kernelSize = new Vector3Int(2, 1, 2);
+
+    private XWFC.Timer _timer = new();
     
     [Flags]
     private enum StateFlag
@@ -59,7 +62,7 @@ public class XWFCAnimator : MonoBehaviour
     }
 
     [Flags]
-    private enum XwfcModel
+    public enum XwfcModel
     {
         Overlapping = 1 << 0,
         SimpleTiled = 1 << 1
@@ -75,6 +78,7 @@ public class XWFCAnimator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        _timer.Start();
         TileSet = new TileSet();
 
         _adjacency = new HashSetAdjacency();
@@ -83,11 +87,14 @@ public class XWFCAnimator : MonoBehaviour
         // _activeModel = XwfcModel.SimpleTiled;
 
 
-        if (_activeModel == XwfcModel.SimpleTiled)
+        if (activeModel == XwfcModel.SimpleTiled)
         {
             var adjMat = ReadConfig();   
-            var tetrisComp = new Component[] { new Component(new Vector3Int(0, 0, 0), new Vector3Int(20, 1, 20), adjMat.TileSet, adjMat.TileAdjacencyConstraints
-            )};
+            var tetrisComp = new Component[] { 
+                new Component(new Vector3Int(0, 0, 0), new Vector3Int(20, 1, 20), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
+                new Component(new Vector3Int(20, 0, 0), new Vector3Int(40, 1, 40), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
+                new Component(new Vector3Int(0, 0, 40), new Vector3Int(60, 1, 60), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
+            };
             _componentManager = new ComponentManager(tetrisComp);
         }
         else
@@ -102,11 +109,13 @@ public class XWFCAnimator : MonoBehaviour
         
         TileSet = _xwfc.AdjMatrix.TileSet;
         CompleteTileSet = _xwfc.AdjMatrix.TileSet;
+        _timer.Stop();
+        Debug.Log("\tInitialization DONE");
 
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
 
-        PrintAdjacencyData();
+        // PrintAdjacencyData();
 
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
 
@@ -124,12 +133,35 @@ public class XWFCAnimator : MonoBehaviour
         // var (sample, ids) = InputHandler.ToSampleGrid(brickPattern2, TileSet, "");
 
         // var atomized = new AtomGrid[] { _currentComponent.AdjacencyMatrix.AtomizeSample(sample) };
+        // CollapseAll();
+        // Reset();
 
-        // _xwfc.CollapseAutomatic();
-
+        // var iter = 25;
+        // var times = new List<float>();
+        // for (int i = 0; i < iter; i++)
+        // {
+        //     times.Add(CollapseAll());
+        //     Reset();
+        // }
+        // Debug.Log("Elapsed and avg time");
+        // Debug.Log(times.ToArray().ToString());
+        //
+        // var avgTime = times.Sum() / (1.0f * iter);
+        //
+        // Debug.Log(avgTime);
+        // Draw(new Vector3Int(0,0,0));
         // if (!FindConfigFileNames().Any()) SaveConfig();
         // LoadConfig();
+
     }
+
+    private float CollapseAll()
+    {
+        _timer.Start();
+        _xwfc.CollapseAutomatic();
+        return _timer.Stop();
+    }
+
 
     public void Assemble()
     {
@@ -839,14 +871,14 @@ public class XWFCAnimator : MonoBehaviour
 
     private void InitXWFComponent(ref Component component)
     {
-        if (_activeModel == XwfcModel.Overlapping)
+        if (activeModel == XwfcModel.Overlapping)
         {
             _xwfc = new XwfcOverlappingModel(component.AdjacencyMatrix.AtomizedSamples, component.AdjacencyMatrix,
                 ref component.Grid, _kernelSize, RandomSeed);
         }
         else
         {
-            _xwfc = new XwfcStm(component.AdjacencyMatrix, ref component.Grid);
+            _xwfc = new XwfcStm(component.AdjacencyMatrix, ref component.Grid, RandomSeed);
         }
         UpdateExtent(component.Grid.GetExtent());
     }
@@ -965,7 +997,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public Vector3Int[] GetOffsets()
     {
-        return _xwfc.Offsets.ToArray();
+        return OffsetFactory.GetOffsets(3);
     }
 
     public Dictionary<int, NonUniformTile> GetTiles()
@@ -1013,10 +1045,21 @@ public class XWFCAnimator : MonoBehaviour
             _iterationsDone = 0;
         
             // while (MayIterate() && MayCollapse())
+
+            if (stepSize < 0)
+            {
+                _timer.Start();
+            }
             while (MayIterate() && MayCollapse())
             {
                 CollapseOnce();
                 _iterationsDone++;
+            }
+
+            if (stepSize < 0)
+            {
+                var time = _timer.Stop();
+                Debug.Log($"Time taken: {time}");
             }
             
             Draw(new Vector3Int(0,0,0));
@@ -1104,6 +1147,7 @@ public class XWFCAnimator : MonoBehaviour
     {
         var grid = _xwfc.GetGrid();
         var gridExtent = grid.GetExtent();
+        var blockedCellId = XwfcStm.BlockedCellId(grid.DefaultFillValue, _xwfc.AdjMatrix.TileSet.Keys);
         for (int y = 0; y < gridExtent.y; y++)
         {
             for (int x = 0; x < gridExtent.x; x++)
@@ -1115,8 +1159,6 @@ public class XWFCAnimator : MonoBehaviour
                     // Drawing.DestroyAtom(drawing);
                     // if (gridValue != grid.DefaultFillValue) DrawAtom(new Vector3(x,y,z),gridValue);
 
-                    var blockedCellId =
-                        XwfcStm.BlockedCellId(grid.DefaultFillValue, _xwfc.AdjMatrix.TileSet.Keys);
                     var coord = new Vector3Int(x, y, z);
                     if (gridValue == grid.DefaultFillValue && drawing.Atom != null)
                     {

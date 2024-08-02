@@ -24,6 +24,7 @@ namespace XWFC
         private bool _forceCompleteTiles;
         private SavePoint _rootSave;
         public int RandomSeed = 3;
+        private Random _random;
 
         #nullable enable
         public XwfcStm(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
@@ -77,7 +78,7 @@ namespace XWFC
             _rootSave = new SavePoint(_gridManager, CollapseQueue, _counter);
         }
 
-        public XwfcStm(AdjacencyMatrix adjacencyMatrix, ref Grid<int> seededGrid, bool forceCompleteTiles = true)
+        public XwfcStm(AdjacencyMatrix adjacencyMatrix, ref Grid<int> seededGrid, int randomSeed, bool forceCompleteTiles = true)
         {
             AdjMatrix = adjacencyMatrix;
             GridExtent = seededGrid.GetExtent();
@@ -85,6 +86,10 @@ namespace XWFC
             _forceCompleteTiles = forceCompleteTiles;
             _defaultWeights = adjacencyMatrix.TileWeigths;
             _maxEntropy = AdjMatrix.MaxEntropy();
+            
+            Debug.Log($"Random Seed: {RandomSeed}");
+            // 316068766
+            //874075968
             
             Offsets = OffsetFactory.GetOffsets(3);
             
@@ -97,9 +102,13 @@ namespace XWFC
             seededGrid = EliminateIncompleteBlockedCellNeighbors(blockedCells, seededGrid);
             
             _gridManager.Grid = seededGrid;
-            CleanIncompleteTiles();
+            // CleanIncompleteTiles();
             
             _rootSave = new SavePoint(_gridManager, CollapseQueue, _counter);
+            
+            RandomSeed = randomSeed;
+            _random = new Random(RandomSeed);
+
         }
 
         public static int BlockedCellId(int defaultFillValue, IEnumerable<int> tileIds)
@@ -406,7 +415,7 @@ namespace XWFC
             var choiceIds = _gridManager.ChoiceIds.Get(coord);
             var choiceWeights = _gridManager.ChoiceWeights.Get(coord);
 
-            int chosenIndex = RandomChoice(wave, choiceWeights);
+            int chosenIndex = RandomChoice(wave, choiceWeights, _random);
 
             // TODO: move this to propagation instead for early conflict detection.
             if (chosenIndex < 0) throw new NoMoreChoicesException($"No more choice remain for cell {coord}.");
@@ -430,6 +439,7 @@ namespace XWFC
             _gridManager = savePoint.GridManager.Deepcopy();
             CollapseQueue = savePoint.CollapseQueue.Copy();
             _counter = savePoint.Counter;
+            // _random = new Random(RandomSeed);
 
         
             // Important: clean the propagation queue.
@@ -470,7 +480,7 @@ namespace XWFC
         {
             _counter += increment;
             _progress = CalcProgress();
-            PrintProgressUpdate(_progress);
+            // PrintProgressUpdate(_progress);
 
             _savePointManager.Save(_progress, _gridManager, CollapseQueue, _counter);
         }

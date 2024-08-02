@@ -14,10 +14,13 @@ namespace XWFC
             if (verbal) Debug.Log("Started timer.");
         }
 
-        public void Stop(bool verbal = true)
+        public float Stop(bool verbal = true)
         {
             _watch.Stop();
-            if (verbal) Debug.Log($"Stopped timer. Elapsed time is {(_watch.ElapsedMilliseconds * .001f):0.00} seconds");
+            var elapsed = _watch.ElapsedMilliseconds * .001f;
+            if (verbal) Debug.Log($"Stopped timer. Elapsed time is {elapsed:0.00} seconds");
+            _watch.Reset();
+            return elapsed;
         }
     }
 }

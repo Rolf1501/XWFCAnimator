@@ -28,7 +28,7 @@ namespace XWFC
         private (Grid<int> atoms, PatternWave wave) _rootSave;
         private int _blockedCellId;
         
-        public XwfcOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, int randomSeed, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, forceCompleteTiles)
+        public XwfcOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, int randomSeed, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, randomSeed, forceCompleteTiles)
         {
             PatternMatrix = new PatternMatrix(atomizedSamples, kernelSize, adjacencyMatrix.AtomMapping);
             AdjacencyMatrix = adjacencyMatrix;
