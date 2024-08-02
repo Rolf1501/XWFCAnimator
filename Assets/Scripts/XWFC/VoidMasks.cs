@@ -58,7 +58,7 @@
         {
             /*
              * Calculates the up and looking direction. Y is default up. Looking direction is always orthogonal to axis.
-             * In case axis is Y, up is Z.
+             * In case axis is Y, up is X.
              */
             // Y is default up direction. Assumes YXZ axes by default. XYZ otherwise.
             var (y, x, z) = (0, 1, 2);
