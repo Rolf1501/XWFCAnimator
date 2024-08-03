@@ -129,9 +129,8 @@ public class TabbedMenu : MonoBehaviour
 
     private void Start()
     {
-        // InitAdjacencyGrid();
         InitGridValues();
-        InitTilesetList();
+        
         InitConfig();
         AddExtentListeners(_wSlider, _wInput);
         AddExtentListeners(_hSlider, _hInput);
@@ -245,6 +244,8 @@ public class TabbedMenu : MonoBehaviour
 
     private void InitAdjacencyToggles(List<int> tiles, HashSetAdjacency hashSetAdjacency, Vector3Int[] offsets)
     {
+        if (XWFCAnimator.Instance.activeModel != XWFCAnimator.XwfcModel.SimpleTiled) return;
+        
         var toggles = _adjGrid.Q<VisualElement>(_adjacencyToggleContainer);
         if (toggles != null)
         {
@@ -449,6 +450,16 @@ public class TabbedMenu : MonoBehaviour
         {
             SyncSliders();
             _savedExtent = XWFCAnimator.Instance.extent;
+        }
+
+        if (_adjacencyGridController == null)
+        {
+            InitAdjacencyGrid();
+        }
+
+        if (_tilesetListContainer == null)
+        {
+            InitTilesetList();
         }
     }
 }
