@@ -606,13 +606,13 @@ namespace XWFC
             {
                 // Find the overlapping regions of the overlaid void void masks in up-direction (i.e. relative Y).
                 var (startYSlider, endYSlider) = CalcSliderRange2D(sliderData.MaxY, baseData.MaxY, y);
-                var (startYBase, endYBase) = CalcBaseRange2D(baseData.MaxY, startYSlider, endYSlider, y);
+                var (startYBase, endYBase) = CalcBaseRange2D(y, sliderData.MaxY + 1, baseData.MaxY + 1);//CalcBaseRange2D(baseData.MaxY, startYSlider, endYSlider, y);
 
                 for (int x = 0; x < shifts.x; x++)
                 {
                     // Find the overlapping regions of the overlaid void void masks in looking-direction (i.e. relative X).
                     var (startXSlider, endXSlider) = CalcSliderRange2D(sliderData.MaxX, baseData.MaxX, x);
-                    var (startXBase, endXBase) = CalcBaseRange2D(baseData.MaxX, startXSlider, endXSlider, x);
+                    var (startXBase, endXBase) = CalcBaseRange2D(x, sliderData.MaxX + 1, baseData.MaxX + 1); //CalcBaseRange2D(baseData.MaxX, startXSlider, endXSlider, x);
                     
                     var sliderRange2D = new Range2D(startXSlider, endXSlider, startYSlider, endYSlider);
                     var sliderSlice = FlattenedSliceMask(sliderRange2D, sliderData.VoidMask);
@@ -746,6 +746,13 @@ namespace XWFC
             */
             int start = Math.Max(shift - endSlider, 0);
             int end = Math.Min(maxBase + 1, start + endSlider - startSlider);
+            return (start, end);
+        }
+
+        private static (int, int) CalcBaseRange2D(int shift, int sliderExtent, int baseExtent)
+        {
+            int start = Math.Max(0, shift - sliderExtent + 1);
+            int end = Math.Min(shift, baseExtent - 1) + 1;
             return (start, end);
         }
 

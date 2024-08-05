@@ -20,6 +20,13 @@ namespace XWFC
             Relations = relations;
             Offset = offset;
         }
+        
+        public Adjacency(int source, IEnumerable<int> relations, Vector3 offset)
+        {
+            Source = source;
+            Relations = relations.Select(x => new Relation(x)).ToList();
+            Offset = offset;
+        }
 
         public string ToJson()
         {

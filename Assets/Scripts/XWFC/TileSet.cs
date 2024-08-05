@@ -29,5 +29,15 @@ namespace XWFC
 
             return tiles;
         }
+
+        public int GetTileIdFromValue(string value)
+        {
+            for (var i = 0; i < this.Count; i++)
+            {
+                if (this[i].UniformAtomValue.Equals(value)) return i;
+            }
+
+            return -1;
+        }
     }
 }

@@ -13,7 +13,6 @@ using Random = System.Random;
 using Vector3 = UnityEngine.Vector3;
 
 using Patterns = System.Collections.Generic.List<(int,UnityEngine.Vector3Int)>;
-using Timer = System.Timers.Timer;
 
 public class XWFCAnimator : MonoBehaviour
 {
@@ -89,13 +88,19 @@ public class XWFCAnimator : MonoBehaviour
 
         if (activeModel == XwfcModel.SimpleTiled)
         {
-            var adjMat = ReadConfig();   
-            var tetrisComp = new Component[] { 
+            // var legoTiles = LegoSet.GetLegoSubset(new []{"b214", "b412", "void"});
+            var legoTiles = LegoSet.GetLegoSubset(new []{"p211", "p212", "void"});
+            // SaveConfig(new AdjacencyMatrix(new HashSetAdjacency(), legoTiles, null));
+            
+            var adjMat = ReadConfig();
+            LoadConfig();
+            PrintAdjacencyData(adjMat);
+            var components = new Component[] { 
                 new Component(new Vector3Int(0, 0, 0), new Vector3Int(20, 1, 20), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
                 new Component(new Vector3Int(20, 0, 0), new Vector3Int(40, 1, 40), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
                 new Component(new Vector3Int(0, 0, 40), new Vector3Int(60, 1, 60), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
             };
-            _componentManager = new ComponentManager(tetrisComp);
+            _componentManager = new ComponentManager(components);
         }
         else
         {
@@ -115,7 +120,7 @@ public class XWFCAnimator : MonoBehaviour
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
 
-        // PrintAdjacencyData();
+        PrintAdjacencyData();
 
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
 
@@ -313,7 +318,7 @@ public class XWFCAnimator : MonoBehaviour
         var doorTile = new NonUniformTile(
             "d", 
             new Vector3Int(3, 1, 5), 
-            new Color(0, 0, 0.8f)
+            new Color(0.4f, 0.2f, 0.1f)
         );
 
         return new NonUniformTile[] { brickTile, grassTile, soilTile, emptyTile, halfBrickTile, doorTile };
@@ -578,12 +583,12 @@ public class XWFCAnimator : MonoBehaviour
 
         return new List<Patterns>() { brickPattern, emptyBrickPattern, windowBrickPattern, emptyEmptyPattern };
     }
-    
-    private void PrintAdjacencyData()
+
+    private void PrintAdjacencyData(AdjacencyMatrix adjacencyMatrix)
     {
-        foreach (var o in _xwfc.Offsets)
+        foreach (var o in adjacencyMatrix.AtomAdjacencyMatrix.Keys)
         {
-            var x = _xwfc.AdjMatrix.AtomAdjacencyMatrix[o];
+            var x = adjacencyMatrix.AtomAdjacencyMatrix[o];
             var s = "" + o + "\n";
             var ss = "\t";
             for (int k = 0; k < x.GetLength(0); k++)
@@ -604,10 +609,15 @@ public class XWFCAnimator : MonoBehaviour
         
         }
         
-        foreach (var (k,v) in _xwfc.AdjMatrix.AtomMapping.Dict)
+        foreach (var (k,v) in adjacencyMatrix.AtomMapping.Dict)
         {
             Debug.Log($"{k}: {v}");
         }
+    }
+    
+    private void PrintAdjacencyData()
+    {
+        PrintAdjacencyData(_xwfc.AdjMatrix);
     }
 
     private (NonUniformTile[] houseTiles, float[] weights) HouseTiles()
@@ -825,18 +835,18 @@ public class XWFCAnimator : MonoBehaviour
             computeAtomEdges:true
         );
         
-        var tileS = new NonUniformTile(
-            "S",
-            new Vector3Int(2, 1, 3),
-            new Color(0, 240 / 255.0f, 0),
-            new bool[,,] { { { true, true, false }, { false, true, true }} },
-            null,
-            computeAtomEdges:true
-        );
         var tileZ = new NonUniformTile(
             "Z",
             new Vector3Int(2, 1, 3),
             new Color(240 / 255.0f, 0, 0),
+            new bool[,,] { { { true, true, false }, { false, true, true }} },
+            null,
+            computeAtomEdges:true
+        );
+        var tileS = new NonUniformTile(
+            "S",
+            new Vector3Int(2, 1, 3),
+            new Color(0, 240 / 255.0f, 0),
             new bool[,,] { { { false, true, true }, { true, true, false }} },
             null,
             computeAtomEdges:true
@@ -852,7 +862,7 @@ public class XWFCAnimator : MonoBehaviour
             computeAtomEdges:true
         );
 
-        var tetrisTiles = new NonUniformTile[] { tileL, tileT, tileJ, tileI, tileS, tileZ, tileO };
+        var tetrisTiles = new NonUniformTile[] { tileL, tileT, tileJ, tileI, tileZ, tileS, tileO };
         var tileSet = new TileSet();
         for (var i = 0; i < tetrisTiles.Length; i++)
         {
@@ -860,15 +870,15 @@ public class XWFCAnimator : MonoBehaviour
         }
         return tileSet;
     }
+    
+    
 
     private void InitXWFCInput(TileSet tiles, Vector3Int gridExtent, SampleGrid[] inputGrids, float[] weights)
     {
         _xwfc = new XWFC.XwfcStm(tiles, gridExtent, inputGrids, AdjacencyMatrix.ToWeightDictionary(weights, tiles));
         UpdateExtent(gridExtent);
     }
-
     
-
     private void InitXWFComponent(ref Component component)
     {
         if (activeModel == XwfcModel.Overlapping)
@@ -1317,6 +1327,22 @@ public class XWFCAnimator : MonoBehaviour
          */
         var adjs = _xwfc.AdjMatrix.TileAdjacencyConstraints;
         var tiles = TileSet;
+        var config = new AdjacencyMatrixJsonFormatter(adjs, tiles).ToJson();
+        var path = CreateSaveConfigPath();
+        FileUtil.WriteToFile(config, path);
+        return path;
+    }
+    
+    public string SaveConfig(AdjacencyMatrix adjacencyMatrix)
+    {
+        /*
+         * To replicate a config need:
+         * Json representation of AdjacencyMatrix.
+         * This contains the tileset, the tile id mapping and the adjacency constraints.
+         * From those, the parameters for recreating config can be restored.
+         */
+        var adjs = adjacencyMatrix.TileAdjacencyConstraints;
+        var tiles = adjacencyMatrix.TileSet;
         var config = new AdjacencyMatrixJsonFormatter(adjs, tiles).ToJson();
         var path = CreateSaveConfigPath();
         FileUtil.WriteToFile(config, path);

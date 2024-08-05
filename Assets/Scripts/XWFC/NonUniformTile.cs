@@ -24,6 +24,7 @@ namespace XWFC
         public Dictionary<Vector3, Dictionary<int, int[,]>> OrientedVoidMasks { get; } = new();
         [CanBeNull] public Dictionary<Vector3Int, HashSet<BorderOutline.Edge>> AtomEdges;
         public readonly bool IsEmptyTile = false;
+        public string UniformAtomValue;
 
         public int NAtoms { get; private set; }
 
@@ -70,6 +71,7 @@ namespace XWFC
         {
             Description = description;
             IsEmptyTile = isEmptyTile;
+            UniformAtomValue = uniformAtomValue;
             if (mask == null)
             {
                 var (x, y, z) = Vector3Util.CastInt(extent);
