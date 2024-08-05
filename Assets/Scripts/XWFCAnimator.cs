@@ -88,9 +88,11 @@ public class XWFCAnimator : MonoBehaviour
 
         if (activeModel == XwfcModel.SimpleTiled)
         {
-            // var legoTiles = LegoSet.GetLegoSubset(new []{"b214", "b412", "void"});
-            var legoTiles = LegoSet.GetLegoSubset(new []{"p211", "p212", "void"});
-            // SaveConfig(new AdjacencyMatrix(new HashSetAdjacency(), legoTiles, null));
+            var legoTiles = LegoSet.GetLegoSubset(new []{"b214", "b312", "b211", "void"});
+            // var legoTiles = LegoSet.GetLegoSubset(new []{"p211", "p212", "void"});
+            var tetrisTile = GetTetrisTileSet().GetSubset(new []{"L","S","T","O"});
+            var activeSet = tetrisTile;
+            SaveConfig(new AdjacencyMatrix(new HashSetAdjacency(), activeSet, null));
             
             var adjMat = ReadConfig();
             LoadConfig();
@@ -100,12 +102,22 @@ public class XWFCAnimator : MonoBehaviour
                 new Component(new Vector3Int(20, 0, 0), new Vector3Int(40, 1, 40), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
                 new Component(new Vector3Int(0, 0, 40), new Vector3Int(60, 1, 60), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
             };
+            // var components = new Component[] { 
+            //     new Component(new Vector3Int(0, 0, 0), new Vector3Int(10, 12, 10), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
+            //     new Component(new Vector3Int(20, 0, 0), new Vector3Int(40, 6, 40), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
+            //     new Component(new Vector3Int(0, 0, 40), new Vector3Int(60, 6, 60), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
+            // };
             _componentManager = new ComponentManager(components);
         }
         else
         {
-            var houseComponents = HouseComponents();
-            _componentManager = new ComponentManager(houseComponents);
+            var (t, p) = LegoSet.WallPerimeterExample();
+            var sampleGrids = InputHandler.PatternsToGrids(BasePatterns(), t, "").ToArray();
+            var component = new Component(new Vector3Int(0,0,0), new Vector3Int(10,6,10), t, sampleGrids);
+
+            var components = new[] { component };
+            // var houseComponents = HouseComponents();
+            _componentManager = new ComponentManager(components);
         }
         
         

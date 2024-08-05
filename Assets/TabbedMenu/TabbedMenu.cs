@@ -352,7 +352,9 @@ public class TabbedMenu : MonoBehaviour
         toggle.value = toggleValue;
         entry.Add(toggle);
         var text = new Label();
-        text.text = $"{tileId}";
+
+        var tileName = XWFCAnimator.Instance.TileSet[tileId].UniformAtomValue;
+        text.text =  tileName != null && tileName.Length > 0 ? tileName : $"{tileId}";
         entry.Add(text);
         var img = new Image();
         var tt = new TileTexture(XWFCAnimator.Instance.drawnTilePositions[tileId], 5, new Vector2(45,45));
@@ -461,5 +463,7 @@ public class TabbedMenu : MonoBehaviour
         {
             InitTilesetList();
         }
+        
+        
     }
 }

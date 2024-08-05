@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using Patterns = System.Collections.Generic.List<(int,UnityEngine.Vector3Int)>;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
@@ -16,39 +16,44 @@ namespace XWFC
                 new NonUniformTile(
                     "b112",
                     new Vector3Int(1,3,2),
-                    new Color(1,0,0)
+                    new Color32(35, 120, 65, 255)
                 ),
                 new NonUniformTile(
                     "b312",
                     new Vector3Int(3,3,2),
-                    new Color(1,0,0)
+                    new Color32(0, 85, 191, 255)
                 ),
                 new NonUniformTile(
                     "b412",
                     new Vector3Int(4,3,2),
-                    new Color(1,0,0)
+                    new Color32(201, 26, 9, 255)
+                ),
+                new NonUniformTile(
+                    "b212",
+                    new Vector3Int(1,3,1),
+                    new Color32(0, 185, 241, 255)
                 ),
                 new NonUniformTile(
                     "b111",
                     new Vector3Int(1,3,1),
-                    new Color(1,0,0)
+                    new Color32(242, 243, 242, 255)
                 ),
                 
                 // Bricks 90deg
                 new NonUniformTile(
                     "b211",
                     new Vector3Int(2,3,1),
-                    new Color(1,0,0)
+                    new Color32(35, 120, 65, 255)
                 ),
                 new NonUniformTile(
                     "b213",
                     new Vector3Int(2,3,3),
-                    new Color(1,0,0)
+                    new Color32(0, 85, 191, 255)
                 ),
                 new NonUniformTile(
                     "b214",
                     new Vector3Int(2,3,4),
-                    new Color(1,0,0)
+                    new Color32(201, 26, 9, 255)
                 ),
                 
                 // Plates
@@ -60,44 +65,44 @@ namespace XWFC
                 new NonUniformTile(
                     "p211",
                     new Vector3Int(2,1,1),
-                    new Color(1,0,0)
+                    new Color32(242, 205, 55, 255)
                 ),
                 new NonUniformTile(
                     "p212",
                     new Vector3Int(2,1,2),
-                    new Color(1,0,0)
+                    new Color32(165, 165, 203, 255)
                 ),
                 
                 // Compound bricks
                 new NonUniformTile(
                     "door",
                     new Vector3Int(3, 15, 1),
-                    new Color(1,0,0)
+                    new Color(0.4f, 0.2f, 0.1f)
                 ),
                 new NonUniformTile(
                     "window",
                     new Vector3Int(3,9,1),
-                    new Color(1,0,0)
+                    new Color(0, 0, 0.8f)
                 ),
                 
                 // Compound bricks 90deg
                 new NonUniformTile(
                     "door90",
                     new Vector3Int(1, 15, 3),
-                    new Color(1,0,0)
+                    new Color(0.4f, 0.2f, 0.1f)
                 ),
                 new NonUniformTile(
                     "window90",
                     new Vector3Int(1,9,3),
-                    new Color(1,0,0)
+                    new Color(0, 0, 0.8f)
                 ),
                 
                 // Void
                 new NonUniformTile(
                     "void",
                     new Vector3Int(1,1,1),
-                    new Color(1,0,0),
-                    isEmptyTile:true
+                    new Color(0,0,0,0.5f),
+                    isEmptyTile:true,computeAtomEdges:false
                 ),
             };
 
@@ -110,94 +115,46 @@ namespace XWFC
             return tileSet;
         }
 
-        public static TileSet GetLegoSubset(string[] tileNames)
+
+
+        public static (TileSet t, List<Patterns>) WallPerimeterExample()
         {
-            var subset = new TileSet();
-            var legoTiles = GetLegoSet();
-            for (var i = 0; i < legoTiles.Count; i++)
+            var bricks = new string[] { "b412", "b214", "b213", "b312", "b212" };
+            var legoTiles = GetLegoSubset(bricks);
+            
+            var t = new Dictionary<string, int>();
+            foreach (var tile in bricks)
             {
-                var tile = legoTiles[i];
-                if (tileNames.Contains(tile.UniformAtomValue))
-                {
-                    subset[i] = tile;
-                }
+                t[tile] = legoTiles.GetTileIdFromValue(tile);
             }
 
-            return subset;
+            var (NORTH, EAST, SOUTH, WEST, UP, DOWN) = (Vector3.forward, Vector3.right, Vector3.back, Vector3.left,
+                Vector3.up, Vector3.down);
+
+            var corner0 = new Patterns()
+            {
+                (t["b412"], new Vector3Int(0, 0, 0)),
+                (t["b412"], new Vector3Int(2, 3, 0)),
+                (t["b412"], new Vector3Int(0, 6, 0)),
+                (t["b214"], new Vector3Int(0, 0, 2)),
+                (t["b214"], new Vector3Int(0, 3, 0)),
+                (t["b214"], new Vector3Int(0, 6, 2)),
+            };
+
+            var brickPattern412 = new Patterns()
+            {
+                (t["b412"], new Vector3Int(2, 0, 0)),
+                (t["b412"], new Vector3Int(0, 3, 0)),
+                (t["b412"], new Vector3Int(4, 3, 0)),
+                (t["b412"], new Vector3Int(2, 6, 0)),
+            };
+            return (legoTiles, new List<Patterns>() { brickPattern412 });
         }
 
-        public static void NutAdjacencyConstraints2x4()
+        public static TileSet GetLegoSubset(string[] strings)
         {
             var legoTiles = GetLegoSet();
-            var b24tiles = new string[] { "b412", "b214" };
-            var tileIds = new Dictionary<string, int>();
-            foreach (var b24Tile in b24tiles)
-            {
-                tileIds[b24Tile] = legoTiles.GetTileIdFromValue(b24Tile);
-            }
-
-            var (NORTH, EAST, SOUTH, WEST, UP, DOWN) = (Vector3.forward, Vector3.right, Vector3.back, Vector3.left, Vector3.up, Vector3.down);
-
-            // var adj = new HashSetAdjacency()
-            // {
-            //     // 214 - 214
-            //     new Adjacency(tileIds["b214"], new List<int>()
-            //     { tileIds["b214"]}, 
-            //         EAST),
-            //     new Adjacency(tileIds["b214"], new List<int>()
-            //             { tileIds["b214"]}, 
-            //         WEST),
-            //     new Adjacency(tileIds["b214"], new List<int>()
-            //             { tileIds["b214"]}, 
-            //         UP),
-            //     new Adjacency(tileIds["b214"], new List<int>()
-            //             { tileIds["b214"]}, 
-            //         DOWN)
-            // };
-            // _adjacency = new HashSetAdjacency(){
-            //     // 0-0
-            //     // new(0, new List<Relation>() { new(0, null) }, NORTH),
-            //     new(0, new List<Relation>() { new(0, null) }, EAST),
-            //     // new(0, new List<Relation>() { new(0, null) }, SOUTH),
-            //     new(0, new List<Relation>() { new(0, null) }, WEST),
-            //     new(0, new List<Relation>() { new(0, null) }, TOP),
-            //     new(0, new List<Relation>() { new(0, null) }, BOTTOM),
-            //     // 1-0
-            //     new(1, new List<Relation>() { new(0, null) }, NORTH),
-            //     // new(1, new List<Relation>() { new(0, null) }, EAST),
-            //     new(1, new List<Relation>() { new(0, null) }, SOUTH),
-            //     // new(1, new List<Relation>() { new(0, null) }, WEST),
-            //     new(1, new List<Relation>() { new(0, null) }, TOP),
-            //     new(1, new List<Relation>() { new(0, null) }, BOTTOM),
-            //     // 1-1
-            //     // new(1, new List<Relation>() { new(0, null) }, NORTH),
-            //     new(1, new List<Relation>() { new(0, null) }, EAST),
-            //     // new(1, new List<Relation>() { new(0, null) }, SOUTH),
-            //     new(1, new List<Relation>() { new(0, null) }, WEST),
-            //     new(1, new List<Relation>() { new(0, null) }, TOP),
-            //     new(1, new List<Relation>() { new(0, null) }, BOTTOM),
-            //     // 2-0
-            //     new(2, new List<Relation>() { new(0, null) }, NORTH),
-            //     new(2, new List<Relation>() { new(0, null) }, EAST),
-            //     new(2, new List<Relation>() { new(0, null) }, SOUTH),
-            //     new(2, new List<Relation>() { new(0, null) }, WEST),
-            //     new(2, new List<Relation>() { new(0, null) }, TOP),
-            //     new(2, new List<Relation>() { new(0, null) }, BOTTOM),
-            //     // 2-1
-            //     new(2, new List<Relation>() { new(1, null) }, NORTH),
-            //     new(2, new List<Relation>() { new(1, null) }, EAST),
-            //     new(2, new List<Relation>() { new(1, null) }, SOUTH),
-            //     new(2, new List<Relation>() { new(1, null) }, WEST),
-            //     new(2, new List<Relation>() { new(1, null) }, TOP),
-            //     new(2, new List<Relation>() { new(1, null) }, BOTTOM),
-            //     // 2-2
-            //     new(2, new List<Relation>() { new(2, null) }, NORTH),
-            //     new(2, new List<Relation>() { new(2, null) }, EAST),
-            //     new(2, new List<Relation>() { new(2, null) }, SOUTH),
-            //     new(2, new List<Relation>() { new(2, null) }, WEST),
-            //     new(2, new List<Relation>() { new(2, null) }, TOP),
-            //     new(2, new List<Relation>() { new(2, null) }, BOTTOM),
-            // };
+            return legoTiles.GetSubset(strings);
         }
     }
 }

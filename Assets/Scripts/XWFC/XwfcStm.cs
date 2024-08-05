@@ -296,7 +296,7 @@ namespace XWFC
         {
             CleanGrids();
             CleanState();
-            CleanIncompleteTiles();
+            // CleanIncompleteTiles();
         }
 
         private void CleanState()

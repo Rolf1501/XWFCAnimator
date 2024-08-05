@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 
 namespace XWFC
@@ -38,6 +39,22 @@ namespace XWFC
             }
 
             return -1;
+        }
+        
+        public TileSet GetSubset(IEnumerable<string> tileNames)
+        {
+            var subset = new TileSet();
+            var list = tileNames.ToArray();
+            for (var i = 0; i < this.Count; i++)
+            {
+                var tile = this[i];
+                if (list.Contains(tile.UniformAtomValue))
+                {
+                    subset[i] = tile;
+                }
+            }
+
+            return subset;
         }
     }
 }

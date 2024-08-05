@@ -18,7 +18,7 @@ namespace XWFC
 
         private Dictionary<Vector3, int[,]> _voidMasks = new ();
 
-        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, SampleGrid[] inputGrids, float[] tileWeights)
+        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, SampleGrid[] inputGrids, float[] tileWeights=null)
         {
             Origin = origin;
             Extent = extent;
