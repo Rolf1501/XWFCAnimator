@@ -623,7 +623,7 @@ namespace XWFC
                     int minSum = CalcMinSum(baseSlice, baseData.ShapeXyz[offsetDirectionIndex], 
                         sliderSlice, sliderData.ShapeXyz[offsetDirectionIndex]);
 
-                    if (minSum < 0)
+                    if (minSum < 0 || minSum == baseData.ShapeXyz[offsetDirectionIndex])
                     {
                         continue; 
                     }
