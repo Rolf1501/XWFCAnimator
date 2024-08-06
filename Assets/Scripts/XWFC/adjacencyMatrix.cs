@@ -575,9 +575,21 @@ namespace XWFC
             var summed = baseSlice.Zip(sliderSlice, (a, b) => a + b).ToList();
             
             // If all the sums are equal to the extent of the base, there is no overlap.
-            var allEmpty = summed.All(i => i == baseMaxDepth);
+            var emptyOverlap = 0;
+            for (int i = 0; i < baseSlice.Length; i++)
+            {
+                if (baseSlice[i] == baseMaxDepth || sliderSlice[i] == sliderMaxDepth)
+                {
+                    emptyOverlap++;
+                }
+            }
 
-            if (allEmpty) return -1;
+            // There must be at least one cell where it is possible to form an attachment. This is impossible for values equal to max depth, as that can never result in a configuration corresponding to the intended overlap.  
+            if (emptyOverlap >= baseSlice.Length) return -1;
+            
+            // var allEmpty = summed.All(i => i == baseMaxDepth);
+            //
+            // if (allEmpty) return -1;
             return summed.Min();
         }
 
@@ -624,6 +636,16 @@ namespace XWFC
                     var sliderSlice = FlattenedSliceMask(sliderRange2D, sliderData.VoidMask);
                     
                     var baseRange2D = new Range2D(startXBase, endXBase, startYBase, endYBase);
+
+                    // var allEmpty = true;
+                    // for (int x_i = 0; x_i < sliderRange2D.GetXLength(); x_i++)
+                    // {
+                    //     for (int y_i = 0; y_i < sliderRange2D.GetYLength(); y_i++)
+                    //     {
+                    //         
+                    //     }
+                    // }
+                    
                     var baseSlice = FlattenedSliceMask(baseRange2D, baseData.VoidMask);
                     
                     int minSum = CalcMinSum(baseSlice, baseData.ShapeXyz[offsetDirectionIndex], 
