@@ -569,10 +569,16 @@ namespace XWFC
         {
             if (baseSlice.Length == 0 || sliderSlice.Length == 0) return -1;
             // There cannot be an adjacency when all layers in either the base or slider are empty.
-            if (baseSlice.Min() > baseMaxDepth - 1 || sliderSlice.Min() > sliderMaxDepth - 1) return -1;
+            if (baseSlice.Min() >= baseMaxDepth || sliderSlice.Min() >= sliderMaxDepth) return -1;
             
             // Find the minimum sum of the overlaid masks.
-            return baseSlice.Zip(sliderSlice, (a, b) => a + b).Min();
+            var summed = baseSlice.Zip(sliderSlice, (a, b) => a + b).ToList();
+            
+            // If all the sums are equal to the extent of the base, there is no overlap.
+            var allEmpty = summed.All(i => i == baseMaxDepth);
+
+            if (allEmpty) return -1;
+            return summed.Min();
         }
 
         private void PerformShifts(
@@ -623,7 +629,7 @@ namespace XWFC
                     int minSum = CalcMinSum(baseSlice, baseData.ShapeXyz[offsetDirectionIndex], 
                         sliderSlice, sliderData.ShapeXyz[offsetDirectionIndex]);
 
-                    if (minSum < 0 || minSum == baseData.ShapeXyz[offsetDirectionIndex])
+                    if (minSum < 0 || minSum == baseData.ShapeXyz[offsetDirectionIndex] || baseSlice.Min() >= baseData.ShapeXyz[offsetDirectionIndex] || sliderSlice.Min() >= sliderData.ShapeXyz[offsetDirectionIndex])
                     {
                         continue; 
                     }
