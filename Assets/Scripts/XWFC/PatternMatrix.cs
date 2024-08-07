@@ -198,11 +198,11 @@ namespace XWFC
                 
                 // The last layers cannot contain full patterns. Minimal pattern size is 2x2x2 in 3D. 2x1x2 in 2D. 2x1x1 in 1D.
                 // Infer dimension from kernel size.
-                for (int x = 0; x < e.x - (_kernelSize.x > 1 ? 1 : 0); x++)
+                for (int x = 0; x < e.x - (_kernelSize.x -1 ); x++)
                 {
-                    for (int y = 0; y < e.y - (_kernelSize.y > 1 ? 1 : 0); y++)
+                    for (int y = 0; y < e.y - (_kernelSize.y - 1); y++)
                     {
-                        for (int z = 0; z < e.z - (_kernelSize.z > 1 ? 1 : 0); z++)
+                        for (int z = 0; z < e.z - (_kernelSize.z - 1); z++)
                         {
                             var c = new Vector3Int(x, y, z);
 

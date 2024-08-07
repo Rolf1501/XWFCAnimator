@@ -90,20 +90,23 @@ public class XWFCAnimator : MonoBehaviour
         {
             var legoTiles = LegoSet.GetLegoSubset(new []{"b214", "b312", "b211", "void"});
             // var legoTiles = LegoSet.GetLegoSubset(new []{"p211", "p212", "void"});
-            var tetrisTile = GetTetrisTileSet().GetSubset(new []{"L","S","T","O"});
+            var tetrisTile = TetrisSet.GetTetrisTileSet().GetSubset(new []{"J","Z","L","T", "S"});
+            // var tetrisTile = TetrisSet.GetLargeTetrisSet().GetSubset(new []{"L","S","T","O","I"});
+            var tetrisTileLarge = TetrisSet.GetLargeTetrisSet().GetSubset(new []{"SL", "ZL", "TL", "OL"});
+            tetrisTile.Join(tetrisTileLarge);
             var activeSet = tetrisTile;
-            SaveConfig(new AdjacencyMatrix(new HashSetAdjacency(), activeSet, null));
+            // SaveConfig(new AdjacencyMatrix(new HashSetAdjacency(), activeSet, null));
             
             var adjMat = ReadConfig();
             LoadConfig();
             PrintAdjacencyData(adjMat);
             var components = new Component[] { 
-                new Component(new Vector3Int(0, 0, 0), new Vector3Int(20, 1, 20), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
-                new Component(new Vector3Int(20, 0, 0), new Vector3Int(40, 1, 40), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
-                new Component(new Vector3Int(0, 0, 40), new Vector3Int(60, 1, 60), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
+                new (new Vector3Int(0, 0, 0), new Vector3Int(20, 1, 20), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
+                new (new Vector3Int(20, 0, 0), new Vector3Int(40, 1, 40), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
+                new (new Vector3Int(0, 0, 40), new Vector3Int(60, 1, 60), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
             };
             // var components = new Component[] { 
-            //     new Component(new Vector3Int(0, 0, 0), new Vector3Int(10, 12, 10), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
+            //     new Component(new Vector3Int(0, 0, 0), new Vector3Int(8, 12, 8), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
             //     new Component(new Vector3Int(20, 0, 0), new Vector3Int(40, 6, 40), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
             //     new Component(new Vector3Int(0, 0, 40), new Vector3Int(60, 6, 60), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
             // };
@@ -111,9 +114,10 @@ public class XWFCAnimator : MonoBehaviour
         }
         else
         {
-            var (t, p) = LegoSet.WallPerimeterExample();
-            var sampleGrids = InputHandler.PatternsToGrids(BasePatterns(), t, "").ToArray();
-            var component = new Component(new Vector3Int(0,0,0), new Vector3Int(10,6,10), t, sampleGrids);
+            var (t, samples) = LegoSet.WallPerimeterExample();
+            // var (t, p) = LegoSet.StackedBricksExample();
+            // var sampleGrids = InputHandler.PatternsToGrids(p, t, "").ToArray();
+            var component = new Component(new Vector3Int(0,0,0), new Vector3Int(8,12,8), t, samples.ToArray());
 
             var components = new[] { component };
             // var houseComponents = HouseComponents();
@@ -627,7 +631,7 @@ public class XWFCAnimator : MonoBehaviour
         }
     }
     
-    private void PrintAdjacencyData()
+    public void PrintAdjacencyData()
     {
         PrintAdjacencyData(_xwfc.AdjMatrix);
     }
@@ -809,79 +813,7 @@ public class XWFCAnimator : MonoBehaviour
         };
         return patterns;
     }
-    private TileSet GetTetrisTileSet()
-    {
-        var tileL = new NonUniformTile(
-            "L",
-        new Vector3Int(2, 1, 3),
-            new Color(240 / 255.0f, 160 / 255.0f, 0),
-            new bool[,,] { { { true, true, true }, { true, false, false } } },
-            null,
-            
-            computeAtomEdges:true
-        );
-        var tileT = new NonUniformTile(
-            "T",
-            new Vector3Int(2, 1, 3),
-            new Color(160 / 255.0f, 0, 240/255.0f),
-            new bool[,,] { { { false, true, false }, { true, true, true }} },
-            null,
-            computeAtomEdges:true
-        );
-        
-        var tileJ = new NonUniformTile(
-            "J",
-            new Vector3Int(2, 1, 3),
-            new Color(0, 0, 240 / 255.0f),
-            new bool[,,] { { { true, false, false }, { true, true, true } } },
-            null,
-            computeAtomEdges:true
-        );
-        
-        var tileI = new NonUniformTile(
-            "I",
-            new Vector3Int(4, 1, 1),
-            new Color(120 / 255.0f, 120 / 255.0f, 1 / 255.0f),
-            new bool[,,] { { { true }, { true }, { true }, { true } } },
-            null,
-            computeAtomEdges:true
-        );
-        
-        var tileZ = new NonUniformTile(
-            "Z",
-            new Vector3Int(2, 1, 3),
-            new Color(240 / 255.0f, 0, 0),
-            new bool[,,] { { { true, true, false }, { false, true, true }} },
-            null,
-            computeAtomEdges:true
-        );
-        var tileS = new NonUniformTile(
-            "S",
-            new Vector3Int(2, 1, 3),
-            new Color(0, 240 / 255.0f, 0),
-            new bool[,,] { { { false, true, true }, { true, true, false }} },
-            null,
-            computeAtomEdges:true
-        );
-        var tileO = new NonUniformTile(
-            "O",
-            new Vector3Int(2, 1, 2),
-            new Color(0, 240 / 255.0f, 240 / 255.0f),
-
-            // new Color(240 / 255.0f, 240 / 255.0f, 0),
-            new bool[,,] { { { true, true }, { true, true }} },
-            null,
-            computeAtomEdges:true
-        );
-
-        var tetrisTiles = new NonUniformTile[] { tileL, tileT, tileJ, tileI, tileZ, tileS, tileO };
-        var tileSet = new TileSet();
-        for (var i = 0; i < tetrisTiles.Length; i++)
-        {
-            tileSet[i] = tetrisTiles[i];
-        }
-        return tileSet;
-    }
+    
     
     
 
@@ -895,6 +827,7 @@ public class XWFCAnimator : MonoBehaviour
     {
         if (activeModel == XwfcModel.Overlapping)
         {
+            _kernelSize = new Vector3Int(2, 2, 2);
             _xwfc = new XwfcOverlappingModel(component.AdjacencyMatrix.AtomizedSamples, component.AdjacencyMatrix,
                 ref component.Grid, _kernelSize, RandomSeed);
         }
@@ -966,6 +899,10 @@ public class XWFCAnimator : MonoBehaviour
         // Draw in z-axis.
         var origin = new Vector3Int(-100,-100,-5);
         var gap = new Vector3Int(5, 0, 0);
+        foreach (var tile in _drawnTiles)
+        {
+            Destroy(tile);
+        }
         foreach (var (key, value) in CompleteTileSet)
         {
             var maxIndex = new Vector3Int();
@@ -980,7 +917,7 @@ public class XWFCAnimator : MonoBehaviour
                 _drawnTiles.Add(drawnAtom);
 
                 if (labeled) continue;
-                LabelTiles(drawnAtom, key.ToString());
+                // LabelTiles(drawnAtom, key.ToString());
                 labeled = true;
                 drawnTilePositions[key] = drawnAtom.transform.position;
             }
@@ -1008,7 +945,7 @@ public class XWFCAnimator : MonoBehaviour
     private Grid<Drawing> InitDrawGrid()
     {
         var e = _xwfc.GridExtent;
-        if (_drawnGrid != null) e = _drawnGrid.GetExtent(); 
+        // if (_drawnGrid != null) e = _drawnGrid.GetExtent(); 
         return new Grid<Drawing>(e, new Drawing(_xwfc.GetGrid().DefaultFillValue, null));
     }
 
@@ -1301,7 +1238,9 @@ public class XWFCAnimator : MonoBehaviour
 
     public void Reset()
     {
-        _xwfc?.UpdateExtent(extent);
+        _xwfc?.UpdateExtent(_xwfc.GridExtent);
+        _xwfc?.UpdateRandom(RandomSeed);
+        extent = _xwfc?.GridExtent ?? extent;
         ResetDrawnGrid();
         _activeStateFlag = 0;
     }
@@ -1314,7 +1253,6 @@ public class XWFCAnimator : MonoBehaviour
     
     public void UpdateExtent(Vector3Int newExtent)
     {
-        if (extent.Equals(newExtent)) return;
         extent = newExtent;
         Reset();
     }

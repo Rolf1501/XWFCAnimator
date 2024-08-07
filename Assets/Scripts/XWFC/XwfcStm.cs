@@ -42,6 +42,7 @@ namespace XWFC
             _maxEntropy = AdjMatrix.MaxEntropy();
             _defaultWeights = AdjMatrix.TileWeigths;
             CollapseQueue = new CollapsePriorityQueue();
+            CollapseQueue.Insert(StartCoord, _maxEntropy);
             
             Offsets = OffsetFactory.GetOffsets(3);
 
@@ -106,9 +107,7 @@ namespace XWFC
             
             _rootSave = new SavePoint(_gridManager, CollapseQueue, _counter);
             
-            RandomSeed = randomSeed;
-            _random = new Random(RandomSeed);
-
+            UpdateRandom(randomSeed);
         }
 
         public static int BlockedCellId(int defaultFillValue, IEnumerable<int> tileIds)
@@ -439,11 +438,16 @@ namespace XWFC
             _gridManager = savePoint.GridManager.Deepcopy();
             CollapseQueue = savePoint.CollapseQueue.Copy();
             _counter = savePoint.Counter;
-            // _random = new Random(RandomSeed);
-
-        
+       
             // Important: clean the propagation queue.
             _propQueue.Clear();
+        }
+
+        public void UpdateRandom(int newSeed)
+        {
+            Debug.Log($"Updated random to: {newSeed}");
+            RandomSeed = newSeed;
+            _random = new Random(RandomSeed);
         }
 
         protected static int RandomChoice(IEnumerable<bool> choices, IEnumerable<float> weights, Random? random = null)
@@ -603,17 +607,15 @@ namespace XWFC
 
         public void UpdateExtent(Vector3Int extent)
         {
-            if (GridExtent != extent)
-            {
-                GridExtent = extent;
-                var (x, y, z) = Vector3Util.CastInt(extent);
-                _rootSave = new SavePoint(new GridManager(x, y, z), new CollapsePriorityQueue(), 0); 
-            }
+            GridExtent = extent;
             Reset();
         }
 
         protected virtual void Reset()
         {
+            var q = new CollapsePriorityQueue();
+            q.Insert(StartCoord, _maxEntropy);
+            _rootSave = new SavePoint(new GridManager(GridExtent.x, GridExtent.y, GridExtent.z), q, 0);
             LoadSavePoint(_rootSave);
             // Clean();
         }

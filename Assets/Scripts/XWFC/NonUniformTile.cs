@@ -17,7 +17,7 @@ namespace XWFC
         public string[,,] AtomValues { get; }
         public int[] DistinctOrientations { get; private set; }
         public string Description { get; }
-        public Dictionary<Vector3, Atom> AtomIndexToIdMapping { get; } = new();
+        public Dictionary<Vector3Int, Atom> AtomIndexToIdMapping { get; } = new();
         public Dictionary<int, bool[,,]> OrientedMask { get; } = new();
         private Dictionary<int, bool[,,,]> OrientedAtomMask { get; } = new();
         public Dictionary<int, Vector3Int[]> OrientedIndices { get; } = new();
@@ -32,7 +32,7 @@ namespace XWFC
         public NonUniformTile(Vector3Int extent, Color color, bool[,,]? mask = null, int[]? distinctOrientations = null,
             string description = "", bool computeAtomEdges=true)
         {
-            Extent = extent;
+            Extent = mask != null ? new Vector3Int(mask.GetLength(1), mask.GetLength(0), mask.GetLength(2)) : extent;
             var (x, y, z) = Vector3Util.CastInt(extent);
             Mask = mask ?? Util.Populate3D(x, y, z, true);
             

@@ -175,5 +175,10 @@ namespace XWFC
 
             return offsetDimensionIndex;
         }
+
+        public bool InRange(Vector3Int value)
+        {
+            return Vector3Util.Geq(value, Min()) && Vector3Util.Lt(value, Max());
+        }
     }
 }

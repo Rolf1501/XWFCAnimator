@@ -57,7 +57,7 @@ namespace XWFC
             
             EliminateIncompletePatterns();
             
-            TilePatternMasks = CalcNutPatternPropagation();
+            // TilePatternMasks = CalcNutPatternPropagation();
             
             // Find first unoccupied cell in grid.
             CollapseQueue.Insert(StartCoord, AdjacencyMatrix.CalcEntropy(_nPatterns));

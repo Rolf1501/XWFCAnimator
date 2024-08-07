@@ -285,7 +285,9 @@ public class TabbedMenu : MonoBehaviour
         _updateAdjacencyButton.clicked += delegate
         {
             Debug.Log("Updated Adjacency Constraints!");
-            XWFCAnimator.Instance.UpdateAdjacencyConstraints(_adjacencyGridController.ToAdjacencySet());
+            var adjSet = _adjacencyGridController.ToAdjacencySet();
+            XWFCAnimator.Instance.UpdateAdjacencyConstraints(adjSet);
+            XWFCAnimator.Instance.PrintAdjacencyData();
         };
     }
     
@@ -299,6 +301,7 @@ public class TabbedMenu : MonoBehaviour
     {
         var tiles = XWFCAnimator.Instance.CompleteTileSet;
         if (tiles.Count == 0) return;
+        _tilesetListContainer?.Clear();
         _tilesetListContainer = _root.Q<VisualElement>(_tilesetListName);
         _tilesetListContainer.AddToClassList("tile-entry-container");
 
@@ -333,7 +336,20 @@ public class TabbedMenu : MonoBehaviour
 
     private void OnTileSetChange(HashSetAdjacency adjacency)
     {
-        var tileDict = _activeTiles.ToDictionary(tileId => tileId, tileId => XWFCAnimator.Instance.CompleteTileSet[tileId]);
+        Dictionary<int, NonUniformTile> tileDict;
+        try
+        {
+            tileDict = _activeTiles.ToDictionary(tileId => tileId,
+                tileId => XWFCAnimator.Instance.CompleteTileSet[tileId]);
+        }
+        catch
+        {
+            XWFCAnimator.Instance.CompleteTileSet = XWFCAnimator.Instance.TileSet;
+            tileDict = _activeTiles.ToDictionary(tileId => tileId,
+                tileId => XWFCAnimator.Instance.TileSet[tileId]);
+            XWFCAnimator.Instance.DrawTiles();
+            InitTilesetList();
+        }
         Debug.Log("Tried updating tileset...");
         InitAdjacencyToggles(tileDict.Keys.ToList(), adjacency, OffsetFactory.GetOffsets());
         if (adjacency.Count == 0) _adjacencyGridController.Populate(true);

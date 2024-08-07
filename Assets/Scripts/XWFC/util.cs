@@ -96,6 +96,16 @@ namespace XWFC
         {
             return new Vector3Int(Math.Max(v0.x, v1.x), Math.Max(v0.y, v1.y), Math.Max(v0.z, v1.z));
         }
+
+        public static bool Geq(Vector3Int v0, Vector3Int v1)
+        {
+            return v0.x >= v1.x && v0.y >= v1.y && v0.z >= v1.z;
+        }
+        
+        public static bool Lt(Vector3Int v0, Vector3Int v1)
+        {
+            return v0.x < v1.x && v0.y < v1.y && v0.z < v1.z;
+        }
     }
     
     public static class Util

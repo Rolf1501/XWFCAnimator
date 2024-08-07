@@ -189,19 +189,38 @@ namespace XWFC
     
     public class SampleGrid : AbstractGrid<string>
     {
-        public SampleGrid(int width, int height, int depth, string defaultFillValue="") : base(width, height, depth, defaultFillValue)
+        private string _voidValue;
+        public SampleGrid(int width, int height, int depth, string defaultFillValue="", string voidValue="void") : base(width, height, depth, defaultFillValue)
         {
+            _voidValue = voidValue;
             Populate(defaultFillValue);
         }
 
-        public SampleGrid(Vector3 extent, string defaultFillValue = "") : base(extent, defaultFillValue)
+        public SampleGrid(Vector3 extent, string defaultFillValue = "", string voidValue="void") : base(extent, defaultFillValue)
         {
+            _voidValue = voidValue;
             Populate(defaultFillValue);
         }
 
-        public SampleGrid(string[,,] grid, string defaultFillValue) : base(grid, defaultFillValue)
+        public SampleGrid(string[,,] grid, string defaultFillValue, string voidValue="void") : base(grid, defaultFillValue)
         {
+            _voidValue = voidValue;
             Populate(defaultFillValue);
+        }
+
+        public void PlaceNut(NonUniformTile nut, Vector3Int coord)
+        {
+            var atomCoords = nut.AtomIndexToIdMapping.Keys;
+            foreach (var atomCoord in atomCoords)
+            {
+                var c = atomCoord + coord;
+                var value = Get(c);
+                if (!value.Equals(_voidValue) && !value.Equals(DefaultFillValue))
+                {
+                    throw new Exception($"Tiles may not overlap: {(nut.UniformAtomValue, coord)}, value: {value}");
+                }
+                Set(c, nut.GetAtomValue(atomCoord));
+            }
         }
     }
 
