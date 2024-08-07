@@ -27,6 +27,7 @@ namespace XWFC
 
         private (Grid<int> atoms, PatternWave wave) _rootSave;
         private int _blockedCellId;
+        private Grid<int> _seededGrid;
         
         public XwfcOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, int randomSeed, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, randomSeed, forceCompleteTiles)
         {
@@ -42,39 +43,50 @@ namespace XWFC
             // 316068766
             //874075968
             _random = new Random(RandomSeed);
-            
+
+            _seededGrid = seededGrid;
             // Initialize wave in superposition.
             var extent = seededGrid.GetExtent();
-            // var extent = seededGrid.GetExtent() * 2  - 1 * new Vector3Int(0,seededGrid.GetExtent().y, 0);
-            // extent = new Vector3Int(18,1,10);
-            _patternWave = new PatternWave(extent, SuperImposedWave());
-            _atomGrid = seededGrid.Deepcopy(); //new Grid<int>(seededGrid.GetExtent(), -1);// seededGrid;
+            
+            InitGrids(extent);
+            
+            
             StartCoord = CalcStartCoord();
             
-            _blockedCellId = BlockedCellId(_atomGrid.DefaultFillValue, AdjacencyMatrix.TileSet.Keys);
+            // PrintAdjacencyData();
             
-            PrintAdjacencyData();
             
-            EliminateIncompletePatterns();
-            
-            // TilePatternMasks = CalcNutPatternPropagation();
+            TilePatternMasks = CalcNutPatternPropagation();
             
             // Find first unoccupied cell in grid.
+            _blockedCellId = BlockedCellId(_atomGrid.DefaultFillValue, AdjacencyMatrix.TileSet.Keys);
             CollapseQueue.Insert(StartCoord, AdjacencyMatrix.CalcEntropy(_nPatterns));
 
-            _rootSave = (_atomGrid.Deepcopy(), _patternWave.Deepcopy());
             
-            while (!CollapseQueue.IsDone())
-            {
-                Collapse(CollapseQueue.DeleteHead().Coord);
-            }
-
-            if (CollapseQueue.IsDone())
-            {
-                FillInBlanks();
-            }
+            // while (!CollapseQueue.IsDone())
+            // {
+            //     Collapse(CollapseQueue.DeleteHead().Coord);
+            // }
+            //
+            // if (CollapseQueue.IsDone())
+            // {
+            //     FillInBlanks();
+            // }
             
             Debug.Log(GridToString(_atomGrid));
+        }
+
+        private void InitGrids(Vector3Int extent)
+        {
+            _patternWave = new PatternWave(extent, SuperImposedWave());
+            _atomGrid = _seededGrid.Deepcopy();
+            EliminateIncompletePatterns();
+            InitRootSave();
+        }
+
+        private void InitRootSave()
+        {
+            _rootSave = (_atomGrid.Deepcopy(), _patternWave.Deepcopy());
         }
 
         private void FillInBlanks()
@@ -135,6 +147,15 @@ namespace XWFC
             }
 
             return new Vector3Int(-1, -1, -1);
+        }
+
+        public override void UpdateExtent(Vector3Int extent)
+        {
+            if (!extent.Equals(_atomGrid.GetExtent()))
+            {
+                InitGrids(extent);
+            }
+            Reset();
         }
 
         protected override void Reset()

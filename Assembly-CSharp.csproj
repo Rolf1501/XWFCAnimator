@@ -94,6 +94,8 @@
     <None Include="Assets\Scripts\Configs\config-08-07-2024-145137-Large-tiles.json" />
     <None Include="Assets\Scripts\Configs\config-08-06-2024-200648-Tetris-none-self-adjacent.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
+    <None Include="Assets\Scripts\Configs\config-08-07-2024-174806.json" />
+    <None Include="Assets\Scripts\Configs\config-08-07-2024-191525.json" />
     <None Include="Assets\TabbedMenu\TabbedMenuStyle.uss" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface.shader" />
     <None Include="Assets\Scripts\Configs\config-05-17-2024-144010.json" />
@@ -108,11 +110,14 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Surface.cginc" />
     <None Include="Assets\Resources\BillingMode.json" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
+    <None Include="Assets\Scripts\Configs\config-08-07-2024-174420.json" />
     <None Include="Assets\TabbedMenu\TabbedMenu.uxml" />
     <None Include="Assets\Scripts\Configs\config-05-22-2024-220842.json" />
     <None Include="Assets\Scripts\Configs\config-05-23-2024-110003.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
+    <None Include="Assets\Scripts\Configs\config-08-07-2024-173520.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />
+    <None Include="Assets\Scripts\Configs\config-08-07-2024-180046.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap-Mobile.shader" />
     <None Include="Assets\TextMesh Pro\Fonts\LiberationSans - OFL.txt" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile.shader" />

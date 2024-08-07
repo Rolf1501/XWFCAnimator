@@ -88,14 +88,15 @@ public class XWFCAnimator : MonoBehaviour
 
         if (activeModel == XwfcModel.SimpleTiled)
         {
-            var legoTiles = LegoSet.GetLegoSubset(new []{"b214", "b312", "b211", "void"});
+            var legoTiles = new LegoSet().GetLegoSet().GetSubset(new []{"b214", "b312", "b211", "void"});
             // var legoTiles = LegoSet.GetLegoSubset(new []{"p211", "p212", "void"});
-            var tetrisTile = TetrisSet.GetTetrisTileSet().GetSubset(new []{"J","Z","L","T", "S"});
+            var tetrisTile = TetrisSet.GetTetrisTileSet();
+            // var tetrisTile = TetrisSet.GetTetrisTileSet().GetSubset(new []{"J","Z","L","T", "S"});
             // var tetrisTile = TetrisSet.GetLargeTetrisSet().GetSubset(new []{"L","S","T","O","I"});
-            var tetrisTileLarge = TetrisSet.GetLargeTetrisSet().GetSubset(new []{"SL", "ZL", "TL", "OL"});
-            tetrisTile.Join(tetrisTileLarge);
+            // var tetrisTileLarge = TetrisSet.GetLargeTetrisSet().GetSubset(new []{"SL", "ZL", "TL", "OL"});
+            // tetrisTile.Join(tetrisTileLarge);
             var activeSet = tetrisTile;
-            // SaveConfig(new AdjacencyMatrix(new HashSetAdjacency(), activeSet, null));
+            SaveConfig(new AdjacencyMatrix(new HashSetAdjacency(), activeSet, null));
             
             var adjMat = ReadConfig();
             LoadConfig();
@@ -114,10 +115,11 @@ public class XWFCAnimator : MonoBehaviour
         }
         else
         {
-            var (t, samples) = LegoSet.WallPerimeterExample();
+            var lego = new LegoSet(false);
+            var (t, samples) = lego.WallPerimeter3DExample();
             // var (t, p) = LegoSet.StackedBricksExample();
-            // var sampleGrids = InputHandler.PatternsToGrids(p, t, "").ToArray();
-            var component = new Component(new Vector3Int(0,0,0), new Vector3Int(8,12,8), t, samples.ToArray());
+
+            var component = new Component(new Vector3Int(0,0,0), new Vector3Int(8,LegoSet.BrickUnitSize(lego.PlateAtoms)*4,8), t, samples.ToArray());
 
             var components = new[] { component };
             // var houseComponents = HouseComponents();
@@ -125,7 +127,14 @@ public class XWFCAnimator : MonoBehaviour
         }
         
         
-
+        
+        /*
+         * TODO: Reset with extent from tabbed menu. Propagate changes to xwfc to update grid extent.
+         */
+        
+        
+        
+        
         LoadNextComponent();
         
         TileSet = _xwfc.AdjMatrix.TileSet;

@@ -670,7 +670,7 @@ MonoBehaviour:
   extent: {x: 10, y: 0, z: 10}
   stepSize: -1
   delay: 0
-  activeModel: 2
+  activeModel: 1
 --- !u!4 &1830932354
 Transform:
   m_ObjectHideFlags: 0

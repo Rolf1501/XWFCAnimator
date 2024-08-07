@@ -605,7 +605,7 @@ namespace XWFC
             return CollapseQueue.IsDone();
         }
 
-        public void UpdateExtent(Vector3Int extent)
+        public virtual void UpdateExtent(Vector3Int extent)
         {
             GridExtent = extent;
             Reset();
