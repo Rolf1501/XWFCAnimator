@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
+using UnityEngine.Tilemaps;
 
 namespace XWFC
 {
@@ -33,9 +34,9 @@ namespace XWFC
 
         public int GetTileIdFromValue(string value)
         {
-            for (var i = 0; i < this.Count; i++)
+            foreach (var key in Keys)
             {
-                if (this[i].UniformAtomValue.Equals(value)) return i;
+                if (this[key].UniformAtomValue.Equals(value)) return key;
             }
 
             return -1;
@@ -55,6 +56,19 @@ namespace XWFC
             }
 
             return subset;
+        }
+
+        public void Join(TileSet t)
+        {
+            foreach (var (k,v) in t)
+            {
+                var id = Count;
+                while (ContainsKey(id))
+                {
+                    id++;
+                }
+                Add(id, v);
+            }
         }
     }
 }
