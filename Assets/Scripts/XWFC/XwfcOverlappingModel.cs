@@ -665,11 +665,11 @@ namespace XWFC
                 var coord = propQueue.Dequeue();
                 // enqueued.Remove(coord);
                 var choices = patternWave.Get(coord);
-                // var choiceInts =new List<int>();
-                // for (var i = 0; i < choices.Length; i++)
-                // {
-                //     if (choices[i]) choiceInts.Add(i);
-                // }
+                var choiceInts =new List<int>();
+                for (var i = 0; i < choices.Length; i++)
+                {
+                    if (choices[i]) choiceInts.Add(i);
+                }
                 
                 
                 foreach (var offset in offsetArray)
@@ -695,14 +695,15 @@ namespace XWFC
                     
                     var timer = new Timer();
                     timer.Start(false);
-                    for (var i = 0; i < choices.Length; i++)
+                    for (var i = 0; i < choiceInts.Count; i++)
                     {
-                        if (!choices[i]) continue;
+                        var choiceId = choiceInts[i];
+                        // if (!choices[i]) continue;
                         // var other = patternMatrix.GetRow(i, offset);
                         // allowedNeighbors = Vectorizor.Or(allowedNeighbors, other);
                         for (int j = 0; j < nPatterns; j++)
                         {
-                            allowedNeighbors[j] |= patternMatrix.GetAdjacency(i, j, offset);
+                            allowedNeighbors[j] |= patternMatrix.GetAdjacency(choiceId, j, offset);
                         }
                     }
 
