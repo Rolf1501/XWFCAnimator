@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -13,7 +15,6 @@ namespace XWFC
         public readonly PatternMatrix PatternMatrix;
         public AdjacencyMatrix AdjacencyMatrix;
         private PatternWave _patternWave;
-        private int _nPatterns;
         private Grid<int> _atomGrid;
         private readonly Vector3Int _kernelSize;
 
@@ -35,7 +36,6 @@ namespace XWFC
             AdjacencyMatrix = adjacencyMatrix;
 
             _kernelSize = kernelSize;
-            _nPatterns = PatternMatrix.Patterns.Count;
             CollapseQueue = new CollapsePriorityQueue();
 
             RandomSeed = randomSeed;
@@ -60,7 +60,7 @@ namespace XWFC
             
             // Find first unoccupied cell in grid.
             _blockedCellId = BlockedCellId(_atomGrid.DefaultFillValue, AdjacencyMatrix.TileSet.Keys);
-            CollapseQueue.Insert(StartCoord, AdjacencyMatrix.CalcEntropy(_nPatterns));
+            CollapseQueue.Insert(StartCoord, AdjacencyMatrix.CalcEntropy(GetNPatterns()));
 
             
             // while (!CollapseQueue.IsDone())
@@ -72,14 +72,30 @@ namespace XWFC
             // {
             //     FillInBlanks();
             // }
-            
-            Debug.Log(GridToString(_atomGrid));
         }
 
         private void InitGrids(Vector3Int extent)
         {
             _patternWave = new PatternWave(extent, SuperImposedWave());
-            _atomGrid = _seededGrid.Deepcopy();
+            if (!extent.Equals(_seededGrid.GetExtent()))
+            {
+                var sE = _seededGrid.GetExtent();
+                _atomGrid = new Grid<int>(extent, _seededGrid.DefaultFillValue);
+                for (int x = 0; x < Math.Min(extent.x, sE.x); x++)
+                {
+                    for (int y = 0; y < Math.Min(extent.y, sE.y); y++)
+                    {
+                        for (int z = 0; z < Math.Min(extent.z, sE.z); z++)
+                        {
+                            _atomGrid.Set(x,y,z, _atomGrid.Get(x,y,z));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                _atomGrid = _seededGrid.Deepcopy();
+            }
             EliminateIncompletePatterns();
             InitRootSave();
         }
@@ -164,7 +180,7 @@ namespace XWFC
             _patternWave = _rootSave.wave.Deepcopy();
             _random = new Random(RandomSeed);
             CollapseQueue.Clear();
-            CollapseQueue.Insert(StartCoord, AdjacencyMatrix.CalcEntropy(_nPatterns));
+            CollapseQueue.Insert(StartCoord, AdjacencyMatrix.CalcEntropy(GetNPatterns()));
             _propagationQueue.Clear();
             Debug.Log($"RESET OVERLAPPING MODEL; RANDOM SEED: {RandomSeed}");
         }
@@ -337,18 +353,27 @@ namespace XWFC
         
         private bool[] SuperImposedWave()
         {
-            return Enumerable.Repeat(true, _nPatterns).ToArray();
+            return Enumerable.Repeat(true, GetNPatterns()).ToArray();
+        }
+
+        private int GetNPatterns()
+        {
+            return PatternMatrix.Patterns.Count;
         }
         
         private bool[] EmptyWave()
         {
-            return new bool[_nPatterns];
+            return new bool[GetNPatterns()];
         }
 
         private void EliminateIncompletePatterns()
         {
+            Debug.Log("Eliminating patterns...");
+            var timer = new Timer();
+            timer.Start();
             var e = _patternWave.GetExtent();
             var propQueue = new Queue<Vector3Int>();
+            var pending = new HashSet<Vector3Int>();
             
             for (int x = 0; x < e.x - _kernelSize.x + 1; x++)
             {
@@ -375,15 +400,23 @@ namespace XWFC
 
                         if (!preIsPost)
                         {
-                            propQueue.Enqueue(coord);
+                            pending.Add(coord);
                             _patternWave.Set(x,y,z, wave);
                         }
                     }
                 }
             }
+            
+            foreach (var i in pending)
+            {
+                propQueue.Enqueue(i);
+            }
 
+            timer.Stop();
+            timer.Start();
             // Propagate the changes imposed by pattern elimination.
             Propagate(propQueue, ref _patternWave, Offsets, ref _atomGrid, PatternMatrix);
+            timer.Stop();
         }
 
         private bool PatternFits(int patternId, Vector3Int coord)
@@ -437,9 +470,10 @@ namespace XWFC
                             {
                                 fullyCovered = false;
                             }
+                            
                         }
-                        
                         if (!(fullyCovered || coveredSelf)) return false;
+                        
                     }
                 }
             }
@@ -458,35 +492,16 @@ namespace XWFC
             
             var choices = _patternWave.Get(coord);
 
-            var uniformWeights = Enumerable.Repeat(1.0f, _nPatterns).ToArray();
+            var uniformWeights = Enumerable.Repeat(1.0f, GetNPatterns()).ToArray();
             var chosenPatternId = RandomChoice(choices, uniformWeights, _random);
 
             var wave = EmptyWave();
             wave[chosenPatternId] = true;
             _patternWave.Set(coord, wave);
             _propagationQueue.Enqueue(coord);
-            
-            /*
-             * If near the bounds of the grid, collapse the remaining atoms immediately. Assumes pattern atom coordinate 0,0,0.
-             */
-            var coordPatterns = coord + _kernelSize;
-            var e = _atomGrid.GetExtent();
-            var xBound = coordPatterns.x == e.x ? _kernelSize.x : 1;
-            var yBound = coordPatterns.y == e.y ?  _kernelSize.y : 1;
-            var zBound = coordPatterns.z == e.z ? _kernelSize.z : 1;
-            var pattern = PatternMatrix.Patterns[chosenPatternId];
 
-            for (int x = 0; x < xBound; x++)
-            {
-                for (int y = 0; y < yBound; y++)
-                {
-                    for (int z = 0; z < zBound; z++)
-                    {
-                        var n = new Vector3Int(coord.x + x, coord.y + y, coord.z + z);
-                        if (!_atomGrid.IsOccupied(n)) _atomGrid.Set(n, pattern[y,x,z]);
-                    }
-                }
-            }
+            SetOccupied(coord, chosenPatternId);
+            
             
             /*
              * Collapse an entire pattern at once; this is allowed because when the pattern reference may be placed, so may the others by construction of the patterns.
@@ -599,6 +614,31 @@ namespace XWFC
             if (CollapseQueue.IsDone()) FillInBlanks();
         }
 
+        protected override void SetOccupied(Vector3Int coord, int id)
+        {
+            /*
+             * If near the bounds of the grid, collapse the remaining atoms immediately. Assumes pattern atom coordinate 0,0,0.
+             */
+            var coordPatterns = coord + _kernelSize;
+            var e = _atomGrid.GetExtent();
+            var xBound = coordPatterns.x == e.x ? _kernelSize.x : 1;
+            var yBound = coordPatterns.y == e.y ?  _kernelSize.y : 1;
+            var zBound = coordPatterns.z == e.z ? _kernelSize.z : 1;
+            var pattern = PatternMatrix.Patterns[id];
+
+            for (int x = 0; x < xBound; x++)
+            {
+                for (int y = 0; y < yBound; y++)
+                {
+                    for (int z = 0; z < zBound; z++)
+                    {
+                        var n = new Vector3Int(coord.x + x, coord.y + y, coord.z + z);
+                        if (!_atomGrid.IsOccupied(n)) _atomGrid.Set(n, pattern[y,x,z]);
+                    }
+                }
+            }
+        }
+
         protected override HashSet<(Vector3Int, float)> Propagate()
         {
             return Propagate(_propagationQueue, ref _patternWave, Offsets, ref _atomGrid, PatternMatrix);
@@ -608,14 +648,29 @@ namespace XWFC
         {
             if (patternWave == null) return new HashSet<(Vector3Int, float)>();
             
-            var nPatterns = patternWave.Get(0, 0, 0).Length;
+            var nPatterns = GetNPatterns();
             var collapseItems = new HashSet<(Vector3Int, float)>();
             var offsetArray = offsets.ToArray();
+
+            // var enqueued = new HashSet<Vector3Int>();
+            // foreach (var i in propQueue)
+            // {
+            //     enqueued.Add(i);
+            // }
+
+            var unionTime = 0f;
             
             while (propQueue.Count > 0)
             {
                 var coord = propQueue.Dequeue();
+                // enqueued.Remove(coord);
                 var choices = patternWave.Get(coord);
+                // var choiceInts =new List<int>();
+                // for (var i = 0; i < choices.Length; i++)
+                // {
+                //     if (choices[i]) choiceInts.Add(i);
+                // }
+                
                 
                 foreach (var offset in offsetArray)
                 {
@@ -635,24 +690,33 @@ namespace XWFC
                     if (!atBounds && atomGrid.IsOccupied(neighbor)) continue;
                     
                     // Get union of allowed neighbors of the current cell.
+                    // var allowedNeighbors = patternMatrix.GetRow(choiceInts[0], offset);
                     var allowedNeighbors = new bool[nPatterns];
+                    
+                    var timer = new Timer();
+                    timer.Start(false);
                     for (var i = 0; i < choices.Length; i++)
                     {
                         if (!choices[i]) continue;
+                        // var other = patternMatrix.GetRow(i, offset);
+                        // allowedNeighbors = Vectorizor.Or(allowedNeighbors, other);
                         for (int j = 0; j < nPatterns; j++)
                         {
                             allowedNeighbors[j] |= patternMatrix.GetAdjacency(i, j, offset);
                         }
                     }
-                    
+
+                    unionTime += timer.Stop(false);
                     var neighborChoices = patternWave.Get(neighbor);
 
                     var post = new bool[nPatterns];
                     var preIsPost = true;
                     var remainingChoiceCount = 0;
+                    var latestChoice = -1;
                     
                     for (int i = 0; i < neighborChoices.Length; i++)
                     {
+                        // var allowed = Vectorizor.GetAtIndex(i, allowedNeighbors) == 1;
                         var isPatternAllowed = allowedNeighbors[i] && neighborChoices[i];
                         post[i] = isPatternAllowed;
                         if (isPatternAllowed != neighborChoices[i])
@@ -663,6 +727,7 @@ namespace XWFC
                         if (isPatternAllowed)
                         {
                             remainingChoiceCount++;
+                            latestChoice = i;
                         }
                     }
                     
@@ -677,10 +742,7 @@ namespace XWFC
                     
                     if (remainingChoiceCount == 1)
                     {
-                        /*
-                         * TODO: Can already collapse the neighbor if there's only one choice remaining.
-                         */
-                        //continue;
+                        SetOccupied(neighbor, latestChoice);
                     }
 
                     if (remainingChoiceCount == 0)
@@ -708,11 +770,19 @@ namespace XWFC
                     
                     patternWave.Set(neighbor, post);
 
-                    propQueue.Enqueue(neighbor);
+                    // if (!enqueued.Contains(neighbor)) 
+                        propQueue.Enqueue(neighbor);
                 }
             }
 
+            Debug.Log($"Time taken on union: {unionTime}");
             return collapseItems;
         }
+
+        public override Vector3Int GetExtent()
+        {
+            return _atomGrid.GetExtent();
+        }
     }
+    
 }
