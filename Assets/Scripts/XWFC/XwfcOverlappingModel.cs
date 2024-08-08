@@ -690,21 +690,20 @@ namespace XWFC
                     if (!atBounds && atomGrid.IsOccupied(neighbor)) continue;
                     
                     // Get union of allowed neighbors of the current cell.
-                    // var allowedNeighbors = patternMatrix.GetRow(choiceInts[0], offset);
-                    var allowedNeighbors = new bool[nPatterns];
+                    var allowedNeighbors = patternMatrix.GetRowVectors(choiceInts[0], offset);
+                    // var allowedNeighbors = new bool[nPatterns];
                     
                     var timer = new Timer();
                     timer.Start(false);
                     for (var i = 0; i < choiceInts.Count; i++)
                     {
                         var choiceId = choiceInts[i];
-                        // if (!choices[i]) continue;
-                        // var other = patternMatrix.GetRow(i, offset);
-                        // allowedNeighbors = Vectorizor.Or(allowedNeighbors, other);
-                        for (int j = 0; j < nPatterns; j++)
-                        {
-                            allowedNeighbors[j] |= patternMatrix.GetAdjacency(choiceId, j, offset);
-                        }
+                        var other = patternMatrix.GetRowVectors(choiceInts[i], offset);
+                        allowedNeighbors = Vectorizor.Or(allowedNeighbors, other);
+                        // for (int j = 0; j < nPatterns; j++)
+                        // {
+                        //     allowedNeighbors[j] |= patternMatrix.GetAdjacency(choiceId, j, offset);
+                        // }
                     }
 
                     unionTime += timer.Stop(false);
@@ -717,8 +716,9 @@ namespace XWFC
                     
                     for (int i = 0; i < neighborChoices.Length; i++)
                     {
-                        // var allowed = Vectorizor.GetAtIndex(i, allowedNeighbors) == 1;
-                        var isPatternAllowed = allowedNeighbors[i] && neighborChoices[i];
+                        var allowed = Vectorizor.GetAtIndex(i, allowedNeighbors) == 1;
+                        var isPatternAllowed = allowed && neighborChoices[i];
+                        // var isPatternAllowed = allowedNeighbors[i] && neighborChoices[i];
                         post[i] = isPatternAllowed;
                         if (isPatternAllowed != neighborChoices[i])
                         {

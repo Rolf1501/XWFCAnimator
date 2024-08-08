@@ -30,7 +30,7 @@ namespace XWFC
             InitPatternMatrix();
             CalcLayerRangesPerOffset();
             CalcPatternAdjacency();
-            // VectorizeRows();
+            VectorizeRows();
         }
 
         private void VectorizeRows()
