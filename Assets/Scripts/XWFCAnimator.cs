@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
@@ -116,24 +117,23 @@ public class XWFCAnimator : MonoBehaviour
         else
         {
             var lego = new LegoSet(false);
-            var (t, samples) = lego.WallPerimeter3DExample();
+            // var (t, samples) = lego.WallPerimeter3DExample();
+            var (t, samples) = lego.DoorExample();
             // var (t, p) = LegoSet.StackedBricksExample();
 
-            var component = new Component(new Vector3Int(0,0,0), new Vector3Int(8,LegoSet.BrickUnitSize(lego.PlateAtoms)*4,8), t, samples.ToArray());
+            var unit = LegoSet.BrickUnitSize(lego.PlateAtoms);
+            var unitV = new Vector3Int(1, unit, 1);
+            
+            var component = new Component(
+                new Vector3Int(0,0,0), 
+                new Vector3Int(8,4,8) * unitV, 
+                t, samples.ToArray());
 
             var components = new[] { component };
             // var houseComponents = HouseComponents();
             _componentManager = new ComponentManager(components);
         }
-        
-        
-        
-        /*
-         * TODO: Reset with extent from tabbed menu. Propagate changes to xwfc to update grid extent.
-         */
-        
-        
-        
+
         
         LoadNextComponent();
         
@@ -145,7 +145,7 @@ public class XWFCAnimator : MonoBehaviour
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
 
-        PrintAdjacencyData();
+        // PrintAdjacencyData();
 
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
 
@@ -153,36 +153,6 @@ public class XWFCAnimator : MonoBehaviour
         _drawnTiles = new HashSet<GameObject>();
 
         DrawTiles();
-
-        /*
-         *
-         * TODO: Complete last layers in grid once solved!!!
-         * Alternatively, Collapse all atoms in pattern upon pattern selection.
-         */
-        
-        // var (sample, ids) = InputHandler.ToSampleGrid(brickPattern2, TileSet, "");
-
-        // var atomized = new AtomGrid[] { _currentComponent.AdjacencyMatrix.AtomizeSample(sample) };
-        // CollapseAll();
-        // Reset();
-
-        // var iter = 25;
-        // var times = new List<float>();
-        // for (int i = 0; i < iter; i++)
-        // {
-        //     times.Add(CollapseAll());
-        //     Reset();
-        // }
-        // Debug.Log("Elapsed and avg time");
-        // Debug.Log(times.ToArray().ToString());
-        //
-        // var avgTime = times.Sum() / (1.0f * iter);
-        //
-        // Debug.Log(avgTime);
-        // Draw(new Vector3Int(0,0,0));
-        // if (!FindConfigFileNames().Any()) SaveConfig();
-        // LoadConfig();
-
     }
 
     private float CollapseAll()
@@ -205,11 +175,6 @@ public class XWFCAnimator : MonoBehaviour
         _activeStateFlag = 0;
         
         var (_, max) = _componentManager.BoundingBox();
-        
-        // foreach (var drawing in _drawnGrid.GetGrid())
-        // {
-        //     Drawing.DestroyAtom(drawing);
-        // }
         
         var defaultValue = _xwfc.GetGrid().DefaultFillValue;
         _drawnGrid = new Grid<Drawing>(max, new Drawing(defaultValue, null));
@@ -239,6 +204,7 @@ public class XWFCAnimator : MonoBehaviour
 
     public void LoadNextComponent()
     {
+        Debug.Log("Loading Component...");
         if (!HasNextComponent()) return;
         
         SaveComponent();
@@ -259,7 +225,7 @@ public class XWFCAnimator : MonoBehaviour
         TileSet = _currentComponent.Tiles;
         CompleteTileSet = TileSet;
         _activeStateFlag = 0;
-        Reset();
+        // Reset();
     }
 
     private TileSet ToTileSet(NonUniformTile[] tiles)
@@ -834,6 +800,7 @@ public class XWFCAnimator : MonoBehaviour
     
     private void InitXWFComponent(ref Component component)
     {
+        Debug.Log("Initializing component...");
         if (activeModel == XwfcModel.Overlapping)
         {
             _kernelSize = new Vector3Int(2, 2, 2);
@@ -844,7 +811,8 @@ public class XWFCAnimator : MonoBehaviour
         {
             _xwfc = new XwfcStm(component.AdjacencyMatrix, ref component.Grid, RandomSeed);
         }
-        UpdateExtent(component.Grid.GetExtent());
+        _xwfc.UpdateRandom(RandomSeed);
+        extent = component.Grid.GetExtent();
     }
 
     private void InitXWFC()
@@ -953,7 +921,7 @@ public class XWFCAnimator : MonoBehaviour
 
     private Grid<Drawing> InitDrawGrid()
     {
-        var e = _xwfc.GridExtent;
+        var e = extent;
         // if (_drawnGrid != null) e = _drawnGrid.GetExtent(); 
         return new Grid<Drawing>(e, new Drawing(_xwfc.GetGrid().DefaultFillValue, null));
     }
@@ -1247,9 +1215,8 @@ public class XWFCAnimator : MonoBehaviour
 
     public void Reset()
     {
-        _xwfc?.UpdateExtent(_xwfc.GridExtent);
-        _xwfc?.UpdateRandom(RandomSeed);
-        extent = _xwfc?.GridExtent ?? extent;
+        _xwfc.UpdateExtent(extent);
+        _xwfc.UpdateRandom(RandomSeed);
         ResetDrawnGrid();
         _activeStateFlag = 0;
     }
