@@ -55,6 +55,11 @@ namespace XWFC
             return _gridManager.Grid;
         }
 
+        public virtual Vector3Int GetExtent()
+        {
+            return _gridManager.Grid.GetExtent();
+        }
+
         public virtual Grid<bool[]> GetWave()
         {
             return _gridManager.Wave;
@@ -347,11 +352,12 @@ namespace XWFC
 
             var head = CollapseQueue.DeleteHead();
             if (CollapseList.IsDefaultCoord(head.Coord)) return;
-            
+             
             var coll = head.Coord;
-            if (!_gridManager.WithinBounds(coll)) return;
+            var grid = GetGrid();
+            if (!grid.WithinBounds(coll)) return;
             
-            while ((!_gridManager.WithinBounds(coll) || _gridManager.Grid.IsOccupied(coll)) && !CollapseQueue.IsDone())
+            while ((!grid.WithinBounds(coll) || grid.IsOccupied(coll)) && !CollapseQueue.IsDone())
             {
                 coll = CollapseQueue.DeleteHead().Coord;
             }
@@ -392,7 +398,7 @@ namespace XWFC
             SetOccupied(coord, choiceId);
         }
 
-        private void SetOccupied(Vector3Int coord, int id)
+        protected virtual void SetOccupied(Vector3Int coord, int id)
         {
             _gridManager.Grid.Set(coord, id);
             var updatedWave = new bool[AdjMatrix.GetNAtoms()];
