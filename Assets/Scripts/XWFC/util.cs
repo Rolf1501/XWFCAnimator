@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 using UnityEngine;
+using Vector3 = UnityEngine.Vector3;
 
 namespace XWFC
 {
@@ -146,6 +150,48 @@ namespace XWFC
                 3 => new Color(float.Parse(split[0]), float.Parse(split[1]), float.Parse(split[2]), 1.0f),
                 _ => new Color()
             };
+        }
+    }
+
+    public static class Vectorizor
+    {
+        public static List<Vector<byte>> VectorizeBool(bool[] array)
+        {
+            var count = Vector<byte>.Count;
+            var nVectors = (int)Math.Ceiling(array.Length * 1.0 / count);
+            var output = new List<Vector<byte>>();
+
+            for (int i = 0; i < nVectors; i++)
+            {
+                var temp = new byte[count];
+                for (int j = 0; j < count; j++)
+                {
+                    temp[j] = (byte)(array[i * count + j] ? 1 : 0);
+                }
+
+                output.Add(new Vector<byte>(temp));
+            }
+
+            return output;
+        }
+
+        public static List<Vector<byte>> Or(List<Vector<byte>> left, List<Vector<byte>> right)
+        {
+            var output = new List<Vector<byte>>();
+            for (var i = 0; i < left.Count; i++)
+            {
+                output.Add(Vector.BitwiseOr(left[i], right[i]));
+            }
+
+            return output;
+        }
+
+        public static byte GetAtIndex(int index, List<Vector<byte>> list)
+        {
+            var count = Vector<byte>.Count;
+            var listIndex = (int)(index / (1.0d * count));
+            var vectorIndex = index - listIndex * count;
+            return list[listIndex][vectorIndex];
         }
     }
 }
