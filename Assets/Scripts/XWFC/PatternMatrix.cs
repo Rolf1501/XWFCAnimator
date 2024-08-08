@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System.Numerics;
 using AtomMapping = XWFC.Bidict<(int tileId, UnityEngine.Vector3Int atomCoord, int orientation),int>;
 namespace XWFC
 {
@@ -13,6 +14,7 @@ namespace XWFC
         public Dictionary<Vector3Int, Range3D> OffsetRangeMapping;
         private IEnumerable<Vector3Int> _offsets;
         public readonly Dictionary<Vector3Int, bool[,]> PatternAdjacencyMatrix;
+        private Dictionary<Vector3Int, Dictionary<int, List<Vector<byte>>>> _vectorizedRows;
  
 
         public PatternMatrix(IEnumerable<AtomGrid> atomizedSamples, Vector3Int kernelSize, AtomMapping atomMapping)
@@ -28,6 +30,26 @@ namespace XWFC
             InitPatternMatrix();
             CalcLayerRangesPerOffset();
             CalcPatternAdjacency();
+            // VectorizeRows();
+        }
+
+        private void VectorizeRows()
+        {
+            _vectorizedRows = new Dictionary<Vector3Int, Dictionary<int, List<Vector<byte>>>>();
+            foreach (var (offset, matrix) in PatternAdjacencyMatrix)
+            {
+                _vectorizedRows[offset] = new Dictionary<int, List<Vector<byte>>>();
+                for (var i = 0; i < matrix.GetLength(0); i++)
+                {
+                    var bools = new bool[matrix.GetLength(1)];
+                    for (var j = 0; j < matrix.GetLength(1); j++)
+                    {
+                        bools[j] = matrix[i, j];
+                    }
+
+                    _vectorizedRows[offset][i] = Vectorizor.VectorizeBool(bools);
+                }
+            }
         }
 
         private void CalcLayerRangesPerOffset()
@@ -268,6 +290,15 @@ namespace XWFC
             }
         }
 
+        public List<Vector<byte>> GetRowVectors(int patternId, Vector3Int offset)
+        {
+            return _vectorizedRows[offset][patternId];
+            // var adjacency = PatternAdjacencyMatrix[offset];
+            // for (int i = 0; i < adjacency.GetLength(1); i++)
+            // {
+            //     yield return adjacency[patternId, i];
+            // }
+        }
         public bool GetAdjacency(int patternId, int otherId, Vector3Int offset)
         {
             return PatternAdjacencyMatrix[offset][patternId, otherId];
