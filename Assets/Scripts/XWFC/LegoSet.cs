@@ -351,12 +351,19 @@ namespace XWFC
                 (t["b412"], new Vector3Int(0,2*unit,4)),
                 (t["b412"], new Vector3Int(0,3*unit,4)),
                 (t["b412"], new Vector3Int(0,4*unit,4)),
+                (t["b412"], new Vector3Int(0,5*unit,4)),
+                (t["b412"], new Vector3Int(0,6*unit,4)),
+                
+                (t["b412"], new Vector3Int(4,5*unit,4)),
+                (t["b412"], new Vector3Int(4,6*unit,4)),
                 
                 (t["b412"], new Vector3Int(8,0,4)),
                 (t["b412"], new Vector3Int(8,unit,4)),
                 (t["b412"], new Vector3Int(8,2*unit,4)),
                 (t["b412"], new Vector3Int(8,3*unit,4)),
                 (t["b412"], new Vector3Int(8,4*unit,4)),
+                (t["b412"], new Vector3Int(8,5*unit,4)),
+                (t["b412"], new Vector3Int(8,6*unit,4)),
                 
                 (t["b216"], new Vector3Int(4,0,0)),
                 (t["b216"], new Vector3Int(6,0,0)),
@@ -372,9 +379,11 @@ namespace XWFC
                 (t["b211"], new Vector3Int(6,3*unit,0)),
                 
                 
-            }, new Vector3Int(1,0,1));
+            }, new Vector3Int(0,0,1));
+            // }, new Vector3Int(1,0,1));
 
-            var sample = ToSampleGrid(patterns, legoTiles, true, extraLayer:new Vector3Int(1,0,0));
+            var sample = ToSampleGrid(patterns, legoTiles, true);
+            // var sample = ToSampleGrid(patterns, legoTiles, true, extraLayer:new Vector3Int(1,0,0));
             return (bricks, sample);
         }
         private (string[] bricks, SampleGrid sample) GetRoofPattern()

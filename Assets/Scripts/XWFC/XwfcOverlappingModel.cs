@@ -644,6 +644,59 @@ namespace XWFC
         {
             return Propagate(_propagationQueue, ref _patternWave, Offsets, ref _atomGrid, PatternMatrix);
         }
+        
+        public override void CollapseOnce()
+        {
+            /*
+             * Performs a single collapse and outputs the affected cells' coordinates.
+             * It is up to the caller to refer to the grid to find the cell's contents.
+             */
+            if (CollapseQueue.IsDone())
+            {
+                Debug.Log($"Complete! Seed: {RandomSeed}");
+                return;
+            }
+
+
+            var nAttempts = 100;
+            var i = 0;
+            while (i < nAttempts)
+            {
+                var head = CollapseQueue.DeleteHead();
+                if (CollapseList.IsDefaultCoord(head.Coord)) return;
+                 
+                var coll = head.Coord;
+                var grid = GetGrid();
+                if (!grid.WithinBounds(coll)) return;
+                
+                while ((!grid.WithinBounds(coll) || grid.IsOccupied(coll)) && !CollapseQueue.IsDone())
+                {
+                    coll = CollapseQueue.DeleteHead().Coord;
+                }
+                try
+                {
+                    Collapse(coll);
+                    break;
+                }
+                catch (NoMoreChoicesException)
+                {
+
+                    RandomSeed = new Random().Next();
+                    UpdateRandom(RandomSeed);
+                    Reset();
+                    i++;
+                    // When rewinding, pass the coordinates of the cells that changed.
+                    // The caller can then refer the grid manager to find what the values of the cells should be. 
+
+                }
+            }
+
+            var collapseItems = Propagate();
+            foreach (var (coord, entropy) in collapseItems)
+            {
+                CollapseQueue.Insert(coord, entropy);
+            }
+        }
 
         private HashSet<(Vector3Int, float)> Propagate(Queue<Vector3Int> propQueue, ref PatternWave patternWave, IEnumerable<Vector3Int> offsets, ref Grid<int> atomGrid, PatternMatrix patternMatrix, bool ignoreConflict=false)
         {

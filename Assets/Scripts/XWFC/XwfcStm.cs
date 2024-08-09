@@ -342,7 +342,7 @@ namespace XWFC
             Debug.Log("All done!");
         }
 
-        public void CollapseOnce()
+        public virtual void CollapseOnce()
         {
             /*
              * Performs a single collapse and outputs the affected cells' coordinates.
