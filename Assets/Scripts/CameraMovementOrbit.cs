@@ -30,9 +30,23 @@ public class CameraMovementOrbit : MonoBehaviour
 
     private void MouseInput()
     {
-        if (Input.GetMouseButton(0)) PanCamera(); // Left.
-        if (Input.GetMouseButton(1) && CameraMayMove()) OrbitCamera(CalcDeltaPos()); // Right.
-        else if (Input.mouseScrollDelta.y != 0 && CameraMayMove()) ZoomCamera(Input.mouseScrollDelta.y);
+        if (Input.GetMouseButton(0) && Input.GetMouseButton(1))
+        {
+            orbitOrigin = _gridCenter; 
+            Camera.transform.position = _gridCenter;
+        }
+        else if (Input.GetMouseButton(0))
+        {
+            PanCamera(); // Left.
+        }
+        else if (Input.GetMouseButton(1) && CameraMayMove())
+        {
+            OrbitCamera(CalcDeltaPos()); // Right.
+        }
+        else if (Input.mouseScrollDelta.y != 0 && CameraMayMove())
+        {
+            ZoomCamera(Input.mouseScrollDelta.y);
+        }
     }
 
     private void PanCamera()
