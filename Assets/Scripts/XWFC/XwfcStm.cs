@@ -502,16 +502,27 @@ namespace XWFC
 
         private bool[] UnionChoices(int[] cs, Vector3Int offset)
         {
-            var remainingChoices = new bool[AdjMatrix.GetNAtoms()];
+            // var remainingChoices = new bool[AdjMatrix.GetNAtoms()];
+            // // TODO: consider the use of SIMD.
+            // // Find the union of allowed neighbors terminals given the set of choices of the current cell.
+            // foreach (int c in cs)
+            // {
+            //     bool[] cAdj = AdjMatrix.GetAdj(offset, c);
+            //     for (int i = 0; i < cAdj.Length; i++) remainingChoices[i] |= cAdj[i];
+            // }
 
-            // TODO: consider the use of SIMD.
-            // Find the union of allowed neighbors terminals given the set of choices of the current cell.
-            foreach (int c in cs)
+            var choices = AdjMatrix.GetRowVectors(cs[0], offset);
+            for (var i = 1; i < cs.Length; i++)
             {
-                bool[] cAdj = AdjMatrix.GetAdj(offset, c);
-                for (int i = 0; i < cAdj.Length; i++) remainingChoices[i] |= cAdj[i];
+                var other = AdjMatrix.GetRowVectors(cs[i], offset);
+                choices = Vectorizor.Or(choices, other);
             }
 
+            var remainingChoices = new bool[AdjMatrix.GetNAtoms()];
+            for (var j = 0; j < AdjMatrix.GetNAtoms(); j++)
+            {
+                remainingChoices[j] = Vectorizor.GetAtIndex(j, choices) == 1;
+            }
             return remainingChoices;
         }
 

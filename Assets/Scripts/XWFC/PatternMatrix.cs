@@ -293,11 +293,6 @@ namespace XWFC
         public List<Vector<byte>> GetRowVectors(int patternId, Vector3Int offset)
         {
             return _vectorizedRows[offset][patternId];
-            // var adjacency = PatternAdjacencyMatrix[offset];
-            // for (int i = 0; i < adjacency.GetLength(1); i++)
-            // {
-            //     yield return adjacency[patternId, i];
-            // }
         }
         public bool GetAdjacency(int patternId, int otherId, Vector3Int offset)
         {

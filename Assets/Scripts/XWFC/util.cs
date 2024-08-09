@@ -157,6 +157,7 @@ namespace XWFC
     {
         public static List<Vector<byte>> VectorizeBool(bool[] array)
         {
+            if (array.Length == 0) return new List<Vector<byte>>() { new () };
             var count = Vector<byte>.Count;
             var nVectors = (int)Math.Ceiling(array.Length * 1.0 / count);
             var output = new List<Vector<byte>>();
@@ -166,6 +167,7 @@ namespace XWFC
                 var temp = new byte[count];
                 for (int j = 0; j < count; j++)
                 {
+                    if (i * count + j >= array.Length) break;
                     temp[j] = (byte)(array[i * count + j] ? 1 : 0);
                 }
 

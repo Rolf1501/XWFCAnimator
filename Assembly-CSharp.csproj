@@ -108,12 +108,15 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Properties.cginc" />
     <None Include="Assets\Scripts\Configs\config-08-07-2024-155230-Large-tile-3.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Surface.cginc" />
+    <None Include="Assets\Scripts\Configs\config-08-09-2024-093329.json" />
     <None Include="Assets\Resources\BillingMode.json" />
     <None Include="Assets\TextMesh Pro\Resources\LineBreaking Following Characters.txt" />
     <None Include="Assets\Scripts\Configs\config-08-07-2024-174420.json" />
     <None Include="Assets\TabbedMenu\TabbedMenu.uxml" />
     <None Include="Assets\Scripts\Configs\config-05-22-2024-220842.json" />
+    <None Include="Assets\Scripts\Configs\config-08-09-2024-094225.json" />
     <None Include="Assets\Scripts\Configs\config-05-23-2024-110003.json" />
+    <None Include="Assets\Scripts\Configs\config-08-09-2024-093441.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets\Scripts\Configs\config-08-07-2024-173520.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF Overlay.shader" />

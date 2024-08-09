@@ -3,9 +3,12 @@ using System.Linq;
 using UnityEngine;
 
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
 
 namespace XWFC
 {
@@ -26,7 +29,8 @@ namespace XWFC
 
         public Dictionary<int, float> TileWeigths;
         public AtomGrid[] AtomizedSamples;
-        
+        private Dictionary<Vector3Int, Dictionary<int, List<Vector<byte>>>> _vectorizedRows;
+
         public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, [CanBeNull] Dictionary<int, float> defaultWeights, int offsetsDimensions = 3)
         {
             
@@ -37,6 +41,7 @@ namespace XWFC
             InferTileAdjacencyConstraints(TileAdjacencyConstraints);
             InferAtomAdjacencyConstraints();
             TileWeigths = ExpandDefaultWeights(defaultWeights);
+            VectorizeRows();
         }
         
         public AdjacencyMatrix(TileSet tiles, SampleGrid[] grids, [CanBeNull] Dictionary<int, float> tileWeights)
@@ -82,6 +87,31 @@ namespace XWFC
             Debug.Log($"{builder}");
             // Process atomized grid.
             Debug.Log("Atom adjacency derived from grid.");
+            VectorizeRows();
+        }
+        
+        private void VectorizeRows()
+        {
+            _vectorizedRows = new Dictionary<Vector3Int, Dictionary<int, List<Vector<byte>>>>();
+            foreach (var (offset, matrix) in AtomAdjacencyMatrix)
+            {
+                _vectorizedRows[offset] = new Dictionary<int, List<Vector<byte>>>();
+                for (var i = 0; i < matrix.GetLength(0); i++)
+                {
+                    var bools = new bool[matrix.GetLength(1)];
+                    for (var j = 0; j < matrix.GetLength(1); j++)
+                    {
+                        bools[j] = matrix[i, j];
+                    }
+
+                    _vectorizedRows[offset][i] = Vectorizor.VectorizeBool(bools);
+                }
+            }
+        }
+        
+        public List<Vector<byte>> GetRowVectors(int patternId, Vector3Int offset)
+        {
+            return _vectorizedRows[offset][patternId];
         }
         
         public static Dictionary<int, float> ToWeightDictionary(float[] weights, TileSet tileSet)
