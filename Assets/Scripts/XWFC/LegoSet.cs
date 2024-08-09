@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Patterns = System.Collections.Generic.List<(int,UnityEngine.Vector3Int)>;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace XWFC
 {
@@ -59,6 +60,11 @@ namespace XWFC
                     "b214",
                     new Vector3Int(2,unit,4),
                     new Color32(201, 26, 9, 255)
+                ),
+                new(
+                    "b216",
+                    new Vector3Int(2,unit,6),
+                    new Color32(120, 100, 160, 255)
                 ),
                 
                 // Plates
@@ -264,6 +270,12 @@ namespace XWFC
         //     return ExtractTilesAndSamples(patterns); 
         // }
 
+        public (TileSet legoTiles, List<SampleGrid> samples) RoofExample()
+        {
+            var roof = GetRoofPattern();
+            var patterns = new[] { roof };
+            return ExtractTilesAndSamples(patterns);
+        }
         public (TileSet legoTiles, List<SampleGrid> samples) DoorEvenExample()
         {
             var door = DoorOnlyPattern2();
@@ -308,6 +320,46 @@ namespace XWFC
             }
 
             return (unit, legoTiles, t);
+        }
+
+        private (string[] bricks, SampleGrid sample) GetRoofPattern()
+        {
+            var bricks = new string[] { "b412", "b212","b312","void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var patterns = TranslatePattern(new Patterns()
+            {
+                (t["b412"], new Vector3Int(1,0,0)),
+                (t["b412"], new Vector3Int(9,0,0)),
+                
+                (t["b212"], new Vector3Int(0,unit,0)),
+                (t["b212"], new Vector3Int(1,2*unit,0)),
+                (t["b212"], new Vector3Int(2,3*unit,0)),
+                (t["b212"], new Vector3Int(3,4*unit,0)),
+                
+                (t["b212"], new Vector3Int(4,5*unit,0)),
+                (t["b212"], new Vector3Int(6,5*unit,0)),
+                (t["b212"], new Vector3Int(8,5*unit,0)),
+                
+                (t["b212"], new Vector3Int(9,4*unit,0)),
+                (t["b212"], new Vector3Int(10,3*unit,0)),
+                (t["b212"], new Vector3Int(11,2*unit,0)),
+                (t["b212"], new Vector3Int(12,unit,0)),
+                
+                (t["b312"], new Vector3Int(2,unit,0)),
+                (t["b312"], new Vector3Int(3,2*unit,0)),
+                (t["b312"], new Vector3Int(4,3*unit,0)),
+                
+                (t["b312"], new Vector3Int(7,3*unit,0)),
+                (t["b312"], new Vector3Int(8,2*unit,0)),
+                (t["b312"], new Vector3Int(9,unit,0)),
+                
+                (t["b412"], new Vector3Int(5,4*unit,0)),
+                
+                
+            }, new Vector3Int(0,0,1));
+
+            var sample = ToSampleGrid(patterns, legoTiles, true);
+            return (bricks, sample);
         }
 
         private (string[] bricks, SampleGrid sample) GetSplitWindowPattern()

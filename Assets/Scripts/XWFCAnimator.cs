@@ -123,7 +123,8 @@ public class XWFCAnimator : MonoBehaviour
             // var (t, samples) = lego.DoorOddExample();
             // var (t, samples) = lego.DoorEvenExample();
             // var (t, samples) = lego.DoorEvenExample();
-            var (t, samples) = lego.SplitWindowExample();
+            // var (t, samples) = lego.SplitWindowExample();
+            var (t, samples) = lego.RoofExample();
             // var (t, p) = LegoSet.StackedBricksExample();
 
             var unit = LegoSet.BrickUnitSize(lego.PlateAtoms);
