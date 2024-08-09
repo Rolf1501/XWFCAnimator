@@ -157,9 +157,10 @@ namespace XWFC
 
         public (TileSet t, List<SampleGrid>) SplitWindowExample()
         {
-            var sample = GetSplitWindowPattern();
+            var oddBricks = GetOddBrickPattern();
+            var splitWindow = GetSplitWindowPattern();
 
-            var patterns = new[] { sample };
+            var patterns = new[] { oddBricks, splitWindow };
             
             return ExtractTilesAndSamples(patterns); 
         }
@@ -315,6 +316,57 @@ namespace XWFC
             var (unit, legoTiles, t) = PatternData(bricks);
             var patterns = TranslatePattern(new Patterns()
             {
+                (t["windowSplit"], new Vector3Int(4,unit,0)),
+                
+                (t["b312"], new Vector3Int(0,unit,0)),
+                (t["b312"], new Vector3Int(0,3*unit,0)),
+                (t["b312"], new Vector3Int(0,5*unit,0)),
+                (t["b312"], new Vector3Int(0,7*unit,0)),
+                
+                (t["b312"], new Vector3Int(2,0,0)),
+                (t["b312"], new Vector3Int(2,6*unit,0)),
+                (t["b312"], new Vector3Int(2,8*unit,0)),
+                
+                (t["b212"], new Vector3Int(2,2*unit,0)),
+                (t["b212"], new Vector3Int(2,4*unit,0)),
+                
+                (t["b212"], new Vector3Int(3,unit,0)),
+                (t["b212"], new Vector3Int(3,5*unit,0)),
+                
+                (t["b312"], new Vector3Int(3,3*unit,0)),
+                (t["b312"], new Vector3Int(3,7*unit,0)),
+                
+                (t["b212"], new Vector3Int(5,0,0)),
+                (t["b212"], new Vector3Int(5,6*unit,0)),
+               
+                (t["b312"], new Vector3Int(6,3*unit,0)),
+                (t["b312"], new Vector3Int(6,7*unit,0)),
+               
+                (t["b312"], new Vector3Int(7,0,0)),
+                (t["b312"], new Vector3Int(7,6*unit,0)),
+                (t["b312"], new Vector3Int(7,8*unit,0)),
+                
+                (t["b212"], new Vector3Int(7,unit,0)),
+                (t["b212"], new Vector3Int(7,5*unit,0)),
+                
+                (t["b212"], new Vector3Int(8,2*unit,0)),
+                (t["b212"], new Vector3Int(8,4*unit,0)),
+                
+                (t["b312"], new Vector3Int(9,unit,0)),
+                (t["b312"], new Vector3Int(9,3*unit,0)),
+                (t["b312"], new Vector3Int(9,5*unit,0)),
+                (t["b312"], new Vector3Int(9,7*unit,0)),
+            }, new Vector3Int(0, 0, 0));
+            var sample = ToSampleGrid(patterns, legoTiles,false);
+            return (bricks, sample);
+        }
+
+        private (string[] bricks, SampleGrid sample) GetOddBrickPattern()
+        {
+            var bricks = new string[] { "b112", "b212","b312", "windowSplit","void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var patterns = TranslatePattern(new Patterns()
+            {
                 (t["b312"], new Vector3Int(0, unit, 0)),
                 (t["b312"], new Vector3Int(0, 3*unit, 0)),
                 (t["b312"], new Vector3Int(0, 5*unit, 0)),
@@ -348,9 +400,11 @@ namespace XWFC
                 (t["b112"], new Vector3Int(0, 6*unit, 0)),
                 
             }, new Vector3Int(0, 0, 0));
-            var sample = ToSampleGrid(patterns, legoTiles);
+            var sample = ToSampleGrid(patterns, legoTiles, false);
             return (bricks, sample);
         }
+        
+        
         private (string[] bricks, SampleGrid sample) GetOddConnectorPattern()
         {
             var bricks = new string[] { "b412", "b112", "b312", "void" };

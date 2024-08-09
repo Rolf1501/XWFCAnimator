@@ -132,7 +132,7 @@ public class XWFCAnimator : MonoBehaviour
             var component = new Component(
                 new Vector3Int(0,0,0), 
                 // new Vector3Int(16,10,2) * unitV, 
-                new Vector3Int(12,6,2) * unitV, 
+                new Vector3Int(13,5,2) * unitV, 
                 // new Vector3Int(7,10,2) * unitV, 
                 t, samples.ToArray());
 
