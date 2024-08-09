@@ -122,7 +122,8 @@ public class XWFCAnimator : MonoBehaviour
             // var (t, samples) = lego.WallExample();
             // var (t, samples) = lego.DoorOddExample();
             // var (t, samples) = lego.DoorEvenExample();
-            var (t, samples) = lego.DoorOnlyExample();
+            // var (t, samples) = lego.DoorEvenExample();
+            var (t, samples) = lego.SplitWindowExample();
             // var (t, p) = LegoSet.StackedBricksExample();
 
             var unit = LegoSet.BrickUnitSize(lego.PlateAtoms);
@@ -131,7 +132,7 @@ public class XWFCAnimator : MonoBehaviour
             var component = new Component(
                 new Vector3Int(0,0,0), 
                 // new Vector3Int(16,10,2) * unitV, 
-                new Vector3Int(8,6,2) * unitV, 
+                new Vector3Int(12,6,2) * unitV, 
                 // new Vector3Int(7,10,2) * unitV, 
                 t, samples.ToArray());
 
@@ -1221,9 +1222,9 @@ public class XWFCAnimator : MonoBehaviour
 
     public void Reset()
     {
+        ResetDrawnGrid();
         _xwfc.UpdateExtent(extent);
         _xwfc.UpdateRandom(RandomSeed);
-        ResetDrawnGrid();
         _activeStateFlag = 0;
     }
 
