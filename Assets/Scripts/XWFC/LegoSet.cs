@@ -44,7 +44,11 @@ namespace XWFC
                     new Vector3Int(1,unit,1),
                     new Color32(242, 243, 242, 255)
                 ),
-                
+                new(
+                    "b115",
+                    new Vector3Int(1,unit,5),
+                    new Color32(242, 243, 242, 255)
+                ),
                 // Bricks 90deg
                 new(
                     "b211",
@@ -270,6 +274,20 @@ namespace XWFC
         //     return ExtractTilesAndSamples(patterns); 
         // }
 
+        public (TileSet legoTiles, List<SampleGrid> samples) ChimneyExample()
+        {
+            var chimney = GetChimneyPattern();
+            var patterns = new[] { chimney };
+            return ExtractTilesAndSamples(patterns);
+        }
+
+        public (TileSet legoTiles, List<SampleGrid> samples) BalconyExample()
+        {
+            var balcony = GetBalconyPattern();
+            var patterns = new[] { balcony };
+            return ExtractTilesAndSamples(patterns);
+        }
+
         public (TileSet legoTiles, List<SampleGrid> samples) RoofExample()
         {
             var roof = GetRoofPattern();
@@ -322,6 +340,43 @@ namespace XWFC
             return (unit, legoTiles, t);
         }
 
+        private (string[] bricks, SampleGrid sample) GetBalconyPattern()
+        {
+            var bricks = new string[] { "b211", "b111", "b112", "b115", "b216", "b412","void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var patterns = TranslatePattern(new Patterns()
+            {
+                (t["b412"], new Vector3Int(0,0,4)),
+                (t["b412"], new Vector3Int(0,unit,4)),
+                (t["b412"], new Vector3Int(0,2*unit,4)),
+                (t["b412"], new Vector3Int(0,3*unit,4)),
+                (t["b412"], new Vector3Int(0,4*unit,4)),
+                
+                (t["b412"], new Vector3Int(8,0,4)),
+                (t["b412"], new Vector3Int(8,unit,4)),
+                (t["b412"], new Vector3Int(8,2*unit,4)),
+                (t["b412"], new Vector3Int(8,3*unit,4)),
+                (t["b412"], new Vector3Int(8,4*unit,4)),
+                
+                (t["b216"], new Vector3Int(4,0,0)),
+                (t["b216"], new Vector3Int(6,0,0)),
+                
+                (t["b111"], new Vector3Int(4,unit,0)),
+                (t["b112"], new Vector3Int(4,2*unit,0)),
+                (t["b115"], new Vector3Int(4,3*unit,1)),
+                (t["b211"], new Vector3Int(4,3*unit,0)),
+                
+                (t["b111"], new Vector3Int(7,unit,0)),
+                (t["b112"], new Vector3Int(7,2*unit,0)),
+                (t["b115"], new Vector3Int(7,3*unit,1)),
+                (t["b211"], new Vector3Int(6,3*unit,0)),
+                
+                
+            }, new Vector3Int(1,0,1));
+
+            var sample = ToSampleGrid(patterns, legoTiles, true, extraLayer:new Vector3Int(1,0,0));
+            return (bricks, sample);
+        }
         private (string[] bricks, SampleGrid sample) GetRoofPattern()
         {
             var bricks = new string[] { "b412", "b212","b312","void" };
@@ -359,6 +414,35 @@ namespace XWFC
             }, new Vector3Int(0,0,1));
 
             var sample = ToSampleGrid(patterns, legoTiles, true);
+            return (bricks, sample);
+        }
+
+        private (string[] bricks, SampleGrid sample) GetChimneyPattern()
+        {
+            var bricks = new string[] { "b112", "b212","void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var patterns = TranslatePattern(new Patterns()
+            {
+                (t["b112"], new Vector3Int(0, 0, 0)),
+                (t["b112"], new Vector3Int(0, 2*unit, 0)),
+                
+                (t["b112"], new Vector3Int(4, unit, 0)),
+                (t["b112"], new Vector3Int(4, 3*unit, 0)),
+                
+                (t["b212"], new Vector3Int(0, unit, 0)),
+                (t["b212"], new Vector3Int(0, 3*unit, 0)),
+                
+                (t["b212"], new Vector3Int(2, unit, 0)),
+                (t["b212"], new Vector3Int(2, 3*unit, 0)),
+                
+                (t["b212"], new Vector3Int(1, 0, 0)),
+                (t["b212"], new Vector3Int(1, 2*unit, 0)),
+                
+                (t["b212"], new Vector3Int(3, 0, 0)),
+                (t["b212"], new Vector3Int(3, 2*unit, 0)),
+            }, new Vector3Int());
+
+            var sample = ToSampleGrid(patterns, legoTiles, false);
             return (bricks, sample);
         }
 
