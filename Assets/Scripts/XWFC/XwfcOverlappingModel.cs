@@ -358,7 +358,7 @@ namespace XWFC
 
         private int GetNPatterns()
         {
-            return PatternMatrix.Patterns.Count;
+            return PatternMatrix.Patterns.Length;
         }
         
         private bool[] EmptyWave()
@@ -748,8 +748,7 @@ namespace XWFC
                          * Conflict...
                          */
                         if (ignoreConflict) continue;
-                        int i = 0;
-                        
+                        var p = PatternMatrix;
                         Debug.Log(GridToString(_atomGrid));
                         throw new NoMoreChoicesException($"No more choices remain for {neighbor}");
                     }

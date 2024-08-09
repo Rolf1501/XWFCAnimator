@@ -219,7 +219,9 @@ namespace XWFC
                 {
                     throw new Exception($"Tiles may not overlap: {(nut.UniformAtomValue, coord)}, value: {value}");
                 }
-                Set(c, nut.GetAtomValue(atomCoord));
+
+                var atomValue = nut.GetAtomValue(atomCoord); 
+                Set(c, atomValue);
             }
         }
     }

@@ -7,7 +7,7 @@ namespace XWFC
     public class PatternMatrix
     {
         public Dictionary<int, Bidict<Vector3Int, HashSet<int>>> AtomPatternMapping;
-        public readonly List<int[,,]> Patterns;
+        public int[][,,] Patterns;
         private readonly IEnumerable<AtomGrid> _atomizedSamples;
         private readonly Vector3Int _kernelSize;
         public readonly  AtomMapping AtomMapping;
@@ -23,7 +23,6 @@ namespace XWFC
             _kernelSize = kernelSize;
             AtomMapping = atomMapping;
             _offsets = OffsetFactory.GetOffsets(3);
-            Patterns = new List<int[,,]>();
             PatternAdjacencyMatrix = new Dictionary<Vector3Int, bool[,]>();
             InitMapping();
             CalcPatterns();
@@ -72,7 +71,7 @@ namespace XWFC
 
         private void CalcPatternAdjacency()
         {
-            for (int i = 0; i < Patterns.Count; i++)
+            for (int i = 0; i < Patterns.Length; i++)
             {
                 var thisPattern = Patterns[i];
                 /*
@@ -82,7 +81,7 @@ namespace XWFC
                  foreach (var offset in _offsets)
                 {
                     // Note no  i + 1 here, pattern can be compatible with itself.
-                    for (int j = i; j < Patterns.Count; j++)
+                    for (int j = i; j < Patterns.Length; j++)
                     {
                         var thatPattern = Patterns[j];
                         
@@ -164,7 +163,7 @@ namespace XWFC
 
         private void InitPatternMatrix()
         {
-            var nPatterns = Patterns.Count;
+            var nPatterns = Patterns.Length;
             foreach (var offset in _offsets)
             {
                 PatternAdjacencyMatrix[offset] = new bool[nPatterns, nPatterns];
@@ -205,6 +204,8 @@ namespace XWFC
 
         private void CalcPatterns()
         {
+
+            var temp = new List<int[,,]>();
 
             var patternOffsets = GetPatternOffsets();
             
@@ -249,14 +250,14 @@ namespace XWFC
 
                             // Prevent duplicate patterns.
                             var patternExists = false; 
-                            foreach (var p in Patterns)
+                            foreach (var p in temp)
                             {
                                 patternExists = PatternEquals(pattern, p);
                                 if (patternExists) break;
                             }
                             if (patternExists) continue;
 
-                            var patternId = Patterns.Count;
+                            var patternId = temp.Count;
 
                             // Add the pattern to the mapping for the corresponding atom ids and add to pattern list.
                             foreach (var offset in patternOffsets)
@@ -265,15 +266,17 @@ namespace XWFC
                                 AtomPatternMapping[patternAtom].GetValue(offset).Add(patternId);
                             }
 
-                            Patterns.Add(pattern);
+                            temp.Add(pattern);
                         }
                     }
                 }
             }
+
+            Patterns = temp.ToArray();
         }
         public float MaxEntropy()
         {
-            return AdjacencyMatrix.CalcEntropy(Patterns.Count);
+            return AdjacencyMatrix.CalcEntropy(Patterns.Length);
         }
 
         public int GetPatternAtomAtCoordinate(int patternId, Vector3Int coord)
