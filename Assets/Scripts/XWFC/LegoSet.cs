@@ -195,6 +195,16 @@ namespace XWFC
             return ExtractTilesAndSamples(patterns); 
         }
 
+        public (TileSet legoTiles, List<SampleGrid> samples) WallExample()
+        {
+            var oddSample = GetOddConnectorPattern();
+            var evenSample = GetEvenConnectorPattern();
+            var brickSample = Get412BrickPattern();
+
+            var patterns = new[] { oddSample, evenSample, brickSample };
+            return ExtractTilesAndSamples(patterns);
+        }
+
         public (TileSet legoTiles, List<SampleGrid> samples) DoorExample()
         {
             var cornerSample = GetCornerPattern();
@@ -286,7 +296,6 @@ namespace XWFC
             var sample = ToSampleGrid(evenConnectorPattern, legoTiles, fillWithVoids: false);
             return (bricks, sample);
         }
-
 
         private (string[] bricks, SampleGrid sample) GetDoorPattern()
         {

@@ -118,7 +118,8 @@ public class XWFCAnimator : MonoBehaviour
         {
             var lego = new LegoSet(false);
             // var (t, samples) = lego.WallPerimeter3DExample();
-            var (t, samples) = lego.DoorExample();
+            // var (t, samples) = lego.DoorExample();
+            var (t, samples) = lego.WallExample();
             // var (t, p) = LegoSet.StackedBricksExample();
 
             var unit = LegoSet.BrickUnitSize(lego.PlateAtoms);
@@ -126,7 +127,7 @@ public class XWFCAnimator : MonoBehaviour
             
             var component = new Component(
                 new Vector3Int(0,0,0), 
-                new Vector3Int(8,4,8) * unitV, 
+                new Vector3Int(7,4,2) * unitV, 
                 t, samples.ToArray());
 
             var components = new[] { component };

@@ -413,6 +413,7 @@ namespace XWFC
             }
 
             timer.Stop();
+            var p = PatternMatrix.Patterns.ToArray();
             timer.Start();
             // Propagate the changes imposed by pattern elimination.
             Propagate(propQueue, ref _patternWave, Offsets, ref _atomGrid, PatternMatrix);
@@ -458,7 +459,7 @@ namespace XWFC
                             var cellValue = _atomGrid.Get(tileOrigin + index);
 
                             var expectedValue = PatternMatrix.AtomMapping.Get((tileId, index, 0));
-                            // Another tile does not occlude this tile iff the cell is not occupied, or if the cell is occupied by the corresponding atom.
+                            // Another tile does not occlude this tile if the cell is not occupied, or if the cell is occupied by the corresponding atom.
                             
                             // If there is a cell where a foreign atom occludes tile placement, then the tile cannot be placed.
                             // If all atoms of the to-be-placed tile are occupied, then the pattern should still be allowed.
@@ -652,11 +653,11 @@ namespace XWFC
             var collapseItems = new HashSet<(Vector3Int, float)>();
             var offsetArray = offsets.ToArray();
 
-            // var enqueued = new HashSet<Vector3Int>();
-            // foreach (var i in propQueue)
-            // {
-            //     enqueued.Add(i);
-            // }
+            var enqueued = new HashSet<Vector3Int>();
+            foreach (var i in propQueue)
+            {
+                enqueued.Add(i);
+            }
 
             var unionTime = 0f;
             
@@ -697,13 +698,8 @@ namespace XWFC
                     timer.Start(false);
                     for (var i = 0; i < choiceInts.Count; i++)
                     {
-                        var choiceId = choiceInts[i];
                         var other = patternMatrix.GetRowVectors(choiceInts[i], offset);
                         allowedNeighbors = Vectorizor.Or(allowedNeighbors, other);
-                        // for (int j = 0; j < nPatterns; j++)
-                        // {
-                        //     allowedNeighbors[j] |= patternMatrix.GetAdjacency(choiceId, j, offset);
-                        // }
                     }
 
                     unionTime += timer.Stop(false);
@@ -753,17 +749,6 @@ namespace XWFC
                          */
                         if (ignoreConflict) continue;
                         int i = 0;
-                        foreach (var patternMatrixPattern in PatternMatrix.Patterns)
-                        {
-                            var builder = new StringBuilder();
-                            builder.Append($"{i}:\t");
-                            i++;
-                            foreach (var i1 in patternMatrixPattern)
-                            {
-                                builder.Append($"{i1},");
-                            }
-                            Debug.Log(builder.ToString());
-                        }
                         
                         Debug.Log(GridToString(_atomGrid));
                         throw new NoMoreChoicesException($"No more choices remain for {neighbor}");
@@ -771,7 +756,7 @@ namespace XWFC
                     
                     patternWave.Set(neighbor, post);
 
-                    // if (!enqueued.Contains(neighbor)) 
+                    if (!enqueued.Contains(neighbor)) 
                         propQueue.Enqueue(neighbor);
                 }
             }
