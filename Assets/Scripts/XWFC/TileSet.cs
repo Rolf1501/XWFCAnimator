@@ -46,14 +46,22 @@ namespace XWFC
         {
             var subset = new TileSet();
             var list = tileNames.ToArray();
-            for (var i = 0; i < this.Count; i++)
+            
+            foreach (var (key, value) in this)
             {
-                var tile = this[i];
-                if (list.Contains(tile.UniformAtomValue))
+                if (list.Contains(value.UniformAtomValue))
                 {
-                    subset[i] = tile;
+                    subset[key] = value;
                 }
             }
+            // for (var i = 0; i < this.Count; i++)
+            // {
+            //     var tile = this[i];
+            //     if (list.Contains(tile.UniformAtomValue))
+            //     {
+            //         subset[i] = tile;
+            //     }
+            // }
 
             return subset;
         }
@@ -68,6 +76,14 @@ namespace XWFC
                     id++;
                 }
                 Add(id, v);
+            }
+        }
+
+        public void MoreTransparent(float alpha)
+        {
+            foreach (var (k,v) in this)
+            {
+                this[k].Color.a = alpha;
             }
         }
     }

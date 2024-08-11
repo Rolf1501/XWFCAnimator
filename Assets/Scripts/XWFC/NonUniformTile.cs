@@ -11,7 +11,7 @@ namespace XWFC
     public class NonUniformTile
     {
         public Vector3Int Extent { get; }
-        public Color Color { get; private set; }
+        public Color Color;
         public bool[,,] Mask { get; }
         
         public string[,,] AtomValues { get; }

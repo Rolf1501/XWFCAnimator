@@ -15,26 +15,31 @@ namespace XWFC
         public TileSet Tiles;
         public Grid<int> Grid;
         public AdjacencyMatrix AdjacencyMatrix;
-
+        public OffsetMode OffsetMode;
         private Dictionary<Vector3, int[,]> _voidMasks = new ();
+        public int CustomSeed;
 
-        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, SampleGrid[] inputGrids, float[] tileWeights=null)
+        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, SampleGrid[] inputGrids, float[] tileWeights=null, OffsetMode offsetMode=OffsetMode.Max, int customSeed = -1)
         {
             Origin = origin;
             Extent = extent;
             Tiles = tileSet;
             Grid = new Grid<int>(Extent, -1);
             AdjacencyMatrix = new AdjacencyMatrix(tileSet, inputGrids, AdjacencyMatrix.ToWeightDictionary(tileWeights, tileSet));
+            OffsetMode = offsetMode;
+            CustomSeed = customSeed;
         }
 
         public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, HashSetAdjacency adjacencyConstraints,
-            float[] tileWeights=null)
+            float[] tileWeights=null,OffsetMode offsetMode=OffsetMode.Max, int customSeed=-1)
         {
             Origin = origin;
             Extent = extent;
             Tiles = tileSet;
             Grid = new Grid<int>(Extent, -1);
             AdjacencyMatrix = new AdjacencyMatrix(adjacencyConstraints, tileSet, new Dictionary<int, float>());
+            OffsetMode = offsetMode;
+            CustomSeed = customSeed;
         }
 
         public Range XRange()
@@ -89,7 +94,7 @@ namespace XWFC
             _voidMasks[new Vector3(0, 0, -1)] = negZ;
         }
 
-        public (int offset, Vector3Int direction) CalcOffset(Range3D region, OffsetMode mode = OffsetMode.Max)
+        public (int offset, Vector3Int direction) CalcOffset(Range3D region, OffsetMode mode)
         {
             if (_voidMasks.Values.Count == 0)
             {
@@ -131,7 +136,7 @@ namespace XWFC
             var voidMask = _voidMasks[direction];
 
             // To find proper adjacency of components, the offset is equal to the largest number of voids.
-            var offset = voidMask[0, 0];
+            var offset = voidMask[voidMaskStart[0], voidMaskStart[1]];
             int avg = 0;
             int nItems = 0;
             var items = new List<int>();

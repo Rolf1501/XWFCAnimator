@@ -12,12 +12,17 @@ namespace XWFC
         private Component _currentComponent;
         private int _orderIndex = -1;
         private List<int> _order;
+        private Grid<bool> _assemblyMask;
+        private Range3D _assemblyRange;
 
         public ComponentManager(Component[] components)
         {
             Components = components;
             CalcIntersections();
             _order = ComponentOrder();
+            var (min, max) = BoundingBox();
+            _assemblyMask = new Grid<bool>(max - min, false);
+            _assemblyRange = new Range3D(min, max);
         }
 
         public int Next()
@@ -46,6 +51,33 @@ namespace XWFC
             }
 
             return (min, max);
+        }
+
+        public void UpdateAssembly()
+        {
+            if (_orderIndex < 0) return;
+
+            var cIndex = _order[_orderIndex];
+            var c = Components[cIndex];
+
+            var e = _assemblyMask.GetExtent();
+            var start = c.Origin;
+            for (int x = start.x; x < e.x; x++)
+            {
+                for (int y = start.y; y < e.y; y++)
+                {
+                    for (int z = start.z; z < e.z; z++)
+                    {
+                        var coord = new Vector3Int(x, y, z);
+                        var gridCoord = c.Origin + coord - _assemblyRange.Min();
+                        if (c.Grid.Get(x, y, z) != c.Grid.DefaultFillValue)
+                        {
+                            _assemblyMask.Set(gridCoord, true);
+                        }
+                    }
+                }
+            }
+
         }
 
         private List<int> ComponentOrder()
@@ -152,6 +184,7 @@ namespace XWFC
             if (_currentComponentId < 0 || _currentComponentId >= Components.Length) return;
             
             var curComponent = Components[_currentComponentId];
+            
             var intersections = Intersections[_currentComponentId];
 
             var solved = GetSolvedIds();
@@ -164,7 +197,7 @@ namespace XWFC
                 // Allowing translation of the same component multiple times could result in endless loop.
                 if (visited.Contains(id) || solved.Contains(id)) continue;
                 
-                var (offset, direction) = curComponent.CalcOffset(range);
+                var (offset, direction) = curComponent.CalcOffset(range, curComponent.OffsetMode);
                 
                 if (offset == 0) continue;
                 
@@ -174,6 +207,27 @@ namespace XWFC
             
             // Translation can result in different intersections, so recompute them.
             CalcIntersections();
+        }
+
+        public void TranslateCurrentSolved()
+        {
+            /*
+             * Upon solving a component, it could be that the result is void in the region of intersection.
+             * So, after solving the component, translate it according to the intersection, against the direction of the intersection.
+             */
+            if (_currentComponentId < 0 || _currentComponentId >= Components.Length || _orderIndex < 1) return;
+            var curComponent = Components[_currentComponentId];
+            var previous = _order[_orderIndex - 1];
+            var isect = Intersections[_currentComponentId];
+            var visited = new HashSet<int>() {_currentComponentId};
+            foreach (var (id, range) in isect)
+            {
+                if (id != previous) continue;
+                
+                var (offset, direction) = curComponent.CalcOffset(range, OffsetMode.Min);
+                PropagateTranslation(_currentComponentId, Vector3Util.Negate(direction), offset, visited, GetSolvedIds());
+                break;
+            }
         }
 
         private HashSet<int> GetSolvedIds()
@@ -243,10 +297,16 @@ namespace XWFC
             visited.Add(componentId);
             
             var intersections = Intersections[componentId];
-            foreach (var (i, range) in intersections)
+            foreach (var (id, range) in intersections)
             {
-                if (visited.Contains(i) || solved.Contains(i)) continue;
-                return PropagateTranslation(i, direction, offset, visited, solved);
+                if (visited.Contains(id) || solved.Contains(id)) continue;
+
+                // var curComponent = Components[componentId];
+                // var other = Components[id];
+                // var (of, dir) = curComponent.CalcOffset(range, curComponent.OffsetMode);
+                
+                if (offset == 0) continue;
+                foreach (var i in PropagateTranslation(id, direction, offset, visited, solved)) visited.Add(i);
             }
 
             return visited;

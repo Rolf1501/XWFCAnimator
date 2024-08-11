@@ -88,6 +88,18 @@ namespace XWFC
                     new Color32(165, 165, 203, 255)
                 ),
                 
+                new(
+                    "p414",
+                    new Vector3Int(4,1,4),
+                    new Color32(20, 200, 160, 255)
+                ),
+                
+                new(
+                    "p317",
+                    new Vector3Int(3,1,7),
+                    new Color32(190, 100, 10, 255)
+                ),
+                
                 // Compound bricks
                 new(
                     "door",
@@ -151,7 +163,21 @@ namespace XWFC
                 new(
                     "void",
                     new Vector3Int(1,1,1),
-                    new Color(0,0,0,0.5f),
+                    new Color(0,0,0,0f),
+                    isEmptyTile:true,computeAtomEdges:false
+                ),
+                
+                new(
+                    "voidBrick",
+                    new Vector3Int(unit,unit,unit),
+                    new Color(0,0,0,0f),
+                    isEmptyTile:true,computeAtomEdges:false
+                ),
+                
+                new(
+                    "voidLarge",
+                    new Vector3Int(2*unit,2*unit,2*unit),
+                    new Color(0,0,0,0f),
                     isEmptyTile:true,computeAtomEdges:false
                 ),
             };
@@ -163,6 +189,80 @@ namespace XWFC
             }
 
             return tileSet;
+        }
+        
+        
+
+        public static Component[] LegoHouse()
+        {
+            var lego = new LegoSet(false);
+            // var (t, samples) = lego.WallPerimeter3DExample();
+            // var (t, samples) = lego.DoorExample();
+            // var (t, samples) = lego.WallExample();
+            // var (t, samples) = lego.DoorOddExample();
+            var (tDoor, sDoor) = lego.DoorEvenExample();
+            var (tWindow, sWindow) = lego.SplitWindowExample();
+            var (tBalcony, sBalcony) = lego.BalconyExample();
+            var (tRoof, sRoof) = lego.RoofExample();
+            var (tChimney, sChimney) = lego.ChimneyExample();
+            // var (t, p) = LegoSet.StackedBricksExample();
+
+            var unit = LegoSet.BrickUnitSize(lego.PlateAtoms);
+            var unitV = new Vector3Int(1, unit, 1);
+
+            var oDoor = new Vector3Int(6, 0, 6);
+            var eDoor = new Vector3Int(30, 10, 2) * unitV;
+
+            var oWindow = new Vector3Int(0, eDoor.y, 0) + oDoor;
+            var eWindow = new Vector3Int(20, 10, 2) * unitV;
+
+            var oBalcony = new Vector3Int(0,eWindow.y, -6) + oWindow;
+            var eBalcony = new Vector3Int(20, 8, 8) * unitV;
+
+            var oRoof = new Vector3Int(-7, eBalcony.y, 6) + oBalcony;
+            var eRoof = new Vector3Int(40, 15, 2) * unitV;
+
+            var oChimney = new Vector3Int(25, eRoof.y, 0) + oRoof;
+            var eChimney = new Vector3Int(4, 8, 2) * unitV;
+            
+            var cDoor = new Component(
+                oDoor, 
+                eDoor, 
+                tDoor, sDoor.ToArray(),
+                customSeed:26
+                );
+
+            var cWindow = new Component(
+                oWindow, 
+                eWindow, 
+                tWindow, sWindow.ToArray(),
+                customSeed:20
+                );
+            
+            var cBalcony = new Component(
+                oBalcony, 
+                eBalcony,
+                tBalcony, sBalcony.ToArray(),
+                customSeed: 1340540562
+                );
+            
+            var cRoof = new Component(
+                oRoof, 
+                eRoof,
+                tRoof, sRoof.ToArray(),
+                customSeed:20
+                );
+            
+            var cChimney = new Component(
+                oChimney, 
+                eChimney, 
+                tChimney, sChimney.ToArray(),
+                customSeed:20
+                );
+
+            var components = new[] { cDoor, cWindow, cBalcony, cRoof, cChimney };
+
+            return components;
         }
 
         public (TileSet t, List<SampleGrid>) SplitWindowExample()

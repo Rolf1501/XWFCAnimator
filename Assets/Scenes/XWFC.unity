@@ -321,7 +321,7 @@ Light:
   m_Type: 1
   m_Shape: 0
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 0.5
+  m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -664,6 +664,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitTilePrefab: {fileID: 2386254473104179453, guid: f452a95fb980f1d44b988bcd8b9b21e6, type: 3}
+  thinTilePrefab: {fileID: 3740132966989639150, guid: 3299b3ac8e9878947b1e8d15b22e7538, type: 3}
   edgePrefab: {fileID: -8391222552659086748, guid: 96bac0e54ded09747a0c96e9dc7c68d8, type: 3}
   tileLabelPrefab: {fileID: 3078947573050405680, guid: f3cbec5e06abcc5409468549833779dd, type: 3}
   RandomSeed: 20

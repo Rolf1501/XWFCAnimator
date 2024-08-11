@@ -497,6 +497,7 @@ namespace XWFC
             var chosenPatternId = RandomChoice(choices, uniformWeights, _random);
 
             var wave = EmptyWave();
+            if (chosenPatternId < 0) throw new NoMoreChoicesException("No more choices...");
             wave[chosenPatternId] = true;
             _patternWave.Set(coord, wave);
             _propagationQueue.Enqueue(coord);
