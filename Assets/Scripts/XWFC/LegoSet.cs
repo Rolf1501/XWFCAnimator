@@ -72,55 +72,55 @@ namespace XWFC
                 ),
                 
                 // Plates
-                new(
-                    "p111",
-                    new Vector3Int(1,1,1),
-                    new Color(1,0,0)
-                ),
-                new(
-                    "p211",
-                    new Vector3Int(2,1,1),
-                    new Color32(242, 205, 55, 255)
-                ),
-                new(
-                    "p212",
-                    new Vector3Int(2,1,2),
-                    new Color32(165, 165, 203, 255)
-                ),
-                
-                new(
-                    "p414",
-                    new Vector3Int(4,1,4),
-                    new Color32(20, 200, 160, 255)
-                ),
-                
-                new(
-                    "p317",
-                    new Vector3Int(3,1,7),
-                    new Color32(190, 100, 10, 255)
-                ),
+                // new(
+                //     "p111",
+                //     new Vector3Int(1,1,1),
+                //     new Color(1,0,0)
+                // ),
+                // new(
+                //     "p211",
+                //     new Vector3Int(2,1,1),
+                //     new Color32(242, 205, 55, 255)
+                // ),
+                // new(
+                //     "p212",
+                //     new Vector3Int(2,1,2),
+                //     new Color32(165, 165, 203, 255)
+                // ),
+                //
+                // new(
+                //     "p414",
+                //     new Vector3Int(4,1,4),
+                //     new Color32(20, 200, 160, 255)
+                // ),
+                //
+                // new(
+                //     "p317",
+                //     new Vector3Int(3,1,7),
+                //     new Color32(190, 100, 10, 255)
+                // ),
                 
                 // Compound bricks
-                new(
-                    "door",
-                    new Vector3Int(3, 5*unit, 2),
-                    new Color(0.4f, 0.2f, 0.1f)
-                ),
+                // new(
+                //     "door",
+                //     new Vector3Int(3, 5*unit, 2),
+                //     new Color(0.4f, 0.2f, 0.1f)
+                // ),
                 new(
                     "doorEven",
                     new Vector3Int(4, 6*unit, 2),
                     new Color(0.4f, 0.2f, 0.1f)
                 ),
-                new(
-                    "window",
-                    new Vector3Int(3,3*unit,1),
-                    new Color(0, 0, 0.8f)
-                ),
-                new(
-                    "windowEven",
-                    new Vector3Int(4,3*unit,1),
-                    new Color(0, 0, 0.8f)
-                ),
+                // new(
+                //     "window",
+                //     new Vector3Int(3,3*unit,1),
+                //     new Color(0, 0, 0.8f)
+                // ),
+                // new(
+                //     "windowEven",
+                //     new Vector3Int(4,3*unit,1),
+                //     new Color(0, 0, 0.8f)
+                // ),
                 new(
                     "windowSplit",
                     new Vector3Int(4,5*unit,2),
@@ -148,16 +148,16 @@ namespace XWFC
                     ),
                 
                 // Compound bricks 90deg
-                new(
-                    "door90",
-                    new Vector3Int(1, 5*unit, 3),
-                    new Color(0.4f, 0.2f, 0.1f)
-                ),
-                new(
-                    "window90",
-                    new Vector3Int(1,3*unit,3),
-                    new Color(0, 0, 0.8f)
-                ),
+                // new(
+                //     "door90",
+                //     new Vector3Int(1, 5*unit, 3),
+                //     new Color(0.4f, 0.2f, 0.1f)
+                // ),
+                // new(
+                //     "window90",
+                //     new Vector3Int(1,3*unit,3),
+                //     new Color(0, 0, 0.8f)
+                // ),
                 
                 // Void
                 new(
@@ -167,19 +167,19 @@ namespace XWFC
                     isEmptyTile:true,computeAtomEdges:false
                 ),
                 
-                new(
-                    "voidBrick",
-                    new Vector3Int(unit,unit,unit),
-                    new Color(0,0,0,0f),
-                    isEmptyTile:true,computeAtomEdges:false
-                ),
-                
-                new(
-                    "voidLarge",
-                    new Vector3Int(2*unit,2*unit,2*unit),
-                    new Color(0,0,0,0f),
-                    isEmptyTile:true,computeAtomEdges:false
-                ),
+                // new(
+                //     "voidBrick",
+                //     new Vector3Int(unit,unit,unit),
+                //     new Color(0,0,0,0f),
+                //     isEmptyTile:true,computeAtomEdges:false
+                // ),
+                //
+                // new(
+                //     "voidLarge",
+                //     new Vector3Int(2*unit,2*unit,2*unit),
+                //     new Color(0,0,0,0f),
+                //     isEmptyTile:true,computeAtomEdges:false
+                // ),
             };
 
             var tileSet = new TileSet();

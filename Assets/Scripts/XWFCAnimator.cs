@@ -91,7 +91,7 @@ public class XWFCAnimator : MonoBehaviour
         if (activeModel == XwfcModel.SimpleTiled)
         {
             // var legoTiles = LegoSet.GetLegoSubset(new []{"p211", "p212", "void"});
-            var tetrisTile = new TetrisSet().GetTetrisTileSet();
+            var tetrisTile = new TetrisSet(true).GetTetrisTileSet();
             // var tetrisTile = TetrisSet.GetTetrisTileSet().GetSubset(new []{"J","Z","L","T", "S"});
             // var tetrisTile = TetrisSet.GetLargeTetrisSet().GetSubset(new []{"L","S","T","O","I"});
             // var tetrisTileLarge = TetrisSet.GetLargeTetrisSet().GetSubset(new []{"SL", "ZL", "TL", "OL"});
@@ -119,10 +119,9 @@ public class XWFCAnimator : MonoBehaviour
                 "p414", 
                 "p317",
                 "void",
-                // "voidBrick",
             };
             var plateAtoms = true;
-            if (plateAtoms) unitTilePrefab = thinTilePrefab;
+            // if (plateAtoms) unitTilePrefab = thinTilePrefab;
             var legoTiles = new LegoSet(plateAtoms).GetLegoSet().GetSubset(bricks);
             
                 // new(
@@ -152,7 +151,9 @@ public class XWFCAnimator : MonoBehaviour
                 //     new Vector3Int(2,1,2),
                 //     new Color32(165, 165, 203, 255)
                 // ),
-            var activeSet = legoTiles;
+            var activeSet = tetrisTile;
+            // activeSet = new TetrisSet(true).GetLargeTetrisSet(false);
+            activeSet = new LegoSet(false).GetLegoSet();
             var unit = LegoSet.BrickUnitSize(plateAtoms);
             SaveConfig(new AdjacencyMatrix(new HashSetAdjacency(), activeSet, null));
             
@@ -178,11 +179,13 @@ public class XWFCAnimator : MonoBehaviour
             var (tF2, sF2 )= set.FillExample();
             foreach (var (k,v) in tF1)
             {
-                v.Color = new Color(0.8f, 0, 0.1f);
+                v.Color.r = 0.2f;
+                v.Color.b = 0.2f;
             }
             foreach (var (k,v) in tF2)
             {
-                v.Color = new Color(0.1f, 0.6f, 0.1f);
+                v.Color.g = 0.2f;
+                v.Color.b = 0.2f;
             }
 
             var e0 = new Vector3Int(40, 2, 40);
@@ -204,7 +207,7 @@ public class XWFCAnimator : MonoBehaviour
                 new (
                     o1,
                     e1,
-                    tF,sF.ToArray(), offsetMode:OffsetMode.Median),
+                    tF,sF.ToArray(), offsetMode:OffsetMode.Max),
                 new (
                 o2,
                 e2,
@@ -212,8 +215,11 @@ public class XWFCAnimator : MonoBehaviour
                 new (
                     o3,
                     e3,
-                    tF2,sF2.ToArray(), offsetMode:OffsetMode.Median)
+                    tF2,sF2.ToArray(), offsetMode:OffsetMode.Max)
             };
+
+            // var (x, t) = new LegoSet(false).ChimneyExample();
+            // components = new[] { new Component(new Vector3Int(0, 0, 0), new Vector3Int(2,2,2), x, t.ToArray()) };
             // var components = LegoSet.LegoHouse();
             // var houseComponents = HouseComponents();
             _componentManager = new ComponentManager(components);
@@ -958,7 +964,8 @@ public class XWFCAnimator : MonoBehaviour
     public void DrawTiles()
     {
         // Draw in z-axis.
-        var origin = new Vector3Int(-100,-100,-5);
+        var origin = new Vector3Int(-10,-10,-10);
+        // var origin = new Vector3Int(-100,-100,-5);
         var gap = new Vector3Int(5, 0, 0);
         foreach (var tile in _drawnTiles)
         {
@@ -974,7 +981,7 @@ public class XWFCAnimator : MonoBehaviour
                 var drawnAtom = Instantiate(unitTilePrefab);
                 drawnAtom.transform.position = CalcAtomPosition(index, origin);
                 
-                UpdateColorFromTerminal(drawnAtom, key);
+                UpdateColorFromTerminal(drawnAtom, key, true);
                 _drawnTiles.Add(drawnAtom);
 
                 if (labeled) continue;
@@ -1282,9 +1289,11 @@ public class XWFCAnimator : MonoBehaviour
         obj.GetComponent<Renderer>().material.color = color;
     }
 
-    private void UpdateColorFromTerminal(GameObject obj, int tileId)
+    private void UpdateColorFromTerminal(GameObject obj, int tileId, bool applyFluctuation)
     {
-        obj.GetComponent<Renderer>().material.color = CompleteTileSet[tileId].Color;
+        var color = CompleteTileSet[tileId].Color;
+        if (applyFluctuation) color = ApplyVariation(color, 0.2f);
+        obj.GetComponent<Renderer>().material.color = color;
     }
 
     private Color GetTerminalColorFromAtom(int atomId, AdjacencyMatrix adjacencyMatrix)

@@ -255,7 +255,7 @@ namespace XWFC
             var solved = GetSolvedIds();
             foreach (var (id, range) in intersections)
             {
-                // Seeding is only when the component intersects with a solved component.
+                // Seeding is only needed when the component intersects with a solved component.
                 if (!solved.Contains(id)) continue;
                 
                 // Map range to relative coordinates to reference items in grid.

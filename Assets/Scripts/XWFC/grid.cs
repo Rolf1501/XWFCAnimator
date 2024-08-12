@@ -208,14 +208,14 @@ namespace XWFC
             Populate(defaultFillValue);
         }
 
-        public void PlaceNut(NonUniformTile nut, Vector3Int coord)
+        public void PlaceNut(NonUniformTile nut, Vector3Int coord, bool overwrite=false)
         {
             var atomCoords = nut.AtomIndexToIdMapping.Keys;
             foreach (var atomCoord in atomCoords)
             {
                 var c = atomCoord + coord;
                 var value = Get(c);
-                if (!value.Equals(_voidValue) && !value.Equals(DefaultFillValue))
+                if (!overwrite && !value.Equals(_voidValue) && !value.Equals(DefaultFillValue))
                 {
                     throw new Exception($"Tiles may not overlap: {(nut.UniformAtomValue, coord)}, value: {value}");
                 }

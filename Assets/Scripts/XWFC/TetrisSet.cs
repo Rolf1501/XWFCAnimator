@@ -66,32 +66,27 @@ namespace XWFC
         {
             // var bricks = new string[] { "o" };
             var bricks = new string[] { "O", "o" };
-            var fullSet = GetTetrisTileSet(false);
+            var fullSet = new TileSet();
+            // var fullSet = GetTetrisTileSet(false);
             fullSet.Add(fullSet.Count, new NonUniformTile(uniformAtomValue:"o", new Vector3Int(1,2,1), new Color(1,1,1)));
-            var unit = GetUnitSize();
+            fullSet.Add(fullSet.Count, new NonUniformTile(uniformAtomValue:"O", new Vector3Int(2,2,2), new Color(0.3f,0.3f,0.3f)));
             var t = PatternData(fullSet, bricks);
+            
             // t.Add("o", fullSet.Count-1);
             var set = fullSet.GetSubset(bricks);
-            var patterns = TranslatePattern(new Patterns()
-            {
-                // (t["O"], new Vector3Int(0,0,0)),
-                // (t["O"], new Vector3Int(0,0,2)),
-                // (t["O"], new Vector3Int(2,0,0)),
-                // (t["O"], new Vector3Int(2,0,2)),
-                // (t["O"], new Vector3Int(4,0,2)),
-                // (t["O"], new Vector3Int(1,0,4)),
-                // (t["O"], new Vector3Int(3,0,4)),
-                // (t["o"], new Vector3Int(4,0,0)),
-                // (t["o"], new Vector3Int(4,0,1)),
-                // (t["o"], new Vector3Int(5,0,0)),
-                // (t["o"], new Vector3Int(5,0,1)),
-                (t["o"], new Vector3Int(0,0,0)),
-                (t["o"], new Vector3Int(0,0,1)),
-                (t["o"], new Vector3Int(1,0,0)),
-                (t["o"], new Vector3Int(1,0,1)),
-            },new Vector3Int(0,0,0));
+            
 
-            var sample = ToSampleGrid(patterns, set, false);
+            var sample = new SampleGrid(new Vector3(12,2,12));
+            sample.Populate("o");
+            sample.PlaceNut(fullSet[t["O"]], new Vector3Int(1,0,1), true);
+            sample.PlaceNut(fullSet[t["O"]], new Vector3Int(1,0,5), true);
+            sample.PlaceNut(fullSet[t["O"]], new Vector3Int(1,0,7), true);
+            sample.PlaceNut(fullSet[t["O"]], new Vector3Int(4,0,2), true);
+            sample.PlaceNut(fullSet[t["O"]], new Vector3Int(6,0,2), true);
+            sample.PlaceNut(fullSet[t["O"]], new Vector3Int(4,0,4), true);
+            sample.PlaceNut(fullSet[t["O"]], new Vector3Int(6,0,4), true);
+            sample.PlaceNut(fullSet[t["O"]], new Vector3Int(4,0,7), true);
+            sample.PlaceNut(fullSet[t["O"]], new Vector3Int(6,0,7), true);
             return (bricks, sample, set);
         }
 
