@@ -98,6 +98,7 @@
     <None Include="Assets\Scripts\Configs\config-08-07-2024-145137-Large-tiles.json" />
     <None Include="Assets\Scripts\Configs\config-08-06-2024-200648-Tetris-none-self-adjacent.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
+    <None Include="Assets\Scripts\Configs\config-08-13-2024-142130.json" />
     <None Include="Assets\Scripts\Configs\config-08-11-2024-213411.json" />
     <None Include="Assets\Scripts\Configs\config-08-10-2024-144251.json" />
     <None Include="Assets\Scripts\Configs\config-08-07-2024-174806.json" />

@@ -172,52 +172,55 @@ public class XWFCAnimator : MonoBehaviour
         }
         else
         {
-            var set = new TetrisSet(true);
-            var (tiles, sample )= set.Example();
-            var (tF, sF )= set.FillExample();
-            var (tF1, sF1 )= set.FillExample();
-            var (tF2, sF2 )= set.FillExample();
-            foreach (var (k,v) in tF1)
-            {
-                v.Color.r = 0.2f;
-                v.Color.b = 0.2f;
-            }
-            foreach (var (k,v) in tF2)
-            {
-                v.Color.g = 0.2f;
-                v.Color.b = 0.2f;
-            }
-
-            var e0 = new Vector3Int(40, 2, 40);
-            var o0 = new Vector3Int(0, 0, 0);
-            var o1 = new Vector3Int(0, 0, e0.z);
-            var e1 = new Vector3Int(20, 2, 10);
-            var o2 = new Vector3Int(0,0,e1.z) + o1;
-            var e2 = new Vector3Int(35, 2, 20);
-            var o3 = new Vector3Int(e1.x, 0, 0) + o1;
-            var e3 = new Vector3Int(20,2,20);
-            var components = new Component[] { 
-                new (
-                o0, 
-                e0, 
-                tiles,sample.ToArray(),
-                customSeed:20,
-                offsetMode:OffsetMode.Max
-                ),
-                new (
-                    o1,
-                    e1,
-                    tF,sF.ToArray(), offsetMode:OffsetMode.Max),
-                new (
-                o2,
-                e2,
-                tF1,sF1.ToArray(), offsetMode:OffsetMode.Max),
-                new (
-                    o3,
-                    e3,
-                    tF2,sF2.ToArray(), offsetMode:OffsetMode.Max)
-            };
-
+            var (t, x) = new LegoSet(false).SplitWindowExample();
+            var components = new[] { new Component(
+                new Vector3Int(), 
+                new Vector3Int(8, 2, 8), t, x.ToArray(), offsetMode:OffsetMode.Max) };
+            // var set = new TetrisSet(true);
+            // var (tiles, sample )= set.Example();
+            // var (tF, sF )= set.FillExample();
+            // var (tF1, sF1 )= set.FillExample();
+            // var (tF2, sF2 )= set.FillExample();
+            // foreach (var (k,v) in tF1)
+            // {
+            //     v.Color.r = 0.2f;
+            //     v.Color.b = 0.2f;
+            // }
+            // foreach (var (k,v) in tF2)
+            // {
+            //     v.Color.g = 0.2f;
+            //     v.Color.b = 0.2f;
+            // }
+            //
+            // var e0 = new Vector3Int(40, 2, 40);
+            // var o0 = new Vector3Int(0, 0, 0);
+            // var o1 = new Vector3Int(0, 0, e0.z);
+            // var e1 = new Vector3Int(20, 2, 10);
+            // var o2 = new Vector3Int(0,0,e1.z) + o1;
+            // var e2 = new Vector3Int(35, 2, 20);
+            // var o3 = new Vector3Int(e1.x, 0, 0) + o1;
+            // var e3 = new Vector3Int(20,2,20);
+            // var components = new Component[] { 
+            //     new (
+            //         o0, 
+            //         e0, 
+            //         tiles,sample.ToArray(),
+            //         customSeed:20,
+            //         offsetMode:OffsetMode.Max
+            //     ),
+            //     new (
+            //         o1,
+            //         e1,
+            //         tF,sF.ToArray(), offsetMode:OffsetMode.Max),
+            //     new (
+            //         o2,
+            //         e2,
+            //         tF1,sF1.ToArray(), offsetMode:OffsetMode.Max),
+            //     new (
+            //         o3,
+            //         e3,
+            //         tF2,sF2.ToArray(), offsetMode:OffsetMode.Max)
+            // };
             // var (x, t) = new LegoSet(false).ChimneyExample();
             // components = new[] { new Component(new Vector3Int(0, 0, 0), new Vector3Int(2,2,2), x, t.ToArray()) };
             // var components = LegoSet.LegoHouse();

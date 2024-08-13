@@ -268,9 +268,11 @@ namespace XWFC
         public (TileSet t, List<SampleGrid>) SplitWindowExample()
         {
             var oddBricks = GetOddBrickPattern();
-            var splitWindow = GetSplitWindowPattern();
+            var voids = GetVoidPattern();
+            // var splitWindow = GetSplitWindowPattern();
+            var oddCorners = GetCornerPatternOdd(false);
 
-            var patterns = new[] { oddBricks, splitWindow };
+            var patterns = new[] { oddBricks, oddCorners };
             
             return ExtractTilesAndSamples(patterns); 
         }
@@ -644,7 +646,9 @@ namespace XWFC
                 (t["b112"], new Vector3Int(0, 4*unit, 0)),
                 (t["b112"], new Vector3Int(0, 6*unit, 0)),
                 
-            }, new Vector3Int(0, 0, 0));
+            }, new Vector3Int(0, 0, 1));
+            LayerAdd(ref patterns, new Range3D(0,9,0,9,0,1), t["void"]);
+            LayerAdd(ref patterns, new Range3D(0,9,0,9,0,1), t["void"]);
             var sample = ToSampleGrid(patterns, legoTiles, false);
             return (bricks, sample);
         }
@@ -897,6 +901,54 @@ namespace XWFC
                 
                 (t["b214"], new Vector3Int(0,2*unit,2)),
                 (t["b214"], new Vector3Int(4,2*unit,0)),
+            }, includeVoidLayer ? new Vector3Int(1,0,1) : new Vector3Int());
+            
+            var cornerSample = ToSampleGrid(corners, legoTiles, extraLayer:includeVoidLayer ? new Vector3Int(1,0,1) : null);
+            return (bricks, cornerSample);
+        }
+        
+        private (string[] bricks, SampleGrid cornerSample) GetCornerPatternOdd(bool includeVoidLayer=true)
+        {
+            var bricks = new string[] { "b312", "b213", "b112", "b211", "void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var corners = TranslatePattern(new Patterns()
+            {
+                (t["b312"], new Vector3Int(0,0,0)),
+                (t["b312"], new Vector3Int(3,0,0)),
+                
+                (t["b213"], new Vector3Int(6,0,0)),
+                (t["b213"], new Vector3Int(6,0,3)),
+                
+                (t["b312"], new Vector3Int(2,0,6)),
+                (t["b312"], new Vector3Int(5,0,6)),
+                
+                (t["b213"], new Vector3Int(0,0,2)),
+                (t["b213"], new Vector3Int(0,0,5)),
+                
+                
+                (t["b213"], new Vector3Int(0,unit,0)),
+                (t["b213"], new Vector3Int(0,unit,3)),
+                
+                (t["b312"], new Vector3Int(0,unit,6)),
+                (t["b312"], new Vector3Int(3,unit,6)),
+                
+                (t["b213"], new Vector3Int(6,unit,5)),
+                (t["b213"], new Vector3Int(6,unit,2)),
+                
+                (t["b312"], new Vector3Int(2,unit,0)),
+                (t["b312"], new Vector3Int(5,unit,0)),
+                
+                (t["b312"], new Vector3Int(0,2*unit,0)),
+                (t["b312"], new Vector3Int(3,2*unit,0)),
+                
+                (t["b213"], new Vector3Int(6,2*unit,0)),
+                (t["b213"], new Vector3Int(6,2*unit,3)),
+                
+                (t["b312"], new Vector3Int(2,2*unit,6)),
+                (t["b312"], new Vector3Int(5,2*unit,6)),
+                
+                (t["b213"], new Vector3Int(0,2*unit,2)),
+                (t["b213"], new Vector3Int(0,2*unit,5)),
             }, includeVoidLayer ? new Vector3Int(1,0,1) : new Vector3Int());
             
             var cornerSample = ToSampleGrid(corners, legoTiles, extraLayer:includeVoidLayer ? new Vector3Int(1,0,1) : null);
