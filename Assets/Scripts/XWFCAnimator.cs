@@ -172,10 +172,10 @@ public class XWFCAnimator : MonoBehaviour
         }
         else
         {
-            var (t, x) = new LegoSet(false).SplitWindowExample();
+            var (t, x) = new LegoSet(false).WindowExample();
             var components = new[] { new Component(
                 new Vector3Int(), 
-                new Vector3Int(8, 2, 8), t, x.ToArray(), offsetMode:OffsetMode.Max) };
+                new Vector3Int(40, 10, 14), t, x.ToArray(), offsetMode:OffsetMode.Max, customSeed: 38) };
             // var set = new TetrisSet(true);
             // var (tiles, sample )= set.Example();
             // var (tF, sF )= set.FillExample();
@@ -223,7 +223,7 @@ public class XWFCAnimator : MonoBehaviour
             // };
             // var (x, t) = new LegoSet(false).ChimneyExample();
             // components = new[] { new Component(new Vector3Int(0, 0, 0), new Vector3Int(2,2,2), x, t.ToArray()) };
-            // var components = LegoSet.LegoHouse();
+            components = LegoSet.LegoHouse();
             // var houseComponents = HouseComponents();
             _componentManager = new ComponentManager(components);
         }
