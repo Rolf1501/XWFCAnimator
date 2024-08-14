@@ -19,7 +19,7 @@ namespace XWFC
         private Dictionary<Vector3, int[,]> _voidMasks = new ();
         public int CustomSeed;
 
-        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, SampleGrid[] inputGrids, float[] tileWeights=null, OffsetMode offsetMode=OffsetMode.Max, int customSeed = -1)
+        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, SampleGrid[] inputGrids, float[] tileWeights=null, OffsetMode offsetMode=OffsetMode.Min, int customSeed = -1)
         {
             Origin = origin;
             Extent = extent;

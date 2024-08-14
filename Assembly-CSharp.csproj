@@ -90,7 +90,9 @@
     <None Include="Assets\Scripts\Configs\config-08-07-2024-152038-Large-tile-2.json" />
     <None Include="Assets\Scripts\Configs\config-08-11-2024-220244.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Bitmap.shader" />
+    <None Include="Assets\Scripts\Configs\config-08-14-2024-184338.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMPro_Mobile.cginc" />
+    <None Include="Assets\Scripts\Configs\config-08-14-2024-183343.json" />
     <None Include="Assets\Scripts\Configs\config-08-10-2024-145604.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF SSD.shader" />
     <None Include="Assets\Scripts\Configs\config-08-11-2024-212951.json" />
@@ -100,6 +102,7 @@
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Surface-Mobile.shader" />
     <None Include="Assets\Scripts\Configs\config-08-13-2024-142130.json" />
     <None Include="Assets\Scripts\Configs\config-08-11-2024-213411.json" />
+    <None Include="Assets\Scripts\Configs\config-08-14-2024-184456.json" />
     <None Include="Assets\Scripts\Configs\config-08-10-2024-144251.json" />
     <None Include="Assets\Scripts\Configs\config-08-07-2024-174806.json" />
     <None Include="Assets\Scripts\Configs\config-08-07-2024-191525.json" />
@@ -128,6 +131,7 @@
     <None Include="Assets\Scripts\Configs\config-05-22-2024-220842.json" />
     <None Include="Assets\Scripts\Configs\config-08-10-2024-135831.json" />
     <None Include="Assets\Scripts\Configs\config-05-23-2024-110003.json" />
+    <None Include="Assets\Scripts\Configs\config-08-14-2024-183500.json" />
     <None Include="Assets\Scripts\Configs\config-08-11-2024-213152.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile Masking.shader" />
     <None Include="Assets\Scripts\Configs\config-08-07-2024-173520.json" />
@@ -139,6 +143,7 @@
     <None Include="Assets\Scripts\Configs\config-08-10-2024-145449.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_SDF-Mobile.shader" />
     <None Include="Assets\Scripts\Configs\config-08-10-2024-142142.json" />
+    <None Include="Assets\Scripts\Configs\config-08-14-2024-184235.json" />
     <None Include="Assets\TextMesh Pro\Sprites\EmojiOne.json" />
     <None Include="Assets\TextMesh Pro\Shaders\TMP_Sprite.shader" />
     <None Include="Assets\Scripts\Configs\config-08-10-2024-145138.json" />
