@@ -63,6 +63,15 @@ namespace XWFC
             wheelMask[3*unit-1, 0, 1] = false;
             wheelMask[3*unit-1, 2, 0] = false;
             wheelMask[3*unit-1, 2, 1] = false;
+
+            var poleLeft = Util.Populate3D(2, 3 * unit, 1, true);
+            poleLeft[0, 1, 0] = false;
+            poleLeft[unit, 1, 0] = false;
+            
+            var poleRight = Util.Populate3D(2, 3 * unit, 1, true);
+            poleRight[0, 0, 0] = false;
+            poleRight[unit, 0, 0] = false;
+
             
             // b211, b312, b412, p111, p211, door, window, void
             var tiles = new NonUniformTile[]
@@ -108,10 +117,21 @@ namespace XWFC
                     new Vector3Int(1,unit,5),
                     new Color32(242, 243, 242, 255)
                 ),
+                new(
+                    "b115b",
+                    new Vector3Int(1,2*unit,4),
+                    new Color32(242, 243, 242, 255)
+                ),
                 // Bricks 90deg
                 new(
                     "b211",
                     new Vector3Int(2,unit,1),
+                    new Color32(35, 120, 65, 255)
+                ),
+                
+                new(
+                    "b231",
+                    new Vector3Int(2,3*unit,1),
                     new Color32(35, 120, 65, 255)
                 ),
                 new(
@@ -157,6 +177,19 @@ namespace XWFC
                     new Color(0.2f,0.1f,1f,0.7f),
                     mask: windowMaskSmall
                 ),
+                
+                // new(
+                //     "poleLeft",
+                //     new Vector3Int(2,3*unit,1),
+                //     new Color(1,0,0),
+                //     mask: poleLeft),
+                //
+                //
+                // new(
+                //     "poleRight",
+                //     new Vector3Int(2,3*unit,1),
+                //     new Color(1,0,1),
+                //     mask: poleRight),
                 
                 // Plates
                 
@@ -301,8 +334,77 @@ namespace XWFC
 
             return tileSet;
         }
-        
-        
+
+        public static Component[] LegoHouse2D()
+        {
+            var lego = new LegoSet(false);
+
+            var (tDoor, sDoor) = lego.DoorEvenExample();
+            var (tWindow, sWindow) = lego.WindowExample2D();
+            var (tBalcony, sBalcony) = lego.BalconyExample2D();
+            var (tRoof, sRoof) = lego.RoofExample();
+            var (tChimney, sChimney) = lego.ChimneyExample2D();
+            
+            var unit = LegoSet.BrickUnitSize(lego.PlateAtoms);
+            var unitV = new Vector3Int(1, unit, 1);
+            
+            var oDoor = new Vector3Int(6, 0, 4);
+            var eDoor = new Vector3Int(40, 10, 2) * unitV;
+            
+            var oWindow = new Vector3Int(0, eDoor.y, 0) + oDoor;
+            var eWindow = new Vector3Int(40, 10, 2) * unitV;
+            
+            var eBalcony = new Vector3Int(24, 8, 6) * unitV;
+            var oBalcony = new Vector3Int((int)(0.5*(eWindow.x - eBalcony.x)),eWindow.y, -4) + oWindow;
+            
+            var oRoof = new Vector3Int(-12, eBalcony.y, 4) + oBalcony;
+            var eRoof = new Vector3Int(50, 22, 2) * unitV;
+            
+            var oChimney = new Vector3Int(35, eRoof.y, 0) + oRoof;
+            var eChimney = new Vector3Int(6, 12, 2) * unitV;
+            
+            var cDoor = new Component(
+                oDoor, 
+                eDoor, 
+                tDoor, sDoor.ToArray(),
+                customSeed:26
+            );
+            
+            var cWindow = new Component(
+                oWindow, 
+                eWindow, 
+                tWindow, sWindow.ToArray(),
+                customSeed:2394
+            );
+            
+            var cBalcony = new Component(
+                oBalcony, 
+                eBalcony,
+                tBalcony, sBalcony.ToArray(),
+                customSeed: 474596326
+            );
+            
+            var cRoof = new Component(
+                oRoof, 
+                eRoof,
+                tRoof, sRoof.ToArray(),
+                customSeed:558,
+                offsetMode:OffsetMode.Max
+            );
+            
+            var cChimney = new Component(
+                oChimney, 
+                eChimney, 
+                tChimney, sChimney.ToArray(),
+                customSeed:20,
+                offsetMode:OffsetMode.Max
+            );
+            
+            // var components = new[] { cBalcony }; //  
+            var components = new[] { cDoor, cWindow,cBalcony, cRoof,cChimney }; //  
+
+            return components;
+        }
 
         public static Component[] LegoHouse()
         {
@@ -428,11 +530,53 @@ namespace XWFC
             //     customSeed:20
             // );
 
+            // var components = new[] { cBalcony }; //   
+            
             var components = new[] { cDoor, cWindow,cBalcony, cRoof,cChimney }; //   
 
             return components;
         }
 
+        public static Component[] LegoTrain()
+        {
+            var plateAtoms = true;
+            var (t, x) = new LegoSet(plateAtoms).Wheel();
+            var (tc, xc) = new LegoSet(plateAtoms).TrainChassis();
+            var (tb, xb) = new LegoSet(plateAtoms).TrainBase();
+            var (tco, xco) = new LegoSet(plateAtoms).Cockpit();
+            var (ts, xs) = new LegoSet(plateAtoms).TrainSteam();
+            var (ts2, xs2) = new LegoSet(plateAtoms).TrainSteam2();
+            var (tg, xg) = new LegoSet(plateAtoms).TrainGuard();
+            var unit = LegoSet.BrickUnitSize(plateAtoms);
+            var components = new[]
+            {
+                // Chassis
+                new Component(new Vector3Int(0,unit+1,2), new Vector3Int(16, 3*unit, 6), tc, xc.ToArray()),
+                
+                // Wheels
+                new Component(new Vector3Int(2,0,0), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
+                new Component(new Vector3Int(7,0,0), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
+                new Component(new Vector3Int(12,0,0), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
+                new Component(new Vector3Int(2,0,8), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
+                new Component(new Vector3Int(7,0,8), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
+                new Component(new Vector3Int(12,0,8), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
+                
+                // Base
+                new Component(new Vector3Int(0,3*unit+3+1,1), new Vector3Int(16, 3*unit, 8), tb, xb.ToArray()),
+                
+                // Cockpit
+                new Component(new Vector3Int(0,6*unit+3+1,1), new Vector3Int(10, 5*unit, 8), tco, xco.ToArray(), customSeed:288),
+                
+                // Train steam
+                new Component(new Vector3Int(10,6*unit+3+1,1), new Vector3Int(6, unit, 8), ts, xs.ToArray(), customSeed:288),
+                new Component(new Vector3Int(11,6*unit+3+1+2,3), new Vector3Int(4, 5*unit, 4), ts2, xs2.ToArray(), customSeed:204),
+                
+                // Guard
+                new Component(new Vector3Int(16,1,1), new Vector3Int(3, 2*unit+1, 8), tg, xg.ToArray(), customSeed:127),
+            };
+
+            return components;
+        }
         public (TileSet t, List<SampleGrid>) WindowExample()
         {
             var oddBricks = GetOddBrickPattern();
@@ -442,6 +586,19 @@ namespace XWFC
             var oddCorners = GetCornerPatternOdd(false);
 
             var patterns = new[] { oddBricks, window, smallWindow,oddCorners, curl };
+            
+            return ExtractTilesAndSamples(patterns); 
+        }
+        
+        public (TileSet t, List<SampleGrid>) WindowExample2D()
+        {
+            var oddBricks = GetOddBrickPattern2D();
+            var window = GetWindowPattern();
+            var smallWindow = GetSmallWindowPattern();
+            var curl = GetOddCurlPattern();
+            // var oddCorners = GetCornerPatternOdd(false);
+
+            var patterns = new[] { oddBricks, window, smallWindow, curl };
             
             return ExtractTilesAndSamples(patterns); 
         }
@@ -555,10 +712,31 @@ namespace XWFC
             var patterns = new[] { chimney, b211, b112, voids };
             return ExtractTilesAndSamples(patterns);
         }
+        
+        public (TileSet legoTiles, List<SampleGrid> samples) ChimneyExample2D()
+        {
+            var b211 = Get211Pattern2D();
+            // var b112 = Get112Pattern();
+            // var voids = GetVoidPattern();
+            var patterns = new[] { b211 };
+            return ExtractTilesAndSamples(patterns);
+        }
 
         public (TileSet legoTiles, List<SampleGrid> samples) BalconyExample()
         {
             var balcony = GetBalconyPattern();
+            // var stackedBricks = GetStackedCornerPattern();
+            // var brick412 = Get412BrickPattern(true,true);
+            // var brick214 = Get214BrickPattern();
+            // var runningStacked = GetRunningStackedBrickPattern();
+            // var corner = GetCornerPattern(false, true);
+            var patterns = new[] { balcony };//, brick412, brick214, corner, runningStacked };
+            return ExtractTilesAndSamples(patterns);
+        }
+
+        public (TileSet legoTiles, List<SampleGrid> samples) BalconyExample2D()
+        {
+            var balcony = GetBalconyPattern2D();
             // var stackedBricks = GetStackedCornerPattern();
             // var brick412 = Get412BrickPattern(true,true);
             // var brick214 = Get214BrickPattern();
@@ -574,6 +752,7 @@ namespace XWFC
             var patterns = new[] { roof };
             return ExtractTilesAndSamples(patterns);
         }
+
         public (TileSet legoTiles, List<SampleGrid> samples) DoorEvenExample()
         {
             var door = DoorOnlyPattern2();
@@ -974,6 +1153,70 @@ namespace XWFC
             var (unit, legoTiles, t) = PatternData(bricks);
             var patterns = TranslatePattern(new Patterns()
             {
+                // (t["b412"], new Vector3Int(0,0,4)),
+                // (t["b412"], new Vector3Int(0,unit,4)),
+                // (t["b412"], new Vector3Int(0,2*unit,4)),
+                // (t["b412"], new Vector3Int(0,3*unit,4)),
+                // (t["b412"], new Vector3Int(0,4*unit,4)),
+                // (t["b412"], new Vector3Int(0,5*unit,4)),
+                // (t["b412"], new Vector3Int(0,6*unit,4)),
+                //
+                // (t["b412"], new Vector3Int(12,0,4)),
+                // (t["b412"], new Vector3Int(12,unit,4)),
+                // (t["b412"], new Vector3Int(12,2*unit,4)),
+                // (t["b412"], new Vector3Int(12,3*unit,4)),
+                // (t["b412"], new Vector3Int(12,4*unit,4)),
+                // (t["b412"], new Vector3Int(12,5*unit,4)),
+                // (t["b412"], new Vector3Int(12,6*unit,4)),
+                //
+                // (t["b212"], new Vector3Int(4,5*unit,4)),
+                // (t["b212"], new Vector3Int(4,6*unit,4)),
+                // (t["b212"], new Vector3Int(6,5*unit,4)),
+                // (t["b212"], new Vector3Int(6,6*unit,4)),
+                // (t["b212"], new Vector3Int(8,5*unit,4)),
+                // (t["b212"], new Vector3Int(8,6*unit,4)),
+                // (t["b212"], new Vector3Int(10,5*unit,4)),
+                // (t["b212"], new Vector3Int(10,6*unit,4)),
+                //
+                // (t["b412"], new Vector3Int(0,0, 6)),
+                // (t["b412"], new Vector3Int(0,unit, 6)),
+                // (t["b412"], new Vector3Int(0,2*unit, 6)),
+                // (t["b412"], new Vector3Int(0,3*unit, 6)),
+                // (t["b412"], new Vector3Int(0,4*unit, 6)),
+                // (t["b412"], new Vector3Int(0,5*unit, 6)),
+                // (t["b412"], new Vector3Int(0,6*unit, 6)),
+                //
+                // (t["b412"], new Vector3Int(12,0, 6)),
+                // (t["b412"], new Vector3Int(12,unit, 6)),
+                // (t["b412"], new Vector3Int(12,2*unit, 6)),
+                // (t["b412"], new Vector3Int(12,3*unit, 6)),
+                // (t["b412"], new Vector3Int(12,4*unit, 6)),
+                // (t["b412"], new Vector3Int(12,5*unit, 6)),
+                // (t["b412"], new Vector3Int(12,6*unit, 6)),
+                //
+                // (t["b212"], new Vector3Int(4,5*unit, 6)),
+                // (t["b212"], new Vector3Int(4,6*unit, 6)),
+                // (t["b212"], new Vector3Int(8,5*unit, 6)),
+                // (t["b212"], new Vector3Int(8,6*unit, 6)),
+                // (t["b212"], new Vector3Int(6,5*unit, 6)),
+                // (t["b212"], new Vector3Int(6,6*unit, 6)),
+                // (t["b212"], new Vector3Int(10,5*unit, 6)),
+                // (t["b212"], new Vector3Int(10,6*unit, 6)),
+                //
+                // (t["b216"], new Vector3Int(4,0,0)),
+                // (t["b216"], new Vector3Int(6,0,0)),
+                // (t["b216"], new Vector3Int(8,0,0)),
+                // (t["b216"], new Vector3Int(10,0,0)),
+                //
+                // (t["poleLeft"], new Vector3Int(4,unit,0)),
+                // (t["poleRight"], new Vector3Int(10,unit,0)),
+                // (t["b231"], new Vector3Int(6,unit,0)),
+                // (t["b231"], new Vector3Int(8,unit,0)),
+                // (t["b115"], new Vector3Int(4,2*unit,1)),
+                // (t["b115b"], new Vector3Int(11,2*unit,1)),
+                
+                
+                
                 (t["b412"], new Vector3Int(0,0,4)),
                 (t["b412"], new Vector3Int(0,unit,4)),
                 (t["b412"], new Vector3Int(0,2*unit,4)),
@@ -1025,39 +1268,54 @@ namespace XWFC
                 (t["b115"], new Vector3Int(7,3*unit,1)),
                 (t["b211"], new Vector3Int(6,3*unit,0)),
                 
-                // (t["b412"], new Vector3Int(0,0,4)),
-                // (t["b412"], new Vector3Int(0,unit,4)),
-                // (t["b412"], new Vector3Int(0,2*unit,4)),
-                // (t["b412"], new Vector3Int(0,3*unit,4)),
-                // (t["b412"], new Vector3Int(0,4*unit,4)),
-                // (t["b412"], new Vector3Int(0,5*unit,4)),
-                // (t["b412"], new Vector3Int(0,6*unit,4)),
-                //
-                // (t["b412"], new Vector3Int(4,5*unit,4)),
-                // (t["b412"], new Vector3Int(4,6*unit,4)),
-                // (t["b212"], new Vector3Int(8,5*unit,4)),
-                // (t["b212"], new Vector3Int(8,6*unit,4)),
-                //
-                // (t["b412"], new Vector3Int(10,0,4)),
-                // (t["b412"], new Vector3Int(10,unit,4)),
-                // (t["b412"], new Vector3Int(10,2*unit,4)),
-                // (t["b412"], new Vector3Int(10,3*unit,4)),
-                // (t["b412"], new Vector3Int(10,4*unit,4)),
-                // (t["b412"], new Vector3Int(10,5*unit,4)),
-                // (t["b412"], new Vector3Int(10,6*unit,4)),
-                //
-                // (t["b216"], new Vector3Int(4,0,0)),
-                // (t["b216"], new Vector3Int(6,0,0)),
-                // (t["b216"], new Vector3Int(8,0,0)),
-                //
-                // (t["b111"], new Vector3Int(4,unit,0)),
-                // (t["b112"], new Vector3Int(4,2*unit,0)),
-                // (t["b115"], new Vector3Int(4,3*unit,1)),
-                // (t["b611"], new Vector3Int(4,3*unit,0)),
-                //
-                // (t["b111"], new Vector3Int(9,unit,0)),
-                // (t["b112"], new Vector3Int(9,2*unit,0)),
-                // (t["b115"], new Vector3Int(9,3*unit,1)),
+            }, new Vector3Int(0,0,0));
+            // }, new Vector3Int(1,0,1));
+
+            var sample = ToSampleGrid(patterns, legoTiles, true);
+            // var sample = ToSampleGrid(patterns, legoTiles, true, extraLayer:new Vector3Int(0,0,1));
+            return (bricks, sample);
+        }
+        
+         
+        private (string[] bricks, SampleGrid sample) GetBalconyPattern2D()
+        {
+            var bricks = new string[] { "b211", "b111", "b112", "b115", "b216", "b412","void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var patterns = TranslatePattern(new Patterns()
+            {
+                
+                (t["b412"], new Vector3Int(0,0,4)),
+                (t["b412"], new Vector3Int(0,unit,4)),
+                (t["b412"], new Vector3Int(0,2*unit,4)),
+                (t["b412"], new Vector3Int(0,3*unit,4)),
+                (t["b412"], new Vector3Int(0,4*unit,4)),
+                (t["b412"], new Vector3Int(0,5*unit,4)),
+                (t["b412"], new Vector3Int(0,6*unit,4)),
+                
+                (t["b412"], new Vector3Int(4,5*unit,4)),
+                (t["b412"], new Vector3Int(4,6*unit,4)),
+                
+                (t["b412"], new Vector3Int(8,0,4)),
+                (t["b412"], new Vector3Int(8,unit,4)),
+                (t["b412"], new Vector3Int(8,2*unit,4)),
+                (t["b412"], new Vector3Int(8,3*unit,4)),
+                (t["b412"], new Vector3Int(8,4*unit,4)),
+                (t["b412"], new Vector3Int(8,5*unit,4)),
+                (t["b412"], new Vector3Int(8,6*unit,4)),
+                
+                (t["b216"], new Vector3Int(4,0,0)),
+                (t["b216"], new Vector3Int(6,0,0)),
+                
+                (t["b111"], new Vector3Int(4,unit,0)),
+                (t["b112"], new Vector3Int(4,2*unit,0)),
+                (t["b115"], new Vector3Int(4,3*unit,1)),
+                (t["b211"], new Vector3Int(4,3*unit,0)),
+                
+                (t["b111"], new Vector3Int(7,unit,0)),
+                (t["b112"], new Vector3Int(7,2*unit,0)),
+                (t["b115"], new Vector3Int(7,3*unit,1)),
+                (t["b211"], new Vector3Int(6,3*unit,0)),
+                
             }, new Vector3Int(0,0,0));
             // }, new Vector3Int(1,0,1));
 
@@ -1209,6 +1467,28 @@ namespace XWFC
                 (t["b211"], new Vector3Int(0, unit, 0)),
                 (t["b211"], new Vector3Int(2, unit, 0)),
                 // (t["b111"], new Vector3Int(0, 2*unit, 0)),
+                (t["b211"], new Vector3Int(1, 2*unit, 0)),
+            }, new Vector3Int(0,0,1));
+
+            LayerAdd(ref patterns, new Range3D(0,5,0,3,0,1), t["void"]);
+            LayerAdd(ref patterns, new Range3D(0,5,0,3,2,3), t["void"]);
+            var sample = ToSampleGrid(patterns, legoTiles, false);
+            return (bricks, sample);
+        }
+        
+        private (string[] bricks, SampleGrid sample) Get211Pattern2D()
+        {
+            var bricks = new string[] { "b211", "b111","void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var patterns = TranslatePattern(new Patterns()
+            {
+                (t["b111"], new Vector3Int(0, 0, 0)),
+                (t["b111"], new Vector3Int(3, 0, 0)),
+                (t["b211"], new Vector3Int(1, 0, 0)),
+                (t["b211"], new Vector3Int(0, unit, 0)),
+                (t["b211"], new Vector3Int(2, unit, 0)),
+                (t["b111"], new Vector3Int(0, 2*unit, 0)),
+                (t["b111"], new Vector3Int(3, 2*unit, 0)),
                 (t["b211"], new Vector3Int(1, 2*unit, 0)),
             }, new Vector3Int(0,0,1));
 
@@ -1493,6 +1773,40 @@ namespace XWFC
                 (t["b312"], new Vector3Int(11, 0, 0)),
                 
                 (t["b212"], new Vector3Int(9, 0, 0)),
+                (t["b212"], new Vector3Int(5, unit, 0)),
+                (t["b212"], new Vector3Int(9, 2*unit, 0)),
+                
+                (t["b312"], new Vector3Int(0, 2*unit, 0)),
+                (t["b312"], new Vector3Int(3, 2*unit, 0)),
+                (t["b312"], new Vector3Int(6, 2*unit, 0)),
+                (t["b312"], new Vector3Int(11, 2*unit, 0)),
+                
+                (t["b312"], new Vector3Int(2, unit, 0)),
+                (t["b312"], new Vector3Int(7, unit, 0)),
+                (t["b312"], new Vector3Int(10, unit, 0)),
+                (t["b312"], new Vector3Int(13, unit, 0)),
+            }, new Vector3Int(0, 0, 1));
+            LayerAdd(ref patterns, new Range3D(0,16,0,3*unit,0,1), t["void"]);
+            LayerAdd(ref patterns, new Range3D(0,16,0,3*unit,3,4), t["void"]);
+            var sample = ToSampleGrid(patterns, legoTiles, false);
+            return (bricks, sample);
+        }
+        
+        private (string[] bricks, SampleGrid sample) GetOddBrickPattern2D()
+        {
+            var bricks = new string[] { "b212","b312","void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var patterns = TranslatePattern(new Patterns()
+            {
+                (t["b312"], new Vector3Int(0, 0, 0)),
+                (t["b312"], new Vector3Int(3, 0, 0)),
+                (t["b312"], new Vector3Int(6, 0, 0)),
+                (t["b312"], new Vector3Int(11, 0, 0)),
+                
+                (t["b212"], new Vector3Int(9, 0, 0)),
+                (t["b212"], new Vector3Int(14, 0, 0)),
+                (t["b212"], new Vector3Int(14, 2*unit, 0)),
+                (t["b212"], new Vector3Int(0, unit, 0)),
                 (t["b212"], new Vector3Int(5, unit, 0)),
                 (t["b212"], new Vector3Int(9, 2*unit, 0)),
                 

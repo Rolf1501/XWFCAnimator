@@ -85,18 +85,14 @@ public class XWFCAnimator : MonoBehaviour
 
         _adjacency = new HashSetAdjacency();
 
-        // InitXWFC();
-        // _activeModel = XwfcModel.SimpleTiled;
-
-
         if (activeModel == XwfcModel.SimpleTiled)
         {
             // var legoTiles = LegoSet.GetLegoSubset(new []{"p211", "p212", "void"});
-            var tetrisTile = new TetrisSet(true).GetTetrisTileSet();
-            // var tetrisTile = TetrisSet.GetTetrisTileSet().GetSubset(new []{"J","Z","L","T", "S"});
+            // var tetrisTile = new TetrisSet(true).GetTetrisTileSet();
+            var tetrisTile = new TetrisSet(true).GetTetrisTileSet().GetSubset(new []{"J","Z","L","T", "S"});
             // var tetrisTile = TetrisSet.GetLargeTetrisSet().GetSubset(new []{"L","S","T","O","I"});
-            // var tetrisTileLarge = TetrisSet.GetLargeTetrisSet().GetSubset(new []{"SL", "ZL", "TL", "OL"});
-            // tetrisTile.Join(tetrisTileLarge);
+            var tetrisTileLarge = new TetrisSet(true).GetLargeTetrisSet(false).GetSubset(new []{"SL", "ZL", "TL", "OL"});
+            tetrisTile.Join(tetrisTileLarge);
             // PrintAdjacencyData(adjMat);
             // var components = new Component[] { 
             //     new (new Vector3Int(0, 0, 0), new Vector3Int(20, 1, 20), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
@@ -125,44 +121,17 @@ public class XWFCAnimator : MonoBehaviour
             // if (plateAtoms) unitTilePrefab = thinTilePrefab;
             var legoTiles = new LegoSet(plateAtoms).GetLegoSet().GetSubset(bricks);
             
-                // new(
-                //     "b214",
-                //     new Vector3Int(2,unit,4),
-                //     new Color32(201, 26, 9, 255)
-                // ),
-                // new(
-                //     "b216",
-                //     new Vector3Int(2,unit,6),
-                //     new Color32(120, 100, 160, 255)
-                // ),
-                //
-                // // Plates
-                // new(
-                //     "p111",
-                //     new Vector3Int(1,1,1),
-                //     new Color(1,0,0)
-                // ),
-                // new(
-                //     "p211",
-                //     new Vector3Int(2,1,1),
-                //     new Color32(242, 205, 55, 255)
-                // ),
-                // new(
-                //     "p212",
-                //     new Vector3Int(2,1,2),
-                //     new Color32(165, 165, 203, 255)
-                // ),
             var activeSet = tetrisTile;
             // activeSet = new TetrisSet(true).GetLargeTetrisSet(false);
-            activeSet = new LegoSet(false).GetLegoSet();
-            var unit = LegoSet.BrickUnitSize(plateAtoms);
+            // activeSet = new LegoSet(false).GetLegoSet();
+            // var unit = LegoSet.BrickUnitSize(plateAtoms);
             // if (plateAtoms) unitTilePrefab = thinTilePrefab;
             SaveConfig(new AdjacencyMatrix(new HashSetAdjacency(), activeSet, null));
             
             var adjMat = ReadConfig();
             LoadConfig();
 
-            var e1 = new Vector3Int(20, unit, 20);
+            var e1 = new Vector3Int(20, 1, 20);
             var c2 = new Vector3Int(e1.x, e1.y-2, 5);
             var c3 = new Vector3Int(10, e1.y, e1.z);
             var components = new Component[] { 
@@ -174,116 +143,28 @@ public class XWFCAnimator : MonoBehaviour
         }
         else
         {
-            // var plateAtoms = true;
-            // var (t, x) = new LegoSet(plateAtoms).Wheel();
-            // var (tc, xc) = new LegoSet(plateAtoms).TrainChassis();
-            // var (tb, xb) = new LegoSet(plateAtoms).TrainBase();
-            // var (tco, xco) = new LegoSet(plateAtoms).Cockpit();
-            // var (ts, xs) = new LegoSet(plateAtoms).TrainSteam();
-            // var (ts2, xs2) = new LegoSet(plateAtoms).TrainSteam2();
-            // var (tg, xg) = new LegoSet(plateAtoms).TrainGuard();
-            // if (plateAtoms) unitTilePrefab = thinTilePrefab;
-            // var unit = LegoSet.BrickUnitSize(plateAtoms);
-            // var components = new[]
-            // {
-            //     // Chassis
-            //     new Component(new Vector3Int(0,unit+1,2), new Vector3Int(16, 3*unit, 6), tc, xc.ToArray()),
-            //     
-            //     // Wheels
-            //     new Component(new Vector3Int(2,0,0), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
-            //     new Component(new Vector3Int(7,0,0), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
-            //     new Component(new Vector3Int(12,0,0), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
-            //     new Component(new Vector3Int(2,0,8), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
-            //     new Component(new Vector3Int(7,0,8), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
-            //     new Component(new Vector3Int(12,0,8), new Vector3Int(3, 3*unit, 2), t, x.ToArray()),
-            //     
-            //     // Base
-            //     new Component(new Vector3Int(0,3*unit+3+1,1), new Vector3Int(16, 3*unit, 8), tb, xb.ToArray()),
-            //     
-            //     // Cockpit
-            //     new Component(new Vector3Int(0,6*unit+3+1,1), new Vector3Int(10, 5*unit, 8), tco, xco.ToArray(), customSeed:288),
-            //     
-            //     // Train steam
-            //     new Component(new Vector3Int(10,6*unit+3+1,1), new Vector3Int(6, unit, 8), ts, xs.ToArray(), customSeed:288),
-            //     new Component(new Vector3Int(11,6*unit+3+1+2,3), new Vector3Int(4, 5*unit, 4), ts2, xs2.ToArray(), customSeed:204),
-            //     
-            //     // Guard
-            //     new Component(new Vector3Int(16,1,1), new Vector3Int(3, 2*unit+1, 8), tg, xg.ToArray(), customSeed:127),
-            // };
+            var plateAtoms = false;
             
-            
-            // var (t, x) = new LegoSet(false).WindowExample();
-            // var components = new[] { new Component( // Window
-            //     new Vector3Int(), 
-            //     new Vector3Int(40, 10, 14), t, x.ToArray(), offsetMode:OffsetMode.Min, customSeed: 38) };
-            // var (t, x) = new LegoSet(false).ChimneyExample();
-            // var (tr, xr) = new LegoSet(false).RoofExample();
-            // var (t, x) = new LegoSet(false).BalconyExample();
-            // var components = new[] { new Component(
-            //     new Vector3Int(), 
-            //     new Vector3Int(20,10,6), tr, xr.ToArray(), offsetMode:OffsetMode.Max, customSeed: 38) ,
-            // new Component(
-            //     new Vector3Int(15,10,0), 
-            //     new Vector3Int(6,10,6), t, x.ToArray(), offsetMode:OffsetMode.Max, customSeed: 38) };
-            // var set = new TetrisSet(true);
-            // var (tiles, sample )= set.Example();
-            // var (tF, sF )= set.FillExample();
-            // var (tF1, sF1 )= set.FillExample();
-            // var (tF2, sF2 )= set.FillExample();
-            // foreach (var (k,v) in tF1)
-            // {
-            //     v.Color.r = 0.2f;
-            //     v.Color.b = 0.2f;
-            // }
-            // foreach (var (k,v) in tF2)
-            // {
-            //     v.Color.g = 0.2f;
-            //     v.Color.b = 0.2f;
-            // }
-            //
-            // var e0 = new Vector3Int(40, 2, 40);
-            // var o0 = new Vector3Int(0, 0, 0);
-            // var o1 = new Vector3Int(0, 0, e0.z);
-            // var e1 = new Vector3Int(20, 2, 10);
-            // var o2 = new Vector3Int(0,0,e1.z) + o1;
-            // var e2 = new Vector3Int(35, 2, 20);
-            // var o3 = new Vector3Int(e1.x, 0, 0) + o1;
-            // var e3 = new Vector3Int(20,2,20);
-            // var components = new Component[] { 
-            //     new (
-            //         o0, 
-            //         e0, 
-            //         tiles,sample.ToArray(),
-            //         customSeed:20,
-            //         offsetMode:OffsetMode.Max
-            //     ),
-            //     new (
-            //         o1,
-            //         e1,
-            //         tF,sF.ToArray(), offsetMode:OffsetMode.Max),
-            //     new (
-            //         o2,
-            //         e2,
-            //         tF1,sF1.ToArray(), offsetMode:OffsetMode.Max),
-            //     new (
-            //         o3,
-            //         e3,
-            //         tF2,sF2.ToArray(), offsetMode:OffsetMode.Max)
-            // };
-            // var (x, t) = new LegoSet(false).ChimneyExample();
-            // components = new[] { new Component(new Vector3Int(0, 0, 0), new Vector3Int(2,2,2), x, t.ToArray()) };
-            var components = LegoSet.LegoHouse();
+            // var components = LegoSet.LegoHouse();
+            var components = LegoSet.LegoHouse2D();
+            // plateAtoms = true;
+            // var components = LegoSet.LegoTrain();
             // var houseComponents = HouseComponents();
+            if (plateAtoms)
+            {
+                unitTilePrefab = thinTilePrefab;
+            }
             _componentManager = new ComponentManager(components);
         }
+        
 
-        Debug.Log("\tInitialization DONE");
         
         _unitSize = unitTilePrefab.GetComponent<Renderer>().bounds.size;
         // Set for keeping track of drawn NUTs.
         _drawnTiles = new HashSet<GameObject>();
         _drawnPatterns = new HashSet<GameObject>();
         LoadNextComponent();
+        Debug.Log($"\tInitialization DONE; RANDOM: {_xwfc.RandomSeed}");
         
         TileSet = _xwfc.AdjMatrix.TileSet;
         CompleteTileSet = _xwfc.AdjMatrix.TileSet;
@@ -291,12 +172,7 @@ public class XWFCAnimator : MonoBehaviour
 
         // Grid for keeping track of drawn atoms.
         _drawnGrid = InitDrawGrid();
-
-        // PrintAdjacencyData();
-
-
-
-    }
+        }
 
     private float CollapseAll()
     {
@@ -370,7 +246,7 @@ public class XWFCAnimator : MonoBehaviour
         InitXWFComponent(ref _currentComponent);
         var t = timer.Stop();
         Debug.Log($"Loaded Component! Time: {t}");
-
+        Reset();
         TileSet = _currentComponent.Tiles;
         CompleteTileSet = TileSet;
         _activeStateFlag = 0;
