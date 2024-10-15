@@ -146,7 +146,9 @@ public class XWFCAnimator : MonoBehaviour
             var plateAtoms = false;
             
             // var components = LegoSet.LegoHouse();
-            var components = LegoSet.LegoHouse2D();
+            // var components = ExampleSet.RedDotWFC();
+            var components = ExampleSet.RedDotExampleComparison();
+            // var components = LegoSet.LegoHouse2D();
             // plateAtoms = true;
             // var components = LegoSet.LegoTrain();
             // var houseComponents = HouseComponents();

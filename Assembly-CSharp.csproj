@@ -80,6 +80,7 @@
     <Compile Include="Assets\Scripts\FileUtil.cs" />
     <Compile Include="Assets\Scripts\XWFC\offset.cs" />
     <Compile Include="Assets\Scripts\XWFC\bidict.cs" />
+    <Compile Include="Assets\Scripts\XWFC\ExampleSet.cs" />
     <Compile Include="Assets\Scripts\XWFC\color.cs" />
     <Compile Include="Assets\Scripts\CameraMovementOrbit.cs" />
     <Compile Include="Assets\Scripts\XWFC\timer.cs" />
