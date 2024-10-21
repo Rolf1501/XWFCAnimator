@@ -57,6 +57,7 @@
     <Compile Include="Assets\Scripts\XWFC\collapseQueue.cs" />
     <Compile Include="Assets\Scripts\XWFC\HashSetAdjacency.cs" />
     <Compile Include="Assets\Scripts\XWFC\XwfcStm.cs" />
+    <Compile Include="Assets\Scripts\XWFC\TerrainSet.cs" />
     <Compile Include="Assets\Scripts\XWFC\TileSet.cs" />
     <Compile Include="Assets\Scripts\XWFC\VoidMasks.cs" />
     <Compile Include="Assets\Scripts\XWFCAnimator.cs" />
