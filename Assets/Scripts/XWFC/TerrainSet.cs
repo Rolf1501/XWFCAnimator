@@ -21,24 +21,35 @@ namespace XWFC
             {
                 // Bricks
                 new(
-                    "r",
+                    "soil",
                     new Vector3Int(1,1,1),
-                    new Color32(200, 10, 10, 255)
+                    new Color32(40, 20, 0, 255)
                 ),
                 new(
-                    "rL",
-                    new Vector3Int(2,2,1),
-                    new Color32(200, 10, 10, 255)
+                    "grass",
+                    new Vector3Int(1,1,1),
+                    new Color32(50, 150, 50, 255)
                 ),
                 new(
-                    "b",
+                    "root",
                     new Vector3Int(1,1,1),
-                    new Color32(10, 10, 10, 255)
+                    new Color32(120, 60, 10, 255)
                 ),
                 new(
-                    "w",
+                    "trunk3",
+                    new Vector3Int(1,3,1),
+                    new Color32(150, 75, 10, 255)
+                ),
+                    
+                new(
+                    "trunk",
                     new Vector3Int(1,1,1),
-                    new Color32(220, 220, 220, 255)
+                    new Color32(150, 75, 10, 255)
+                ),
+                new(
+                    "leaves",
+                    new Vector3Int(1,1,1),
+                    new Color32(20, 100, 20, 255)
                 ),
                 new(
                     "void",
