@@ -115,6 +115,66 @@ namespace XWFC
             return (bricks, grid );
         }
         
+        public (string[] t, SampleGrid) LeavesPattern()
+        {
+            var bricks = new string[] { "leaf", "void" };
+            var tiles = GetSet().GetSubset(bricks);
+            
+            var t = new Dictionary<string, int>();
+            foreach (var tile in bricks)
+            {
+                t[tile] = tiles.GetTileIdFromValue(tile);
+            }
+
+            var stackedPattern = new Patterns();
+            LayerAdd(ref stackedPattern, new Range3D(1,3,0,1,1,3), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(0,4,1,3,1,3), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(1,3,3,4,1,3), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(1,3,1,3,0,1), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(1,3,1,3,3,4), t["leaf"]);
+            stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(1, 1, 1));
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1,1,1));
+            
+            return (bricks, grid );
+        }
+        
+        public (string[] t, SampleGrid) RootPattern()
+        {
+            var bricks = new string[] { "grass", "root", "trunk3", "void" };
+            var tiles = GetSet().GetSubset(bricks);
+            
+            var t = new Dictionary<string, int>();
+            foreach (var tile in bricks)
+            {
+                t[tile] = tiles.GetTileIdFromValue(tile);
+            }
+
+            var stackedPattern = new Patterns()
+            {
+                (t["root"], new Vector3Int(1,0,1)),
+                (t["trunk3"], new Vector3Int(1,1,1)),
+                
+                (t["grass"], new Vector3Int(0,0,0)),
+                (t["grass"], new Vector3Int(1,0,0)),
+                (t["grass"], new Vector3Int(2,0,0)),
+                (t["grass"], new Vector3Int(0,0,1)),
+                (t["grass"], new Vector3Int(2,0,1)),
+                (t["grass"], new Vector3Int(0,0,2)),
+                (t["grass"], new Vector3Int(1,0,2)),
+                (t["grass"], new Vector3Int(2,0,2)),
+                (t["grass"], new Vector3Int(0,0,3)),
+                (t["grass"], new Vector3Int(1,0,3)),
+                (t["grass"], new Vector3Int(2,0,3)),
+                
+            };
+            
+            var grid = ToSampleGrid(stackedPattern, tiles, true);
+            
+            return (bricks, grid );
+        }
+        
+        
+        
         public static int BrickUnitSize(bool plateAtoms = true)
         {
             /*
@@ -127,7 +187,9 @@ namespace XWFC
         {
             var trunk = TreeTrunkPattern();
             var trunkLeaves = TreeTrunkLeavesPattern();
-            var patterns = new[] { trunk, trunkLeaves };
+            var leaves = LeavesPattern();
+            var root = RootPattern();
+            var patterns = new[] { trunk, root }; //, trunkLeaves, leaves};
             return ExtractTilesAndSamples(patterns);
         }
         
