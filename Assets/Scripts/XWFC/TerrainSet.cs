@@ -6,10 +6,10 @@ using UnityEngine.Rendering;
 
 namespace XWFC
 {
-    public class TerrSet : TileSet
+    public class TerrainSet : TileSet
     {
         public bool PlateAtoms;
-        public TerrSet(bool plateAtoms = true)
+        public TerrainSet(bool plateAtoms = true)
         {
             PlateAtoms = plateAtoms;
         }
@@ -49,7 +49,7 @@ namespace XWFC
                 new(
                     "leaves",
                     new Vector3Int(1,1,1),
-                    new Color32(20, 100, 20, 255)
+                    new Color32(20, 100, 20, 200)
                 ),
                 new(
                     "void",
@@ -67,9 +67,9 @@ namespace XWFC
             return tileSet;
         }
         
-        public (string[] t, SampleGrid) RedDotPatternWFC()
+        public (string[] t, SampleGrid) TreeTrunkPattern()
         {
-            var bricks = new string[] { "b", "w", "r", "void" };
+            var bricks = new string[] { "trunk3", "void" };
             var tiles = GetSet().GetSubset(bricks);
             
             var t = new Dictionary<string, int>();
@@ -80,54 +80,10 @@ namespace XWFC
 
             var stackedPattern = new Patterns()
             {
-                (t["w"], new Vector3Int(0, 0, 0)),
-                (t["w"], new Vector3Int(1, 0, 0)),
-                (t["w"], new Vector3Int(2, 0, 0)),
-                (t["w"], new Vector3Int(3, 0, 0)),
-                (t["w"], new Vector3Int(4, 0, 0)),
-                (t["w"], new Vector3Int(5, 0, 0)),
-                
-                (t["w"], new Vector3Int(0, 1, 0)),
-                (t["w"], new Vector3Int(0, 2, 0)),
-                (t["w"], new Vector3Int(0, 3, 0)),
-                (t["w"], new Vector3Int(0, 4, 0)),
-                (t["w"], new Vector3Int(0, 5, 0)),
-                
-                (t["w"], new Vector3Int(1, 5, 0)),
-                (t["w"], new Vector3Int(2, 5, 0)),
-                (t["w"], new Vector3Int(3, 5, 0)),
-                (t["w"], new Vector3Int(4, 5, 0)),
-                (t["w"], new Vector3Int(5, 5, 0)),
-                
-                (t["w"], new Vector3Int(5, 4, 0)),
-                (t["w"], new Vector3Int(5, 3, 0)),
-                (t["w"], new Vector3Int(5, 2, 0)),
-                (t["w"], new Vector3Int(5, 1, 0)),
-                
-                (t["b"], new Vector3Int(1, 1, 0)),
-                (t["b"], new Vector3Int(2, 1, 0)),
-                (t["b"], new Vector3Int(3, 1, 0)),
-                (t["b"], new Vector3Int(4, 1, 0)),
-                
-                (t["b"], new Vector3Int(4, 2, 0)),
-                (t["b"], new Vector3Int(4, 3, 0)),
-                (t["b"], new Vector3Int(4, 4, 0)),
-                
-                (t["b"], new Vector3Int(3, 4, 0)),
-                (t["b"], new Vector3Int(2, 4, 0)),
-                (t["b"], new Vector3Int(1, 4, 0)),
-                
-                (t["b"], new Vector3Int(1, 3, 0)),
-                (t["b"], new Vector3Int(1, 2, 0)),
-                
-                (t["r"], new Vector3Int(2, 2, 0)),
-                (t["r"], new Vector3Int(3, 2, 0)),
-                (t["r"], new Vector3Int(2, 3, 0)),
-                (t["r"], new Vector3Int(3, 3, 0)),
-                
-                
+                (t["trunk3"], new Vector3Int(1, 0, 1)),
+                (t["trunk3"], new Vector3Int(1, 3, 1)),
             };
-            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(0,0,1));
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1,0,1));
             
 
             return (bricks, grid );
@@ -202,10 +158,10 @@ namespace XWFC
             return plateAtoms ? 3 : 1;
         }
 
-        public (TileSet legoTiles, List<SampleGrid> samples) RedDotExampleWFC()
+        public (TileSet legoTiles, List<SampleGrid> samples) TreeExample()
         {
-            var roof = RedDotPatternWFC();
-            var patterns = new[] { roof };
+            var trunk = TreeTrunkPattern();
+            var patterns = new[] { trunk };
             return ExtractTilesAndSamples(patterns);
         }
         
@@ -241,18 +197,18 @@ namespace XWFC
 
             return components;
         }
-        public static Component[] RedDotXWFC()
+        public static Component[] Tree()
         {
-            var set = new ExampleSet(false);
+            var set = new TerrainSet(false);
 
-            var (t, s) = set.RedDotExampleXWFC();
+            var (t, s) = set.TreeExample();
             
             var unit = LegoSet.BrickUnitSize(set.PlateAtoms);
             var unitV = new Vector3Int(1, unit, 1);
             
             var c = new Component(
                 new Vector3Int(0,0,0), 
-                new Vector3Int(30,30,2), 
+                new Vector3Int(3,9,3), 
                 t, s.ToArray(),
                 customSeed:26
             );
