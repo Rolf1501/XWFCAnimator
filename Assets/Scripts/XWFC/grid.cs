@@ -215,12 +215,12 @@ namespace XWFC
             {
                 var c = atomCoord + coord;
                 var value = Get(c);
-                if (!overwrite && !value.Equals(_voidValue) && !value.Equals(DefaultFillValue))
+                var atomValue = nut.GetAtomValue(atomCoord); 
+                if (!value.Equals(atomValue) && !overwrite && !value.Equals(_voidValue) && !value.Equals(DefaultFillValue))
                 {
                     throw new Exception($"Tiles may not overlap: {(nut.UniformAtomValue, coord)}, value: {value}");
                 }
 
-                var atomValue = nut.GetAtomValue(atomCoord); 
                 Set(c, atomValue);
             }
         }

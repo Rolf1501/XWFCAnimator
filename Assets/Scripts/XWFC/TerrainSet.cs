@@ -47,7 +47,7 @@ namespace XWFC
                     new Color32(150, 75, 10, 255)
                 ),
                 new(
-                    "leaves",
+                    "leaf",
                     new Vector3Int(1,1,1),
                     new Color32(20, 100, 20, 200)
                 ),
@@ -85,13 +85,13 @@ namespace XWFC
             };
             var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1,0,1));
             
-
             return (bricks, grid );
         }
         
-        public (string[] t, SampleGrid) RedDotPatternXWFC()
+        
+        public (string[] t, SampleGrid) TreeTrunkLeavesPattern()
         {
-            var bricks = new string[] { "b", "w", "rL", "void" };
+            var bricks = new string[] { "trunk3", "leaf", "void" };
             var tiles = GetSet().GetSubset(bricks);
             
             var t = new Dictionary<string, int>();
@@ -102,54 +102,19 @@ namespace XWFC
 
             var stackedPattern = new Patterns()
             {
-                (t["w"], new Vector3Int(0, 0, 0)),
-                (t["w"], new Vector3Int(1, 0, 0)),
-                (t["w"], new Vector3Int(2, 0, 0)),
-                (t["w"], new Vector3Int(3, 0, 0)),
-                (t["w"], new Vector3Int(4, 0, 0)),
-                (t["w"], new Vector3Int(5, 0, 0)),
-                
-                (t["w"], new Vector3Int(0, 1, 0)),
-                (t["w"], new Vector3Int(0, 2, 0)),
-                (t["w"], new Vector3Int(0, 3, 0)),
-                (t["w"], new Vector3Int(0, 4, 0)),
-                (t["w"], new Vector3Int(0, 5, 0)),
-                
-                (t["w"], new Vector3Int(1, 5, 0)),
-                (t["w"], new Vector3Int(2, 5, 0)),
-                (t["w"], new Vector3Int(3, 5, 0)),
-                (t["w"], new Vector3Int(4, 5, 0)),
-                (t["w"], new Vector3Int(5, 5, 0)),
-                
-                (t["w"], new Vector3Int(5, 4, 0)),
-                (t["w"], new Vector3Int(5, 3, 0)),
-                (t["w"], new Vector3Int(5, 2, 0)),
-                (t["w"], new Vector3Int(5, 1, 0)),
-                
-                (t["b"], new Vector3Int(1, 1, 0)),
-                (t["b"], new Vector3Int(2, 1, 0)),
-                (t["b"], new Vector3Int(3, 1, 0)),
-                (t["b"], new Vector3Int(4, 1, 0)),
-                
-                (t["b"], new Vector3Int(4, 2, 0)),
-                (t["b"], new Vector3Int(4, 3, 0)),
-                (t["b"], new Vector3Int(4, 4, 0)),
-                
-                (t["b"], new Vector3Int(3, 4, 0)),
-                (t["b"], new Vector3Int(2, 4, 0)),
-                (t["b"], new Vector3Int(1, 4, 0)),
-                
-                (t["b"], new Vector3Int(1, 3, 0)),
-                (t["b"], new Vector3Int(1, 2, 0)),
-                
-                (t["rL"], new Vector3Int(2, 2, 0)),
+                (t["trunk3"], new Vector3Int(1, 0, 1)),
+                (t["leaf"], new Vector3Int(1, 3, 1)),
             };
-            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(0,0,1));
+            LayerAdd(ref stackedPattern, new Range3D(0,3,1,4,0,1), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(0,3,1,4,2,3), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(0,1,1,4,1,2), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(2,3,1,4,1,2), t["leaf"]);
+            stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(1, 0, 1));
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1,1,1));
             
-
             return (bricks, grid );
         }
-
+        
         public static int BrickUnitSize(bool plateAtoms = true)
         {
             /*
@@ -161,42 +126,11 @@ namespace XWFC
         public (TileSet legoTiles, List<SampleGrid> samples) TreeExample()
         {
             var trunk = TreeTrunkPattern();
-            var patterns = new[] { trunk };
+            var trunkLeaves = TreeTrunkLeavesPattern();
+            var patterns = new[] { trunk, trunkLeaves };
             return ExtractTilesAndSamples(patterns);
         }
         
-        public (TileSet legoTiles, List<SampleGrid> samples) RedDotExampleXWFC()
-        {
-            var roof = RedDotPatternXWFC();
-            var patterns = new[] { roof };
-            return ExtractTilesAndSamples(patterns);
-        }
-
-        public static Component[] RedDotExampleComparison()
-        {
-            var set = new ExampleSet(false);
-
-            var (t0, s0) = set.RedDotExampleWFC();
-            var (t1, s1) = set.RedDotExampleXWFC();
-            
-            var unit = LegoSet.BrickUnitSize(set.PlateAtoms);
-            var unitV = new Vector3Int(1, unit, 1);
-            
-            var cwfc = new Component(
-                new Vector3Int(0,0,0), 
-                new Vector3Int(30,30,2), 
-                t0, s0.ToArray()
-            );
-
-            var cxwfc = new Component(
-                new Vector3Int(40, 0, 0),
-                new Vector3Int(30, 30, 2),
-                t1, s1.ToArray());
-            
-            var components = new[] { cwfc, cxwfc }; //  
-
-            return components;
-        }
         public static Component[] Tree()
         {
             var set = new TerrainSet(false);
@@ -208,28 +142,7 @@ namespace XWFC
             
             var c = new Component(
                 new Vector3Int(0,0,0), 
-                new Vector3Int(3,9,3), 
-                t, s.ToArray(),
-                customSeed:26
-            );
-            
-            var components = new[] { c }; //  
-
-            return components;
-        }
-        
-        public static Component[] RedDotWFC()
-        {
-            var set = new ExampleSet(false);
-
-            var (t, s) = set.RedDotExampleWFC();
-            
-            var unit = LegoSet.BrickUnitSize(set.PlateAtoms);
-            var unitV = new Vector3Int(1, unit, 1);
-            
-            var c = new Component(
-                new Vector3Int(0,0,0), 
-                new Vector3Int(30,30,1), 
+                new Vector3Int(3,11,3), 
                 t, s.ToArray(),
                 customSeed:26
             );
