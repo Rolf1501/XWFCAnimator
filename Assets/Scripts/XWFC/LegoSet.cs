@@ -335,6 +335,39 @@ namespace XWFC
             return tileSet;
         }
 
+        public static Component[] SimpleHouseExample()
+        {
+            var set = new LegoSet(false);
+
+            var (t, s) = set.SimpleHouse();
+
+            var weights = new Dictionary<string, float>();
+            foreach (var (tKey, value) in t)
+            {
+                weights[value.UniformAtomValue] = 1;
+            }
+
+            weights["door"] = 500;
+        
+            var unit = LegoSet.BrickUnitSize(set.PlateAtoms);
+            var unitV = new Vector3Int(1, unit, 1);
+        
+            var c = new Component(
+                new Vector3Int(0,0,0), 
+                new Vector3Int(14,8,14), 
+                t, s.ToArray(),
+                tileWeights:weights,
+                customSeed:1166925486
+                // 569
+            );
+        
+        
+        
+            var components = new[] { c }; //  
+
+            return components;
+        }
+
         public static Component[] LegoHouse2D()
         {
             var lego = new LegoSet(false);
@@ -762,8 +795,15 @@ namespace XWFC
             var brick412 = Get412BrickPattern();
             var brick214 = Get214BrickPattern();
             var oddCorner = GetCornerPatternOdd(false);
-            // var voids = GetVoidPattern();
-            var patterns = new[] { door, corner, brick412, brick214 };
+            var oddSingle = GetCornerPatternOddSingle();
+            var evenSingle = GetCornerPatternEvenSingle();
+            var oddBrick = GetOddBrickPattern();
+            
+            var smallWindow = GetSmallWindowPattern();
+            var curl = GetOddCurlPattern();
+
+            var patterns = new[] { door, corner, brick412, brick214, oddCorner, oddSingle, evenSingle, oddBrick, smallWindow, curl };
+            
             
             return ExtractTilesAndSamples(patterns);
         }
@@ -2164,23 +2204,23 @@ namespace XWFC
             var (unit, legoTiles, t) = PatternData(bricks);
             var corners = new Patterns()
             {
-                (t["b213"], new Vector3Int(0,unit,0)),
-                (t["b213"], new Vector3Int(0,unit,3)),
+                (t["b412"], new Vector3Int(0,0,0)),
+                (t["b412"], new Vector3Int(4,0,0)),
                 
-                (t["b312"], new Vector3Int(0,unit,6)),
-                (t["b312"], new Vector3Int(3,unit,6)),
+                (t["b214"], new Vector3Int(8,0,0)),
+                (t["b214"], new Vector3Int(8,0,4)),
                 
-                (t["b213"], new Vector3Int(6,unit,5)),
-                (t["b213"], new Vector3Int(6,unit,2)),
+                (t["b412"], new Vector3Int(6,0,8)),
+                (t["b412"], new Vector3Int(2,0,8)),
                 
-                (t["b312"], new Vector3Int(2,unit,0)),
-                (t["b312"], new Vector3Int(5,unit,0)),
+                (t["b214"], new Vector3Int(0,0,6)),
+                (t["b214"], new Vector3Int(0,0,2)),
                 
             };
-            LayerAdd(ref corners, new Range3D(0,2,0,1,0,8), t["b111"]);
-            LayerAdd(ref corners, new Range3D(6,8,0,1,0,8), t["b111"]);
-            LayerAdd(ref corners, new Range3D(2,6,0,1,0,2), t["b111"]);
-            LayerAdd(ref corners, new Range3D(2,6,0,1,6,8), t["b111"]);
+            LayerAdd(ref corners, new Range3D(0,2,0,1,0,10), t["b111"]);
+            LayerAdd(ref corners, new Range3D(8,10,0,1,0,10), t["b111"]);
+            LayerAdd(ref corners, new Range3D(2,8,0,1,0,2), t["b111"]);
+            LayerAdd(ref corners, new Range3D(2,8,0,1,8,10), t["b111"]);
             var cornerSample = ToSampleGrid(corners, legoTiles, extraLayer:includeVoidLayer ? new Vector3Int(1,0,1) : null);
             return (bricks, cornerSample);
         }
