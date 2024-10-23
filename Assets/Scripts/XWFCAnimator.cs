@@ -152,7 +152,8 @@ public class XWFCAnimator : MonoBehaviour
             // var components = LegoSet.LegoHouse();
             // var components = ExampleSet.RedDotWFC();
             // var components = ExampleSet.RedDotExampleComparison();
-            var components = TerrainSet.Tree();
+            // var components = TerrainSet.Tree();
+            var components = LegoSet.SimpleHouseExample();
             // var components = LegoSet.LegoHouse2D();
             // plateAtoms = true;
             // var components = LegoSet.LegoTrain();
