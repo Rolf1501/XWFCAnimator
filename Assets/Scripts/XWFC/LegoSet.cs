@@ -357,8 +357,8 @@ namespace XWFC
             weights["b214"] = 200;
             weights["b212"] = 300;
             // weights["windowSmall"] = 1000;
-            weights["windowS"] = 1000;
-            weights["b112"] = 1000;
+            // weights["windowS"] = 100;
+            // weights["b112"] = 100;
         
             var unit = LegoSet.BrickUnitSize(set.PlateAtoms);
             var unitV = new Vector3Int(1, unit, 1);
@@ -812,12 +812,15 @@ namespace XWFC
             var squareZ = GetSquarePatternSingleZ();
             var oddBrick = GetOddBrickPattern();
             
-            var window = GetWindowSPattern();
-            // var window = GetWindowPattern();
+            // var window = GetWindowSPattern();
+            var window = GetWindowPattern();
             var curl = GetOddCurlPattern();
 
-            var patterns = new[] { door, corner, brick412, brick214, oddCorner, oddSingle, evenSingle, oddBrick, window, curl, squareX, squareZ };
-            
+            var patterns = new[]
+            {
+                door, corner, brick412, brick214, oddCorner, oddSingle, evenSingle, oddBrick, window, curl, squareX,
+                squareZ
+            };
             
             return ExtractTilesAndSamples(patterns);
         }
