@@ -50,25 +50,7 @@ namespace XWFC
             
             InitGrids(extent);
 
-            _weights = new float[PatternMatrix.Patterns.Length];
-            for (var i = 0; i < PatternMatrix.Patterns.Length; i++)
-            {
-                var pattern = PatternMatrix.Patterns[i];
-                var w = 0.0f;
-                for (int x = 0; x < pattern.GetLength(1); x++)
-                {
-                    for (int y = 0; y < pattern.GetLength(0); y++)
-                    {
-                        for (int z = 0; z < pattern.GetLength(0); z++)
-                        {
-                            var (tileId, coord, _) = adjacencyMatrix.AtomMapping.GetKey(pattern[y, x, z]);
-                            w += adjacencyMatrix.TileWeigths[tileId];
-                        }
-                    }
-                }
-
-                _weights[i] = w;
-            }
+            CalcPatternWeights();
             
             StartCoord = CalcStartCoord();
             
@@ -91,6 +73,39 @@ namespace XWFC
             // {
             //     FillInBlanks();
             // }
+        }
+
+        // public override void UpdateNutWeights(Dictionary<string, float> weights)
+        // {
+        //     foreach (var i in AdjacencyMatrix.TileWeigths.Keys)
+        //     {
+        //         var tileValue = AdjacencyMatrix.TileSet[i].UniformAtomValue;
+        //         AdjacencyMatrix.TileWeigths[i] = weights[tileValue];
+        //     }
+        //     CalcPatternWeights();
+        // }
+
+        public void CalcPatternWeights()
+        {
+            _weights = new float[PatternMatrix.Patterns.Length];
+            for (var i = 0; i < PatternMatrix.Patterns.Length; i++)
+            {
+                var pattern = PatternMatrix.Patterns[i];
+                var w = 0.0f;
+                for (int x = 0; x < pattern.GetLength(1); x++)
+                {
+                    for (int y = 0; y < pattern.GetLength(0); y++)
+                    {
+                        for (int z = 0; z < pattern.GetLength(0); z++)
+                        {
+                            var (tileId, coord, _) = AdjacencyMatrix.AtomMapping.GetKey(pattern[y, x, z]);
+                            w += AdjacencyMatrix.TileWeigths[tileId];
+                        }
+                    }
+                }
+
+                _weights[i] = w;
+            }
         }
 
         private void InitGrids(Vector3Int extent)

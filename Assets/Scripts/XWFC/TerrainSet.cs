@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using Patterns = System.Collections.Generic.List<(int,UnityEngine.Vector3Int)>;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -54,7 +55,16 @@ namespace XWFC
                 new(
                     "void",
                     new Vector3Int(1,1,1),
-                    new Color32(0,0,0,0))
+                    new Color32(0,0,0,0)
+                    ),
+                new(
+                    "rockBase",
+                    new Vector3Int(1,1,1),
+                    new Color32(100,100,100, 255)),
+                new(
+                    "water",
+                    new Vector3Int(2,1,2),
+                    new Color32(70,70,200, 255))
                 
             };
 
@@ -138,6 +148,138 @@ namespace XWFC
             return (bricks, grid );
         }
         
+        public (string[] t, SampleGrid) WaterPattern()
+        {
+            var bricks = new string[] { "water", "grass", "void" };
+            var tiles = GetSet().GetSubset(bricks);
+            
+            var t = new Dictionary<string, int>();
+            foreach (var tile in bricks)
+            {
+                t[tile] = tiles.GetTileIdFromValue(tile);
+            }
+
+            var stackedPattern = new Patterns()
+            {
+                (t["water"], new Vector3Int(1, 0, 3)),
+                (t["water"], new Vector3Int(3, 0, 2)),
+                (t["water"], new Vector3Int(3, 0, 4)),
+                (t["water"], new Vector3Int(5, 0, 1)),
+                (t["water"], new Vector3Int(5, 0, 3)),
+                (t["water"], new Vector3Int(7, 0, 2)),
+            };
+
+            for (int i = 0; i < 10; i++)
+            {
+                for (int j = 0; j < 7; j++)
+                {
+                    var vector = new Vector3Int(i, 0, j);
+                    var free = true;
+                    foreach (var (id, vec) in stackedPattern)
+                    {
+
+                        if (Vector3Util.Lt(vector, vec + tiles[id].Extent) && Vector3Util.Geq(vector, vec))
+                        {
+                            free = false;
+                            break;
+                        }
+                        
+                    }
+                    if (free) stackedPattern.Add((t["grass"], new Vector3Int(i,0,j)));
+                }
+            }
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(0,1,0));
+            
+            return (bricks, grid );
+        }
+        
+        public (string[] t, SampleGrid) WaterEvenPattern()
+        {
+            var bricks = new string[] { "water", "grass", "void" };
+            var tiles = GetSet().GetSubset(bricks);
+            
+            var t = new Dictionary<string, int>();
+            foreach (var tile in bricks)
+            {
+                t[tile] = tiles.GetTileIdFromValue(tile);
+            }
+
+            var stackedPattern = new Patterns()
+            {
+                (t["water"], new Vector3Int(1, 0, 3)),
+                (t["water"], new Vector3Int(3, 0, 3)),
+                (t["water"], new Vector3Int(5, 0, 3)),
+                (t["water"], new Vector3Int(3, 0, 1)),
+                (t["water"], new Vector3Int(3, 0, 5)),
+            };
+
+            for (int i = 0; i < 8; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    var vector = new Vector3Int(i, 0, j);
+                    var free = true;
+                    foreach (var (id, vec) in stackedPattern)
+                    {
+
+                        if (Vector3Util.Lt(vector, vec + tiles[id].Extent) && Vector3Util.Geq(vector, vec))
+                        {
+                            free = false;
+                            break;
+                        }
+                        
+                    }
+                    if (free) stackedPattern.Add((t["grass"], new Vector3Int(i,0,j)));
+                }
+            }
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(0,1,0));
+            
+            return (bricks, grid );
+        }
+        
+        public (string[] t, SampleGrid) WaterSquarePattern()
+        {
+            var bricks = new string[] { "water", "grass", "void" };
+            var tiles = GetSet().GetSubset(bricks);
+            
+            var t = new Dictionary<string, int>();
+            foreach (var tile in bricks)
+            {
+                t[tile] = tiles.GetTileIdFromValue(tile);
+            }
+
+            var stackedPattern = new Patterns()
+            {
+                (t["water"], new Vector3Int(1, 0, 1)),
+                (t["water"], new Vector3Int(3, 0, 1)),
+                (t["water"], new Vector3Int(1, 0, 3)),
+                (t["water"], new Vector3Int(3, 0, 3)),
+            };
+
+            for (int i = 0; i < 6; i++)
+            {
+                for (int j = 0; j < 6; j++)
+                {
+                    var vector = new Vector3Int(i, 0, j);
+                    var free = true;
+                    foreach (var (id, vec) in stackedPattern)
+                    {
+
+                        if (Vector3Util.Lt(vector, vec + tiles[id].Extent) && Vector3Util.Geq(vector, vec))
+                        {
+                            free = false;
+                            break;
+                        }
+                        
+                    }
+                    if (free) stackedPattern.Add((t["grass"], new Vector3Int(i,0,j)));
+                }
+            }
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(0,1,0));
+            
+            return (bricks, grid );
+        }
+        
         public (string[] t, SampleGrid) RootPattern()
         {
             var bricks = new string[] { "grass", "root", "trunk3", "void" };
@@ -189,7 +331,10 @@ namespace XWFC
             var trunkLeaves = TreeTrunkLeavesPattern();
             var leaves = LeavesPattern();
             var root = RootPattern();
-            var patterns = new[] { trunk, root, trunkLeaves, leaves};
+            var water = WaterPattern();
+            var water2 = WaterEvenPattern();
+            var water3 = WaterSquarePattern();
+            var patterns = new[] { trunk, root, trunkLeaves, leaves, water, water2, water3};
             return ExtractTilesAndSamples(patterns);
         }
         
@@ -205,19 +350,21 @@ namespace XWFC
                 weights[value.UniformAtomValue] = 1;
             }
 
-            weights["grass"] = 100;
-            weights["root"] = 120;
-            weights["trunk3"] = 50;
+            weights["grass"] = 300;
+            weights["root"] = 200;
+            weights["trunk3"] = 200;
+            weights["water"] = 400;
+            weights["leaf"] = 0.01f;
             
             var unit = LegoSet.BrickUnitSize(set.PlateAtoms);
             var unitV = new Vector3Int(1, unit, 1);
             
             var c = new Component(
                 new Vector3Int(0,0,0), 
-                new Vector3Int(10,10,10), 
+                new Vector3Int(40,8,20), 
                 t, s.ToArray(),
                 tileWeights:weights,
-                customSeed:792
+                customSeed:754
             );
             
             

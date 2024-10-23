@@ -22,6 +22,7 @@ public class XWFCAnimator : MonoBehaviour
     [SerializeField] private GameObject edgePrefab;
     [SerializeField] private Canvas tileLabelPrefab;
     [SerializeField] private int RandomSeed;
+    [SerializeField] private Dictionary<string, float> tileWeights;
     public Vector3Int extent;
     public float stepSize;
     public TileSet TileSet;
@@ -258,7 +259,8 @@ public class XWFCAnimator : MonoBehaviour
         _activeStateFlag = 0;
         ResetDrawnGrid();
         if (activeModel == XwfcModel.Overlapping) DrawPatterns();
-        
+        tileWeights = _currentComponent.TileWeights;
+        // _xwfc.UpdateNutWeights(tileWeights);
         DrawTiles();
     }
 
@@ -856,7 +858,7 @@ public class XWFCAnimator : MonoBehaviour
         }
         _xwfc.UpdateRandom(RandomSeed);
         extent = component.Grid.GetExtent();
-
+        
         Debug.Log("Loaded component!");
     }
 

@@ -486,6 +486,11 @@ namespace XWFC
                     $"STATUS: {progress}%. Processed {_counter}/{GridExtent.x * GridExtent.y * GridExtent.z} cells");
         }
 
+        // public virtual void UpdateNutWeights(Dictionary<string, float> weights)
+        // {
+        //     return;
+        // }
+
         private void UpdateProgress(int increment = 1)
         {
             _counter += increment;
