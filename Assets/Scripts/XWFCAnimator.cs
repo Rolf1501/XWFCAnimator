@@ -56,6 +56,9 @@ public class XWFCAnimator : MonoBehaviour
     private Vector3Int _kernelSize = new Vector3Int(2, 1, 2);
 
     private XWFC.Timer _timer = new();
+
+    [SerializeField] private bool ShowVoids = true;
+    private bool _showingVoids = true;
     
     [Flags]
     private enum StateFlag
@@ -319,36 +322,6 @@ public class XWFCAnimator : MonoBehaviour
         return tileSet;
     }
 
-    private Component[] HouseComponents()
-    {
-        var (_, weights) = HouseTiles();
-
-        // var activeTileSet = tetrisTiles;
-
-        // Three components stacked in the y-direction.
-        var baseExtent = new Vector3Int(30, 1, 20);
-        var floorExtent = new Vector3Int(20, 1, 20);
-        var roofExtent = new Vector3Int(20, 1, 20);
-
-        var baseOrigin = new Vector3Int(0,0,0);
-        var floorOrigin = baseOrigin;
-        floorOrigin.z += baseExtent.z;
-        var roofOrigin = floorOrigin;
-        roofOrigin.z += floorExtent.z;
-
-        var baseTileSet = ToTileSet(BaseTiles());
-        var baseGrid = InputHandler.PatternsToGrids(BasePatterns(), baseTileSet, "");
-
-        var floorTileSet = ToTileSet(FloorTiles());
-        var floorGrid = InputHandler.PatternsToGrids(FloorPatterns(), floorTileSet, "");
-        
-        var baseComponent = new Component(baseOrigin, baseExtent, baseTileSet, baseGrid.ToArray(), weights);
-        var floorComponent = new Component(floorOrigin, floorExtent, floorTileSet, floorGrid.ToArray(), weights);
-        // var roof = new Component(roofOrigin, roofExtent, tileSet, grids.ToArray(), weights);
-        var components = new Component[] { baseComponent, floorComponent };//, floor, roof };
-
-        return components;
-    }
 
     private NonUniformTile[] BaseTiles()
     {
@@ -1122,6 +1095,30 @@ public class XWFCAnimator : MonoBehaviour
         else
         {
             _updateDeltaTime += Time.deltaTime;
+        }
+
+        if (_showingVoids != ShowVoids)
+        {
+            _showingVoids = ShowVoids;
+            var e = _drawnGrid.GetExtent();
+            for (int x = 0; x < e.x; x++)
+            {
+                for (int y = 0; y < e.y; y++)
+                {
+                    for (int z = 0; z < e.z; z++)
+                    {
+                        var atom = _drawnGrid.Get(x, y, z);
+                        if (atom.Id == _drawnGrid.DefaultFillValue.Id) continue;
+                        var (tileId,_ , _) = _xwfc.AdjMatrix.AtomMapping.Get(atom.Id);
+                        if (tileId == TileSet.GetTileIdFromValue("void"))
+                        {
+                            atom.Atom.SetActive(_showingVoids);
+                        }
+                    }
+                    
+                }
+            }
+            
         }
     }
 

@@ -29,6 +29,7 @@ namespace XWFC
         private (Grid<int> atoms, PatternWave wave) _rootSave;
         private int _blockedCellId;
         private Grid<int> _seededGrid;
+        private float[] _weights;
         
         public XwfcOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, int randomSeed, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, randomSeed, forceCompleteTiles)
         {
@@ -40,8 +41,7 @@ namespace XWFC
 
             RandomSeed = randomSeed;
             Debug.Log($"Random Seed: {RandomSeed}");
-            // 316068766
-            //874075968
+            
             _random = new Random(RandomSeed);
 
             _seededGrid = seededGrid;
@@ -49,7 +49,26 @@ namespace XWFC
             var extent = seededGrid.GetExtent();
             
             InitGrids(extent);
-            
+
+            _weights = new float[PatternMatrix.Patterns.Length];
+            for (var i = 0; i < PatternMatrix.Patterns.Length; i++)
+            {
+                var pattern = PatternMatrix.Patterns[i];
+                var w = 0.0f;
+                for (int x = 0; x < pattern.GetLength(1); x++)
+                {
+                    for (int y = 0; y < pattern.GetLength(0); y++)
+                    {
+                        for (int z = 0; z < pattern.GetLength(0); z++)
+                        {
+                            var (tileId, coord, _) = adjacencyMatrix.AtomMapping.GetKey(pattern[y, x, z]);
+                            w += adjacencyMatrix.TileWeigths[tileId];
+                        }
+                    }
+                }
+
+                _weights[i] = w;
+            }
             
             StartCoord = CalcStartCoord();
             
@@ -494,7 +513,7 @@ namespace XWFC
             var choices = _patternWave.Get(coord);
 
             var uniformWeights = Enumerable.Repeat(1.0f, GetNPatterns()).ToArray();
-            var chosenPatternId = RandomChoice(choices, uniformWeights, _random);
+            var chosenPatternId = RandomChoice(choices, _weights, _random);
 
             var wave = EmptyWave();
             if (chosenPatternId < 0) throw new NoMoreChoicesException("No more choices...");

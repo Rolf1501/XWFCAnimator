@@ -189,7 +189,7 @@ namespace XWFC
             var trunkLeaves = TreeTrunkLeavesPattern();
             var leaves = LeavesPattern();
             var root = RootPattern();
-            var patterns = new[] { trunk, root }; //, trunkLeaves, leaves};
+            var patterns = new[] { trunk, root, trunkLeaves, leaves};
             return ExtractTilesAndSamples(patterns);
         }
         
@@ -198,16 +198,29 @@ namespace XWFC
             var set = new TerrainSet(false);
 
             var (t, s) = set.TreeExample();
+
+            var weights = new Dictionary<string, float>();
+            foreach (var (tKey, value) in t)
+            {
+                weights[value.UniformAtomValue] = 1;
+            }
+
+            weights["grass"] = 100;
+            weights["root"] = 120;
+            weights["trunk3"] = 50;
             
             var unit = LegoSet.BrickUnitSize(set.PlateAtoms);
             var unitV = new Vector3Int(1, unit, 1);
             
             var c = new Component(
                 new Vector3Int(0,0,0), 
-                new Vector3Int(3,11,3), 
+                new Vector3Int(10,10,10), 
                 t, s.ToArray(),
-                customSeed:26
+                tileWeights:weights,
+                customSeed:792
             );
+            
+            
             
             var components = new[] { c }; //  
 
