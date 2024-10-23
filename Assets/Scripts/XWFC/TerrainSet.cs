@@ -350,11 +350,12 @@ namespace XWFC
                 weights[value.UniformAtomValue] = 1;
             }
 
-            weights["grass"] = 300;
+            weights["grass"] = 500;
             weights["root"] = 200;
             weights["trunk3"] = 200;
-            weights["water"] = 400;
+            weights["water"] = 200;
             weights["leaf"] = 0.01f;
+            weights["void"] = 10;
             
             var unit = LegoSet.BrickUnitSize(set.PlateAtoms);
             var unitV = new Vector3Int(1, unit, 1);
@@ -364,7 +365,8 @@ namespace XWFC
                 new Vector3Int(40,8,20), 
                 t, s.ToArray(),
                 tileWeights:weights,
-                customSeed:754
+                customSeed:1166925486
+                // 569
             );
             
             

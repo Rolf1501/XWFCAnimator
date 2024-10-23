@@ -48,9 +48,9 @@ namespace XWFC
             // Initialize wave in superposition.
             var extent = seededGrid.GetExtent();
             
+            CalcPatternWeights();
             InitGrids(extent);
 
-            CalcPatternWeights();
             
             StartCoord = CalcStartCoord();
             
@@ -795,7 +795,7 @@ namespace XWFC
 
                     var post = new bool[nPatterns];
                     var preIsPost = true;
-                    var remainingChoiceCount = 0;
+                    var remainingChoiceCount = 0.0f;
                     var latestChoice = -1;
                     
                     for (int i = 0; i < neighborChoices.Length; i++)
@@ -811,7 +811,7 @@ namespace XWFC
 
                         if (isPatternAllowed)
                         {
-                            remainingChoiceCount++;
+                            remainingChoiceCount+= 100.0f / _weights[i];
                             latestChoice = i;
                         }
                     }
@@ -848,7 +848,7 @@ namespace XWFC
                 }
             }
 
-            Debug.Log($"Time taken on union: {unionTime}");
+            // Debug.Log($"Time taken on union: {unionTime}");
             return collapseItems;
         }
 

@@ -180,6 +180,14 @@ namespace XWFC
              */
             return nChoices > 0 ? (float)Math.Log(nChoices) : -1;
         }
+        
+        public static float CalcEntropy(float nChoices)
+        {
+            /*
+             * Entropy is taken as the log of the number of choices.
+             */
+            return nChoices > 0 ? (float)Math.Log(nChoices) : -1;
+        }
 
         private void Init(TileSet tileSet, int offsetsDimensions)
         {
