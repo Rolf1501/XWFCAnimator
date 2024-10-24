@@ -152,8 +152,8 @@ public class XWFCAnimator : MonoBehaviour
             // var components = LegoSet.LegoHouse();
             // var components = ExampleSet.RedDotWFC();
             // var components = ExampleSet.RedDotExampleComparison();
-            // var components = TerrainSet.Tree();
-            var components = LegoSet.SimpleHouseExample();
+            var components = TerrainSet.Tree();
+            // var components = LegoSet.SimpleHouseExample();
             // var components = LegoSet.LegoHouse2D();
             // plateAtoms = true;
             // var components = LegoSet.LegoTrain();
@@ -296,6 +296,10 @@ public class XWFCAnimator : MonoBehaviour
                         drawnAtom.transform.position = origin + Vector3Util.Mult(new Vector3Int(x,y,z),  _unitSize);
                         _drawnPatterns.Add(drawnAtom);
 
+                        if (_xwfc.AdjMatrix.TileSet[_xwfc.AdjMatrix.AtomMapping.GetKey(value).tileId].UniformAtomValue.Equals("void"))
+                        {
+                            drawnAtom.SetActive(false);
+                        }
                         var edges = DrawEdges(value, drawnAtom, _currentComponent.AdjacencyMatrix);
                         foreach (var edge in edges)
                         {
@@ -948,6 +952,11 @@ public class XWFCAnimator : MonoBehaviour
                 {
                     _drawnTiles.Add(edge);
                 }
+                
+                if (_xwfc.AdjMatrix.TileSet[_xwfc.AdjMatrix.AtomMapping.GetKey(atomId).tileId].UniformAtomValue.Equals("void"))
+                {
+                    drawnAtom.SetActive(false);
+                }
 
                 if (labeled) continue;
                 // LabelTiles(drawnAtom, key.ToString());
@@ -1208,13 +1217,17 @@ public class XWFCAnimator : MonoBehaviour
     private void DrawAtom(Vector3Int coord, int atomId, Vector3Int origin, AdjacencyMatrix adjacencyMatrix)
     {
         if (!adjacencyMatrix.AtomMapping.ContainsValue(atomId)) return;
-        
+
         var atom = Instantiate(unitTilePrefab);
                 
         atom.transform.position = CalcAtomPosition(coord, origin);
         var edges = DrawEdges(atomId, atom, adjacencyMatrix);
         var drawing = new Drawing(atomId, atom, edges);
         UpdateColorFromAtom(atom, atomId, adjacencyMatrix);
+        if (adjacencyMatrix.TileSet[adjacencyMatrix.AtomMapping.GetKey(atomId).tileId].UniformAtomValue.Equals("void"))
+        {
+            atom.SetActive(false);
+        }
         _drawnGrid.Set(coord + origin, drawing);
     }
 

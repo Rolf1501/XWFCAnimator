@@ -362,7 +362,8 @@ namespace XWFC
             
             var c = new Component(
                 new Vector3Int(0,0,0), 
-                new Vector3Int(40,8,20), 
+                new Vector3Int(10,8,10), 
+                // new Vector3Int(40,8,20), 
                 t, s.ToArray(),
                 tileWeights:weights,
                 customSeed:1166925486
