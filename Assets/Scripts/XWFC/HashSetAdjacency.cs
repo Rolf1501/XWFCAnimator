@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+using UnityEngine;
+// using Newtonsoft.Json;
 
 namespace XWFC
 {
@@ -16,8 +17,8 @@ namespace XWFC
                 set.Add(adj.ToJson());
             }
 
-            dict["adjacencyConstraints"] = JsonConvert.SerializeObject(set);
-            var json = JsonConvert.SerializeObject(dict);
+            dict["adjacencyConstraints"] = JsonUtility.ToJson(set);
+            var json = JsonUtility.ToJson(dict);
             return json;
         }
 
@@ -25,13 +26,13 @@ namespace XWFC
         {
             var set = new HashSetAdjacency();
             
-            var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(s);
+            var dict = JsonUtility.FromJson<Dictionary<string,string>>(s);
             foreach (var (k,v) in dict)
             {
-                var hashSetString = JsonConvert.DeserializeObject<HashSet<string>>(v);
+                var hashSetString = JsonUtility.FromJson<HashSet<string>>(v);
                 foreach (var adjacencyString in hashSetString)
                 {
-                    var adjDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(adjacencyString);
+                    var adjDict = JsonUtility.FromJson<Dictionary<string, string>>(adjacencyString);
                     var adjacency = new Adjacency(adjDict["source"], adjDict["relations"], adjDict["offset"]);
                     set.Add(adjacency);
                 }

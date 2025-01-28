@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
-using Unity.VisualScripting;
+// using Newtonsoft.Json;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace XWFC
 {
@@ -46,14 +46,16 @@ namespace XWFC
                 // output[$"relation{i.ToString()}"] = Relations[i].ToJson();
             }
 
-            output["relations"] = JsonConvert.SerializeObject(relations);
-            return JsonConvert.SerializeObject(output);
+            output["relations"] = JsonUtility.ToJson(relations);
+            return JsonUtility.ToJson(output);
+            // output["relations"] = JsonConvert.SerializeObject(relations);
+            // return JsonConvert.SerializeObject(output);
         }
 
         public Adjacency(string source, string relations, string offset)
         {
             Source = int.Parse(source);
-            var rels = JsonConvert.DeserializeObject<List<string>>(relations);
+            var rels = JsonUtility.FromJson<List<string>>(relations);
             Relations = rels.Select(s => Relation.FromJson(s)).ToList();
             // var rels = JsonFormatter.ListTrimSplit(relations);
             
@@ -62,9 +64,9 @@ namespace XWFC
 
         public static Adjacency FromJson(string s)
         {
-            var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(s);
+            var dict = JsonUtility.FromJson<Dictionary<string,string>>(s);
             // var dict = JsonConvert.DeserializeObject<Dictionary<string,string>>(s);
-            var rels = JsonConvert.DeserializeObject<List<string>>(dict["relations"]);
+            var rels = JsonUtility.FromJson<List<string>>(dict["relations"]);
 
             return new Adjacency(dict["source"], dict["relations"], dict["offset"]);
 

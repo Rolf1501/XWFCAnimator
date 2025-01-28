@@ -17,6 +17,7 @@ using Patterns = System.Collections.Generic.List<(int,UnityEngine.Vector3Int)>;
 
 public class XWFCAnimator : MonoBehaviour
 {
+
     [SerializeField] private GameObject unitTilePrefab;
     [SerializeField] private GameObject thinTilePrefab;
     [SerializeField] private GameObject edgePrefab;
@@ -56,6 +57,9 @@ public class XWFCAnimator : MonoBehaviour
     private Vector3Int _kernelSize = new Vector3Int(2, 1, 2);
 
     private XWFC.Timer _timer = new();
+
+    [SerializeField] private bool ShowVoids = false;
+    private bool _showingVoids = true;
     
     [Flags]
     private enum StateFlag
@@ -146,7 +150,10 @@ public class XWFCAnimator : MonoBehaviour
             var plateAtoms = false;
             
             // var components = LegoSet.LegoHouse();
-            var components = LegoSet.LegoHouse2D();
+            // var components = ExampleSet.RedDotWFC();
+            // var components = ExampleSet.RedDotExampleComparison();
+            var components = TerrainSet.Tree();
+            // var components = LegoSet.LegoHouse2D();
             // plateAtoms = true;
             // var components = LegoSet.LegoTrain();
             // var houseComponents = HouseComponents();
@@ -1120,6 +1127,28 @@ public class XWFCAnimator : MonoBehaviour
         {
             _updateDeltaTime += Time.deltaTime;
         }
+
+        if (_showingVoids != ShowVoids)
+        {
+            _showingVoids = ShowVoids;
+            var e = _drawnGrid.GetExtent();
+            for (int x = 0; x < e.x; x++)
+            {
+                for (int y = 0; y < e.y; y++)
+                {
+                    for (int z = 0; z < e.z; z++)
+                    {
+                        var atom = _drawnGrid.Get(x, y, z);
+                        if (atom.Id == TileSet.GetTileIdFromValue("void"))
+                        {
+                            atom.Atom.SetActive(_showingVoids);
+                        }
+                    }
+                    
+                }
+            }
+            
+        }
     }
 
     public void CollapseOnce()
@@ -1212,6 +1241,11 @@ public class XWFCAnimator : MonoBehaviour
         var edges = DrawEdges(atomId, atom, adjacencyMatrix);
         var drawing = new Drawing(atomId, atom, edges);
         UpdateColorFromAtom(atom, atomId, adjacencyMatrix);
+
+        if (!ShowVoids && atomId == TileSet.GetTileIdFromValue("void"))
+        {
+            atom.SetActive(ShowVoids);
+        }
         _drawnGrid.Set(coord + origin, drawing);
     }
 

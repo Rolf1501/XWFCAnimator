@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json;
+// using Newtonsoft.Json;
+using UnityEngine;
 using UnityEngine.Tilemaps;
 
 namespace XWFC
@@ -20,12 +21,13 @@ namespace XWFC
 
         public static TileSet FromJson(string s)
         {
-            var json = JsonConvert.DeserializeObject<Dictionary<string, string>>(s);
+            var json = JsonUtility.FromJson<Dictionary<string, string>>(s);
+            // var json = JsonConvert.DeserializeObject<Dictionary<string, string>>(s);
             var tiles = new TileSet();
             foreach (var (k,v )in json)
             {
                 var id = int.Parse(k);
-                var terminal = NonUniformTile.FromJson(JsonConvert.DeserializeObject<Dictionary<string,string>>(v));
+                var terminal = NonUniformTile.FromJson(JsonUtility.FromJson<Dictionary<string,string>>(v));
                 tiles.Add(id, terminal);
             }
 
