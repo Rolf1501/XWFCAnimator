@@ -162,6 +162,17 @@ namespace XWFC
                 }
             }
 
+            foreach (var i in aug)
+            {
+                Debug.Log($"aug: {i}");
+
+            }
+
+            foreach (var (k,v) in defaultWeights)
+            {
+                Debug.Log($"def: {k} {v}");
+            }
+
             return aug;
         }
         

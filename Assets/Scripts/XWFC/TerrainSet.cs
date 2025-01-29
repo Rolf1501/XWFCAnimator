@@ -16,6 +16,7 @@ namespace XWFC
         public TileSet GetSet()
         {
             var unit = BrickUnitSize(PlateAtoms);
+            var leafColor = new Color32(20, 100, 20, 200);
 
             var tiles = new NonUniformTile[]
             {
@@ -49,7 +50,37 @@ namespace XWFC
                 new(
                     "leaf",
                     new Vector3Int(1,1,1),
-                    new Color32(20, 100, 20, 200)
+                    leafColor
+                ),
+                new(
+                    "leafTop",
+                    new Vector3Int(1,1,1),
+                    leafColor
+                ),
+                new(
+                    "leafBottom",
+                    new Vector3Int(1,1,1),
+                    leafColor
+                ),
+                new(
+                    "leafLeft",
+                    new Vector3Int(1,1,1),
+                    leafColor
+                ),
+                new(
+                    "leafRight",
+                    new Vector3Int(1,1,1),
+                    leafColor
+                ),
+                new(
+                    "leafFront",
+                    new Vector3Int(1,1,1),
+                    leafColor
+                ),
+                new(
+                    "leafBack",
+                    new Vector3Int(1,1,1),
+                    leafColor
                 ),
                 new(
                     "void",
@@ -100,7 +131,7 @@ namespace XWFC
         
         public (string[] t, SampleGrid) TreeTrunkLeavesPattern()
         {
-            var bricks = new string[] { "trunk3", "leaf", "void" };
+            var bricks = new string[] { "trunk3", "leaf", "void", "leafBottom" };
             var tiles = GetSet().GetSubset(bricks);
             
             var t = new Dictionary<string, int>();
@@ -114,19 +145,28 @@ namespace XWFC
                 (t["trunk3"], new Vector3Int(1, 0, 1)),
                 (t["leaf"], new Vector3Int(1, 3, 1)),
             };
-            LayerAdd(ref stackedPattern, new Range3D(0,3,1,4,0,1), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(0,3,1,4,2,3), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(0,1,1,4,1,2), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(2,3,1,4,1,2), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(0,3,2,4,0,1), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(0,3,2,4,2,3), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(0,1,2,4,1,2), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(2,3,2,4,1,2), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(0,3,1,2,0,1), t["leafBottom"]);
+            LayerAdd(ref stackedPattern, new Range3D(0,3,1,2,2,3), t["leafBottom"]);
+            LayerAdd(ref stackedPattern, new Range3D(0,1,1,2,1,2), t["leafBottom"]);
+            LayerAdd(ref stackedPattern, new Range3D(2,3,1,2,1,2), t["leafBottom"]);
+            //LayerAdd(ref stackedPattern, new Range3D(0,3,1,4,0,1), t["leaf"]);
+            //LayerAdd(ref stackedPattern, new Range3D(0,3,1,4,2,3), t["leaf"]);
+            //LayerAdd(ref stackedPattern, new Range3D(0,1,1,4,1,2), t["leaf"]);
+            //LayerAdd(ref stackedPattern, new Range3D(2,3,1,4,1,2), t["leaf"]);
             stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(1, 0, 1));
-            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1,1,1));
+            var grid = ToSampleGrid(stackedPattern, tiles, true);
+            //var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1,0,1));
             
             return (bricks, grid );
         }
         
         public (string[] t, SampleGrid) LeavesPattern()
         {
-            var bricks = new string[] { "leaf", "void" };
+            var bricks = new string[] { "leaf", "void", "leafBottom", "leafTop", "leafRight", "leafLeft", "leafFront", "leafBack" };
             var tiles = GetSet().GetSubset(bricks);
             
             var t = new Dictionary<string, int>();
@@ -136,11 +176,19 @@ namespace XWFC
             }
 
             var stackedPattern = new Patterns();
-            LayerAdd(ref stackedPattern, new Range3D(1,3,0,1,1,3), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(0,4,1,3,1,3), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(1,3,3,4,1,3), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(1,3,1,3,0,1), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(1,3,1,3,3,4), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(1,3,0,1,1,3), t["leafBottom"]);
+            LayerAdd(ref stackedPattern, new Range3D(1,3,1,2,1,3), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(1,3,2,3,1,3), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(1,3,3,4,1,3), t["leafTop"]);
+            LayerAdd(ref stackedPattern, new Range3D(0,1,1,3,1,3), t["leafLeft"]);
+            LayerAdd(ref stackedPattern, new Range3D(3,4,1,3,1,3), t["leafRight"]);
+            LayerAdd(ref stackedPattern, new Range3D(1,3,1,3,0,1), t["leafFront"]);
+            LayerAdd(ref stackedPattern, new Range3D(1,3,1,3,3,4), t["leafBack"]);
+            //LayerAdd(ref stackedPattern, new Range3D(1,3,0,1,1,3), t["leaf"]);
+            //LayerAdd(ref stackedPattern, new Range3D(0,4,1,3,1,3), t["leaf"]);
+            //LayerAdd(ref stackedPattern, new Range3D(1,3,3,4,1,3), t["leaf"]);
+            //LayerAdd(ref stackedPattern, new Range3D(1,3,1,3,0,1), t["leaf"]);
+            //LayerAdd(ref stackedPattern, new Range3D(1,3,1,3,3,4), t["leaf"]);
             stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(1, 1, 1));
             var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1,1,1));
             
@@ -349,11 +397,17 @@ namespace XWFC
                 weights[value.UniformAtomValue] = 1;
             }
 
-            weights["grass"] = 500;
+            weights["grass"] = 5000;
             weights["root"] = 200;
             weights["trunk3"] = 200;
             weights["water"] = 200;
             weights["leaf"] = 0.01f;
+            weights["leafTop"] = 0.01f;
+            weights["leafBottom"] = 0.01f;
+            weights["leafLeft"] = 0.01f;
+            weights["leafRight"] = 0.01f;
+            weights["leafFront"] = 0.01f;
+            weights["leafBack"] = 0.01f;
             weights["void"] = 10;
             
             var unit = LegoSet.BrickUnitSize(set.PlateAtoms);
