@@ -898,10 +898,11 @@ MonoBehaviour:
   edgePrefab: {fileID: 8410042719729564467, guid: 3613ece26b5228a4a9482bacca203304, type: 3}
   tileLabelPrefab: {fileID: 3078947573050405680, guid: f3cbec5e06abcc5409468549833779dd, type: 3}
   RandomSeed: 20
-  extent: {x: 10, y: 0, z: 10}
+  applyColorFluctuations: 0
+  extent: {x: 10, y: 2, z: 10}
   stepSize: -1
   delay: 0
-  activeModel: 1
+  activeModel: 2
   ShowVoids: 1
 --- !u!4 &1830932354
 Transform:

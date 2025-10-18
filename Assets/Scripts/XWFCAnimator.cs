@@ -94,10 +94,15 @@ public class XWFCAnimator : MonoBehaviour
         {
             // var legoTiles = LegoSet.GetLegoSubset(new []{"p211", "p212", "void"});
             // var tetrisTile = new TetrisSet(true).GetTetrisTileSet();
-            var tetrisTile = new TetrisSet(true).GetTetrisTileSet().GetSubset(new []{"J","Z","L","T", "S"});
+            var tetrisTile = new TetrisSet(false).GetTetrisTileSet().GetSubset(new []{"J","Z","L","T", "S"});
             // var tetrisTile = TetrisSet.GetLargeTetrisSet().GetSubset(new []{"L","S","T","O","I"});
-            var tetrisTileLarge = new TetrisSet(true).GetLargeTetrisSet(false).GetSubset(new []{"SL", "ZL", "TL", "OL"});
-            tetrisTile.Join(tetrisTileLarge);
+            //var tetrisTileLarge = new TetrisSet(true).GetLargeTetrisSet(false).GetSubset(new []{"SL", "ZL", "TL", "OL"});
+            //tetrisTile.Join(tetrisTileLarge);
+
+            var adjs = GetAllAdjacent2D(tetrisTile);
+            
+
+            var adjMat = new AdjacencyMatrix(adjs, tetrisTile, null);
             // PrintAdjacencyData(adjMat);
             // var components = new Component[] { 
             //     new (new Vector3Int(0, 0, 0), new Vector3Int(20, 1, 20), adjMat.TileSet, adjMat.TileAdjacencyConstraints),
@@ -106,35 +111,35 @@ public class XWFCAnimator : MonoBehaviour
             // };
 
 
-            var bricks = new[]
-            {
-                // "b112", 
-                "b312", 
-                "b412", 
-                // "b212", 
-                "b115", 
-                "b211", 
-                "b213", 
-                // "b216", 
-                "p211", 
-                "p212", 
-                "p414", 
-                "p317",
-                "void",
-            };
-            var plateAtoms = true;
+            //var bricks = new[]
+            //{
+            //    // "b112", 
+            //    "b312", 
+            //    "b412", 
+            //    // "b212", 
+            //    "b115", 
+            //    "b211", 
+            //    "b213", 
+            //    // "b216", 
+            //    "p211", 
+            //    "p212", 
+            //    "p414", 
+            //    "p317",
+            //    "void",
+            //};
+            //var plateAtoms = true;
             // if (plateAtoms) unitTilePrefab = thinTilePrefab;
-            var legoTiles = new LegoSet(plateAtoms).GetLegoSet().GetSubset(bricks);
+            //var legoTiles = new LegoSet(plateAtoms).GetLegoSet().GetSubset(bricks);
             
-            var activeSet = tetrisTile;
+            //var activeSet = tetrisTile;
             // activeSet = new TetrisSet(true).GetLargeTetrisSet(false);
             // activeSet = new LegoSet(false).GetLegoSet();
             // var unit = LegoSet.BrickUnitSize(plateAtoms);
             // if (plateAtoms) unitTilePrefab = thinTilePrefab;
-            SaveConfig(new AdjacencyMatrix(new HashSetAdjacency(), activeSet, null));
+            SaveConfig(adjMat);
             
-            var adjMat = ReadConfig();
-            LoadConfig();
+            //adjMat = ReadConfig();
+            //LoadConfig();
 
             var e1 = new Vector3Int(20, 1, 20);
             var c2 = new Vector3Int(e1.x, e1.y-2, 5);
@@ -1439,7 +1444,23 @@ public class XWFCAnimator : MonoBehaviour
             yield return FileUtil.GetFileNameFromPath(path, includeExtension);
         }
     }
-    
+
+    public HashSetAdjacency GetAllAdjacent2D(TileSet tiles)
+    {
+        var adjSet = new HashSetAdjacency();
+        var directions = new List<Vector3Int> { Vector3Int.forward, Vector3Int.back, Vector3Int.left, Vector3Int.right };
+        var tileIds = tiles.Keys.ToList();
+        foreach (var tileId in tiles.Keys)
+        {
+            foreach (var d in directions)
+            {
+                var adj = new Adjacency(tileId, tileIds, d);
+                adjSet.Add(adj);
+            }
+        }
+        return adjSet;
+    }
+
     private record Drawing
     {
         public int Id;
