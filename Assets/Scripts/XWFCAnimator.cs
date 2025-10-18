@@ -22,6 +22,8 @@ public class XWFCAnimator : MonoBehaviour
     [SerializeField] private GameObject edgePrefab;
     [SerializeField] private Canvas tileLabelPrefab;
     [SerializeField] private int RandomSeed;
+    [SerializeField] private Dictionary<string, float> tileWeights;
+    [SerializeField] private bool applyColorFluctuations = false;
     public Vector3Int extent;
     public float stepSize;
     public TileSet TileSet;
@@ -56,6 +58,9 @@ public class XWFCAnimator : MonoBehaviour
     private Vector3Int _kernelSize = new Vector3Int(2, 1, 2);
 
     private XWFC.Timer _timer = new();
+
+    [SerializeField] private bool ShowVoids = true;
+    private bool _showingVoids = true;
     
     [Flags]
     private enum StateFlag
@@ -144,9 +149,14 @@ public class XWFCAnimator : MonoBehaviour
         else
         {
             var plateAtoms = false;
-            
+            new InputReader().ReadNUT();
             // var components = LegoSet.LegoHouse();
-            var components = LegoSet.LegoHouse2D();
+            // var components = ExampleSet.RedDotWFC();
+            // var components = ExampleSet.RedDotExampleComparison();
+            var components = TerrainSet.Tree(); // 157178941
+            //var components = CogSet.COG();
+            // var components = LegoSet.SimpleHouseExample();
+            // var components = LegoSet.LegoHouse2D();
             // plateAtoms = true;
             // var components = LegoSet.LegoTrain();
             // var houseComponents = HouseComponents();
@@ -252,8 +262,12 @@ public class XWFCAnimator : MonoBehaviour
         _activeStateFlag = 0;
         ResetDrawnGrid();
         if (activeModel == XwfcModel.Overlapping) DrawPatterns();
-        
+        tileWeights = _currentComponent.TileWeights;
+        // _xwfc.UpdateNutWeights(tileWeights);
         DrawTiles();
+        /*
+         * 1631111006
+         */
     }
 
 
@@ -287,6 +301,10 @@ public class XWFCAnimator : MonoBehaviour
                         drawnAtom.transform.position = origin + Vector3Util.Mult(new Vector3Int(x,y,z),  _unitSize);
                         _drawnPatterns.Add(drawnAtom);
 
+                        if (_xwfc.AdjMatrix.TileSet[_xwfc.AdjMatrix.AtomMapping.GetKey(value).tileId].UniformAtomValue.Equals("void"))
+                        {
+                            drawnAtom.SetActive(false);
+                        }
                         var edges = DrawEdges(value, drawnAtom, _currentComponent.AdjacencyMatrix);
                         foreach (var edge in edges)
                         {
@@ -316,36 +334,6 @@ public class XWFCAnimator : MonoBehaviour
         return tileSet;
     }
 
-    private Component[] HouseComponents()
-    {
-        var (_, weights) = HouseTiles();
-
-        // var activeTileSet = tetrisTiles;
-
-        // Three components stacked in the y-direction.
-        var baseExtent = new Vector3Int(30, 1, 20);
-        var floorExtent = new Vector3Int(20, 1, 20);
-        var roofExtent = new Vector3Int(20, 1, 20);
-
-        var baseOrigin = new Vector3Int(0,0,0);
-        var floorOrigin = baseOrigin;
-        floorOrigin.z += baseExtent.z;
-        var roofOrigin = floorOrigin;
-        roofOrigin.z += floorExtent.z;
-
-        var baseTileSet = ToTileSet(BaseTiles());
-        var baseGrid = InputHandler.PatternsToGrids(BasePatterns(), baseTileSet, "");
-
-        var floorTileSet = ToTileSet(FloorTiles());
-        var floorGrid = InputHandler.PatternsToGrids(FloorPatterns(), floorTileSet, "");
-        
-        var baseComponent = new Component(baseOrigin, baseExtent, baseTileSet, baseGrid.ToArray(), weights);
-        var floorComponent = new Component(floorOrigin, floorExtent, floorTileSet, floorGrid.ToArray(), weights);
-        // var roof = new Component(roofOrigin, roofExtent, tileSet, grids.ToArray(), weights);
-        var components = new Component[] { baseComponent, floorComponent };//, floor, roof };
-
-        return components;
-    }
 
     private NonUniformTile[] BaseTiles()
     {
@@ -880,7 +868,7 @@ public class XWFCAnimator : MonoBehaviour
         }
         _xwfc.UpdateRandom(RandomSeed);
         extent = component.Grid.GetExtent();
-
+        
         Debug.Log("Loaded component!");
     }
 
@@ -960,7 +948,7 @@ public class XWFCAnimator : MonoBehaviour
                 var drawnAtom = Instantiate(unitTilePrefab);
                 drawnAtom.transform.position = CalcAtomPosition(index, origin);
                 
-                UpdateColorFromTerminal(drawnAtom, key, true);
+                UpdateColorFromTerminal(drawnAtom, key);
                 _drawnTiles.Add(drawnAtom);
 
                 var atomId = _xwfc.AdjMatrix.AtomMapping.GetValue((key, index, 0));
@@ -968,6 +956,11 @@ public class XWFCAnimator : MonoBehaviour
                 foreach (var edge in edges)
                 {
                     _drawnTiles.Add(edge);
+                }
+                
+                if (_xwfc.AdjMatrix.TileSet[_xwfc.AdjMatrix.AtomMapping.GetKey(atomId).tileId].UniformAtomValue.Equals("void"))
+                {
+                    drawnAtom.SetActive(false);
                 }
 
                 if (labeled) continue;
@@ -1120,6 +1113,30 @@ public class XWFCAnimator : MonoBehaviour
         {
             _updateDeltaTime += Time.deltaTime;
         }
+
+        if (_showingVoids != ShowVoids)
+        {
+            _showingVoids = ShowVoids;
+            var e = _drawnGrid.GetExtent();
+            for (int x = 0; x < e.x; x++)
+            {
+                for (int y = 0; y < e.y; y++)
+                {
+                    for (int z = 0; z < e.z; z++)
+                    {
+                        var atom = _drawnGrid.Get(x, y, z);
+                        if (atom.Id == _drawnGrid.DefaultFillValue.Id) continue;
+                        var (tileId,_ , _) = _xwfc.AdjMatrix.AtomMapping.Get(atom.Id);
+                        if (tileId == TileSet.GetTileIdFromValue("void"))
+                        {
+                            atom.Atom.SetActive(_showingVoids);
+                        }
+                    }
+                    
+                }
+            }
+            
+        }
     }
 
     public void CollapseOnce()
@@ -1205,11 +1222,19 @@ public class XWFCAnimator : MonoBehaviour
     private void DrawAtom(Vector3Int coord, int atomId, Vector3Int origin, AdjacencyMatrix adjacencyMatrix)
     {
         if (!adjacencyMatrix.AtomMapping.ContainsValue(atomId)) return;
-        
+
         var atom = Instantiate(unitTilePrefab);
                 
         atom.transform.position = CalcAtomPosition(coord, origin);
         var edges = DrawEdges(atomId, atom, adjacencyMatrix);
+        if (adjacencyMatrix.TileSet[adjacencyMatrix.AtomMapping.GetKey(atomId).tileId].UniformAtomValue.Equals("void"))
+        {
+            atom.SetActive(false);
+            foreach (var item in edges)
+            {
+                item.SetActive(false);
+            }
+        }
         var drawing = new Drawing(atomId, atom, edges);
         UpdateColorFromAtom(atom, atomId, adjacencyMatrix);
         _drawnGrid.Set(coord + origin, drawing);
@@ -1269,17 +1294,17 @@ public class XWFCAnimator : MonoBehaviour
 
     }
 
-    private void UpdateColorFromAtom(GameObject obj, int atomId, AdjacencyMatrix adjacencyMatrix, bool applyFluctuation=true)
+    private void UpdateColorFromAtom(GameObject obj, int atomId, AdjacencyMatrix adjacencyMatrix)
     {
         var color = GetTerminalColorFromAtom(atomId, adjacencyMatrix);
-        if (applyFluctuation) color = ApplyVariation(color, 0.2f);
+        if (applyColorFluctuations) color = ApplyVariation(color, 0.2f);
         obj.GetComponent<Renderer>().material.color = color;
     }
 
-    private void UpdateColorFromTerminal(GameObject obj, int tileId, bool applyFluctuation)
+    private void UpdateColorFromTerminal(GameObject obj, int tileId)
     {
         var color = CompleteTileSet[tileId].Color;
-        if (applyFluctuation) color = ApplyVariation(color, 0.2f);
+        if (applyColorFluctuations) color = ApplyVariation(color, 0.2f);
         obj.GetComponent<Renderer>().material.color = color;
     }
 

@@ -177,6 +177,11 @@ namespace XWFC
                     new Color(0.2f,0.1f,1f,0.7f),
                     mask: windowMaskSmall
                 ),
+                new(
+                    "windowS",
+                    new Vector3Int(2,3,2),
+                    new Color(0.2f,0.1f,1f,0.7f)
+                ),
                 
                 // new(
                 //     "poleLeft",
@@ -333,6 +338,45 @@ namespace XWFC
             }
 
             return tileSet;
+        }
+
+        public static Component[] SimpleHouseExample()
+        {
+            var set = new LegoSet(false);
+
+            var (t, s) = set.SimpleHouse();
+
+            var weights = new Dictionary<string, float>();
+            foreach (var (tKey, value) in t)
+            {
+                weights[value.UniformAtomValue] = 1;
+            }
+
+            weights["door"] = 500;
+            weights["b412"] = 200;
+            weights["b214"] = 200;
+            weights["b212"] = 300;
+            // weights["windowSmall"] = 1000;
+            // weights["windowS"] = 100;
+            // weights["b112"] = 100;
+        
+            var unit = LegoSet.BrickUnitSize(set.PlateAtoms);
+            var unitV = new Vector3Int(1, unit, 1);
+        
+            var c = new Component(
+                new Vector3Int(0,0,0), 
+                new Vector3Int(22,16,14), 
+                t, s.ToArray(),
+                tileWeights:weights,
+                customSeed:514
+                // 569
+            );
+        
+        
+        
+            var components = new[] { c }; //  
+
+            return components;
         }
 
         public static Component[] LegoHouse2D()
@@ -725,11 +769,6 @@ namespace XWFC
         public (TileSet legoTiles, List<SampleGrid> samples) BalconyExample()
         {
             var balcony = GetBalconyPattern();
-            // var stackedBricks = GetStackedCornerPattern();
-            // var brick412 = Get412BrickPattern(true,true);
-            // var brick214 = Get214BrickPattern();
-            // var runningStacked = GetRunningStackedBrickPattern();
-            // var corner = GetCornerPattern(false, true);
             var patterns = new[] { balcony };//, brick412, brick214, corner, runningStacked };
             return ExtractTilesAndSamples(patterns);
         }
@@ -737,11 +776,6 @@ namespace XWFC
         public (TileSet legoTiles, List<SampleGrid> samples) BalconyExample2D()
         {
             var balcony = GetBalconyPattern2D();
-            // var stackedBricks = GetStackedCornerPattern();
-            // var brick412 = Get412BrickPattern(true,true);
-            // var brick214 = Get214BrickPattern();
-            // var runningStacked = GetRunningStackedBrickPattern();
-            // var corner = GetCornerPattern(false, true);
             var patterns = new[] { balcony };//, brick412, brick214, corner, runningStacked };
             return ExtractTilesAndSamples(patterns);
         }
@@ -761,6 +795,32 @@ namespace XWFC
             var brick214 = Get214BrickPattern();
             // var voids = GetVoidPattern();
             var patterns = new[] { door, corner, brick412, brick214 };
+            
+            return ExtractTilesAndSamples(patterns);
+        }
+        
+        public (TileSet legoTiles, List<SampleGrid> samples) SimpleHouse()
+        {
+            var door = DoorOnlyPattern2();
+            var corner = GetCornerPattern(false);
+            var brick412 = Get412BrickPattern();
+            var brick214 = Get214BrickPattern();
+            var oddCorner = GetCornerPatternOdd(false);
+            var oddSingle = GetCornerPatternOddSingle();
+            var evenSingle = GetCornerPatternEvenSingle();
+            var squareX = GetSquarePatternSingleX();
+            var squareZ = GetSquarePatternSingleZ();
+            var oddBrick = GetOddBrickPattern();
+            
+            // var window = GetWindowSPattern();
+            var window = GetWindowPattern();
+            var curl = GetOddCurlPattern();
+
+            var patterns = new[]
+            {
+                door, corner, brick412, brick214, oddCorner, oddSingle, evenSingle, oddBrick, window, curl, squareX,
+                squareZ
+            };
             
             return ExtractTilesAndSamples(patterns);
         }
@@ -1716,6 +1776,41 @@ namespace XWFC
             var sample = ToSampleGrid(patterns, legoTiles,false);
             return (bricks, sample);
         }
+        
+        private (string[] bricks, SampleGrid sample) GetWindowSPattern()
+        {
+            var bricks = new string[] { "b112","b312", "windowS","void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var patterns = TranslatePattern(new Patterns()
+            {
+                (t["windowS"], new Vector3Int(4,1*unit,0)),
+                
+                (t["b312"], new Vector3Int(1,0,0)),
+                (t["b312"], new Vector3Int(0,unit,0)),
+                (t["b312"], new Vector3Int(1,2*unit,0)),
+                (t["b312"], new Vector3Int(0,3*unit,0)),
+                (t["b312"], new Vector3Int(1,4*unit,0)),
+                
+                (t["b312"], new Vector3Int(4,0,0)),
+                (t["b312"], new Vector3Int(4,4*unit,0)),
+                
+                (t["b312"], new Vector3Int(6,unit,0)),
+                (t["b312"], new Vector3Int(7,2*unit,0)),
+                (t["b312"], new Vector3Int(6,3*unit,0)),
+                
+                (t["b112"], new Vector3Int(3,unit,0)),
+                (t["b112"], new Vector3Int(6,2*unit,0)),
+                (t["b112"], new Vector3Int(3,3*unit,0)),
+                
+                
+            }, new Vector3Int(0, 0, 1));
+            LayerAdd(ref patterns, new Range3D(0,11,0,7*unit,0,1), t["void"]);
+            LayerAdd(ref patterns, new Range3D(0,11,0,7*unit,3,4), t["void"]);
+            var sample = ToSampleGrid(patterns, legoTiles,false);
+            return (bricks, sample);
+        }
+        
+        
         private (string[] bricks, SampleGrid sample) GetOddBrickPattern2()
         {
             var bricks = new string[] { "b112", "b212","b312", "windowSplit","void" };
@@ -1959,80 +2054,7 @@ namespace XWFC
             return (bricks, doorSample);
         }
 
-        private (string[] bricks, SampleGrid sample) DoorOnlyPattern()
-        {
-            var bricks = new string[] { "b212", "void", "doorEven" };
-            var (unit, legoTiles, t) = PatternData(bricks);
-            var doorPattern = TranslatePattern(new Patterns()
-            {
-                (t["doorEven"], new Vector3Int(2, 0, 0)),
-                (t["doorEven"], new Vector3Int(2, 0, 1)),
-                
-                (t["b212"], new Vector3Int(0,0,0)),
-                (t["b212"], new Vector3Int(0,unit,0)),
-                (t["b212"], new Vector3Int(0,2*unit,0)),
-                (t["b212"], new Vector3Int(0,3*unit,0)),
-                (t["b212"], new Vector3Int(0,4*unit,0)),
-                (t["b212"], new Vector3Int(0,5*unit,0)),
-                (t["b212"], new Vector3Int(0,6*unit,0)),
-                
-                (t["b212"], new Vector3Int(6,0,0)),
-                (t["b212"], new Vector3Int(6,unit,0)),
-                (t["b212"], new Vector3Int(6,2*unit,0)),
-                (t["b212"], new Vector3Int(6,3*unit,0)),
-                (t["b212"], new Vector3Int(6,4*unit,0)),
-                (t["b212"], new Vector3Int(6,5*unit,0)),
-                (t["b212"], new Vector3Int(6,6*unit,0)),
-                
-                (t["b212"], new Vector3Int(2,6*unit,0)),
-                (t["b212"], new Vector3Int(2,7*unit,0)),
-                (t["b212"], new Vector3Int(4,6*unit,0)),
-                (t["b212"], new Vector3Int(4,7*unit,0)),
-            }, new Vector3Int(0,0,1));
-            LayerAdd(ref doorPattern, new Range3D(0,10,0,6*unit, 0,1), t["void"]); // Layer in front.
-            LayerAdd(ref doorPattern, new Range3D(0,10,0,7*unit, 3,4), t["void"]); // Layer in back.
-
-            var doorSample = ToSampleGrid(doorPattern, legoTiles, fillWithVoids: false);
-            return (bricks, doorSample);
-        }
         
-        // private (string[] bricks, SampleGrid sample) DoorOnlyPattern2()
-        // {
-        //     var bricks = new string[] { "b212", "b412", "void", "doorEven" };
-        //     var (unit, legoTiles, t) = PatternData(bricks);
-        //     var doorPattern = TranslatePattern(new Patterns()
-        //     {
-        //         (t["doorEven"], new Vector3Int(6, 0, 0)),
-        //         
-        //         (t["b412"], new Vector3Int(2,0,0)),
-        //         (t["b412"], new Vector3Int(2,2*unit,0)),
-        //         (t["b412"], new Vector3Int(2,4*unit,0)),
-        //         (t["b412"], new Vector3Int(2,6*unit,0)),
-        //         
-        //         (t["b412"], new Vector3Int(0,unit,0)),
-        //         (t["b412"], new Vector3Int(0,3*unit,0)),
-        //         (t["b412"], new Vector3Int(0,5*unit,0)),
-        //         
-        //         (t["b212"], new Vector3Int(4,unit,0)),
-        //         (t["b212"], new Vector3Int(4,3*unit,0)),
-        //         (t["b212"], new Vector3Int(4,5*unit,0)),
-        //         
-        //         (t["b412"], new Vector3Int(6,6*unit,0)),
-        //         
-        //         (t["b412"], new Vector3Int(10,0,0)),
-        //         (t["b212"], new Vector3Int(10,unit,0)),
-        //         (t["b412"], new Vector3Int(10,2*unit,0)),
-        //         (t["b212"], new Vector3Int(10,3*unit,0)),
-        //         (t["b412"], new Vector3Int(10,4*unit,0)),
-        //         (t["b212"], new Vector3Int(10,5*unit,0)),
-        //         (t["b412"], new Vector3Int(10,6*unit,0)),
-        //     }, new Vector3Int(0,0,1));
-        //     LayerAdd(ref doorPattern, new Range3D(0,16,0,7*unit, 0,1), t["void"]); // Layer in front.
-        //     LayerAdd(ref doorPattern, new Range3D(0,16,0,7*unit, 3,4), t["void"]); // Layer in back.
-        //
-        //     var doorSample = ToSampleGrid(doorPattern, legoTiles, fillWithVoids: false);
-        //     return (bricks, doorSample);
-        // }
         private (string[] bricks, SampleGrid sample) DoorOnlyPattern2()
         {
             var bricks = new string[] { "b212", "b412", "void", "doorEven" };
@@ -2198,6 +2220,94 @@ namespace XWFC
             }, includeVoidLayer ? new Vector3Int(1,0,1) : new Vector3Int());
             
             var cornerSample = ToSampleGrid(corners, legoTiles, extraLayer:includeVoidLayer ? new Vector3Int(1,0,1) : null);
+            return (bricks, cornerSample);
+        }
+        
+        private (string[] bricks, SampleGrid cornerSample) GetCornerPatternOddSingle(bool includeVoidLayer=true)
+        {
+            var bricks = new string[] { "b312", "b213", "b111", "void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var corners = new Patterns()
+            {
+                (t["b213"], new Vector3Int(0,unit,0)),
+                (t["b213"], new Vector3Int(0,unit,3)),
+                
+                (t["b312"], new Vector3Int(0,unit,6)),
+                (t["b312"], new Vector3Int(3,unit,6)),
+                
+                (t["b213"], new Vector3Int(6,unit,5)),
+                (t["b213"], new Vector3Int(6,unit,2)),
+                
+                (t["b312"], new Vector3Int(2,unit,0)),
+                (t["b312"], new Vector3Int(5,unit,0)),
+                
+            };
+            LayerAdd(ref corners, new Range3D(0,2,0,1,0,8), t["b111"]);
+            LayerAdd(ref corners, new Range3D(6,8,0,1,0,8), t["b111"]);
+            LayerAdd(ref corners, new Range3D(2,6,0,1,0,2), t["b111"]);
+            LayerAdd(ref corners, new Range3D(2,6,0,1,6,8), t["b111"]);
+            var cornerSample = ToSampleGrid(corners, legoTiles, extraLayer:includeVoidLayer ? new Vector3Int(1,0,1) : null);
+            return (bricks, cornerSample);
+        }
+        
+        private (string[] bricks, SampleGrid cornerSample) GetCornerPatternEvenSingle(bool includeVoidLayer=true)
+        {
+            var bricks = new string[] { "b412", "b214", "b111", "void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var corners = new Patterns()
+            {
+                (t["b412"], new Vector3Int(0,0,0)),
+                (t["b412"], new Vector3Int(4,0,0)),
+                
+                (t["b214"], new Vector3Int(8,0,0)),
+                (t["b214"], new Vector3Int(8,0,4)),
+                
+                (t["b412"], new Vector3Int(6,0,8)),
+                (t["b412"], new Vector3Int(2,0,8)),
+                
+                (t["b214"], new Vector3Int(0,0,6)),
+                (t["b214"], new Vector3Int(0,0,2)),
+                
+            };
+            LayerAdd(ref corners, new Range3D(0,2,1,2,0,10), t["b111"]);
+            LayerAdd(ref corners, new Range3D(8,10,1,2,0,10), t["b111"]);
+            LayerAdd(ref corners, new Range3D(2,8,1,2,0,2), t["b111"]);
+            LayerAdd(ref corners, new Range3D(2,8,1,2,8,10), t["b111"]);
+            var cornerSample = ToSampleGrid(corners, legoTiles, extraLayer:includeVoidLayer ? new Vector3Int(1,0,1) : null);
+            return (bricks, cornerSample);
+        }
+        
+        private (string[] bricks, SampleGrid cornerSample) GetSquarePatternSingleZ(bool includeVoidLayer=true)
+        {
+            var bricks = new string[] { "b212", "b213", "b111", "void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var corners = new Patterns()
+            {
+                (t["b213"], new Vector3Int(0,1,0)),
+                (t["b212"], new Vector3Int(0,1,3)),
+                (t["b213"], new Vector3Int(0,1,5)),
+            };
+            LayerAdd(ref corners, new Range3D(0,2,0,1,0,8), t["b111"]);
+            corners = TranslatePattern(corners, new Vector3Int(1, 0, 0));
+            
+            var cornerSample = ToSampleGrid(corners, legoTiles, extraLayer: new Vector3Int(1,0,0));
+            return (bricks, cornerSample);
+        }
+        
+        private (string[] bricks, SampleGrid cornerSample) GetSquarePatternSingleX(bool includeVoidLayer=true)
+        {
+            var bricks = new string[] { "b212", "b312", "b111", "void" };
+            var (unit, legoTiles, t) = PatternData(bricks);
+            var corners = new Patterns()
+            {
+                (t["b312"], new Vector3Int(0,1,0)),
+                (t["b212"], new Vector3Int(3,1,0)),
+                (t["b312"], new Vector3Int(5,1,0)),
+            };
+            LayerAdd(ref corners, new Range3D(0,8,0,1,0,2), t["b111"]);
+            corners = TranslatePattern(corners, new Vector3Int(0, 0, 1));
+            
+            var cornerSample = ToSampleGrid(corners, legoTiles, extraLayer: new Vector3Int(0,0,1));
             return (bricks, cornerSample);
         }
 

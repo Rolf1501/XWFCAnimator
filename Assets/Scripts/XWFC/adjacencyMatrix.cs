@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
@@ -174,6 +173,14 @@ namespace XWFC
         }
 
         public static float CalcEntropy(int nChoices)
+        {
+            /*
+             * Entropy is taken as the log of the number of choices.
+             */
+            return nChoices > 0 ? (float)Math.Log(nChoices) : -1;
+        }
+        
+        public static float CalcEntropy(float nChoices)
         {
             /*
              * Entropy is taken as the log of the number of choices.
@@ -911,18 +918,18 @@ namespace XWFC
             var tileString = new Dictionary<string, string>();
             foreach (var (k,v) in _tiles)
             {
-                tileString[k.ToString()] = JsonConvert.SerializeObject(v.ToJson());
+                tileString[k.ToString()] = JsonUtility.ToJson(v.ToJson());
             }
             
-            dict["tileset"] = JsonConvert.SerializeObject(tileString);
+            dict["tileset"] = JsonUtility.ToJson(tileString);
             dict["tileAdjacencyConstraints"] = _tileAdjacencyConstraints.ToJson();
             
-            return JsonConvert.SerializeObject(dict);
+            return JsonUtility.ToJson(dict);
         }
 
         public static AdjacencyMatrix FromJson(string s)
         {
-            var dict = JsonConvert.DeserializeObject<Dictionary<string, string>>(s);
+            var dict = JsonUtility.FromJson<Dictionary<string, string>>(s);
             var tilesetString = dict["tileset"];
             var tileset = TileSet.FromJson(tilesetString);
             var adjConstraintsString = dict["tileAdjacencyConstraints"];

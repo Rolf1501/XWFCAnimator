@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace XWFC
@@ -18,14 +19,16 @@ namespace XWFC
         public OffsetMode OffsetMode;
         private Dictionary<Vector3, int[,]> _voidMasks = new ();
         public int CustomSeed;
+        public Dictionary<string, float> TileWeights;
 
-        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, SampleGrid[] inputGrids, float[] tileWeights=null, OffsetMode offsetMode=OffsetMode.Min, int customSeed = -1)
+        public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, SampleGrid[] inputGrids, Dictionary<string,float> tileWeights=null, OffsetMode offsetMode=OffsetMode.Min, int customSeed = -1)
         {
             Origin = origin;
             Extent = extent;
             Tiles = tileSet;
             Grid = new Grid<int>(Extent, -1);
-            AdjacencyMatrix = new AdjacencyMatrix(tileSet, inputGrids, AdjacencyMatrix.ToWeightDictionary(tileWeights, tileSet));
+            TileWeights = tileWeights;
+            AdjacencyMatrix = new AdjacencyMatrix(tileSet, inputGrids, AdjacencyMatrix.ToWeightDictionary(tileWeights?.Values.ToArray(), tileSet));
             OffsetMode = offsetMode;
             CustomSeed = customSeed;
         }
