@@ -42,7 +42,15 @@ public class FileUtil
 
         return outPath;
     }
-    
+
+    public static string GetPathToScripts()
+    {
+        var dir = Directory.GetCurrentDirectory();
+        var outPath = Path.Join(dir, $"/Assets/Scripts/");
+
+        return outPath;
+    }
+
     public static string GetTimeStamp()
     {
         var timeStamp = DateTime.Now.ToString(CultureInfo.InvariantCulture);

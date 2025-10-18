@@ -23,6 +23,7 @@ public class XWFCAnimator : MonoBehaviour
     [SerializeField] private Canvas tileLabelPrefab;
     [SerializeField] private int RandomSeed;
     [SerializeField] private Dictionary<string, float> tileWeights;
+    [SerializeField] private bool applyColorFluctuations = false;
     public Vector3Int extent;
     public float stepSize;
     public TileSet TileSet;
@@ -148,11 +149,12 @@ public class XWFCAnimator : MonoBehaviour
         else
         {
             var plateAtoms = false;
-            
+            new InputReader().ReadNUT();
             // var components = LegoSet.LegoHouse();
             // var components = ExampleSet.RedDotWFC();
             // var components = ExampleSet.RedDotExampleComparison();
-            var components = TerrainSet.Tree();
+            var components = TerrainSet.Tree(); // 157178941
+            //var components = CogSet.COG();
             // var components = LegoSet.SimpleHouseExample();
             // var components = LegoSet.LegoHouse2D();
             // plateAtoms = true;
@@ -263,6 +265,9 @@ public class XWFCAnimator : MonoBehaviour
         tileWeights = _currentComponent.TileWeights;
         // _xwfc.UpdateNutWeights(tileWeights);
         DrawTiles();
+        /*
+         * 1631111006
+         */
     }
 
 
@@ -943,7 +948,7 @@ public class XWFCAnimator : MonoBehaviour
                 var drawnAtom = Instantiate(unitTilePrefab);
                 drawnAtom.transform.position = CalcAtomPosition(index, origin);
                 
-                UpdateColorFromTerminal(drawnAtom, key, true);
+                UpdateColorFromTerminal(drawnAtom, key);
                 _drawnTiles.Add(drawnAtom);
 
                 var atomId = _xwfc.AdjMatrix.AtomMapping.GetValue((key, index, 0));
@@ -1222,12 +1227,16 @@ public class XWFCAnimator : MonoBehaviour
                 
         atom.transform.position = CalcAtomPosition(coord, origin);
         var edges = DrawEdges(atomId, atom, adjacencyMatrix);
-        var drawing = new Drawing(atomId, atom, edges);
-        UpdateColorFromAtom(atom, atomId, adjacencyMatrix);
         if (adjacencyMatrix.TileSet[adjacencyMatrix.AtomMapping.GetKey(atomId).tileId].UniformAtomValue.Equals("void"))
         {
             atom.SetActive(false);
+            foreach (var item in edges)
+            {
+                item.SetActive(false);
+            }
         }
+        var drawing = new Drawing(atomId, atom, edges);
+        UpdateColorFromAtom(atom, atomId, adjacencyMatrix);
         _drawnGrid.Set(coord + origin, drawing);
     }
 
@@ -1285,17 +1294,17 @@ public class XWFCAnimator : MonoBehaviour
 
     }
 
-    private void UpdateColorFromAtom(GameObject obj, int atomId, AdjacencyMatrix adjacencyMatrix, bool applyFluctuation=true)
+    private void UpdateColorFromAtom(GameObject obj, int atomId, AdjacencyMatrix adjacencyMatrix)
     {
         var color = GetTerminalColorFromAtom(atomId, adjacencyMatrix);
-        if (applyFluctuation) color = ApplyVariation(color, 0.2f);
+        if (applyColorFluctuations) color = ApplyVariation(color, 0.2f);
         obj.GetComponent<Renderer>().material.color = color;
     }
 
-    private void UpdateColorFromTerminal(GameObject obj, int tileId, bool applyFluctuation)
+    private void UpdateColorFromTerminal(GameObject obj, int tileId)
     {
         var color = CompleteTileSet[tileId].Color;
-        if (applyFluctuation) color = ApplyVariation(color, 0.2f);
+        if (applyColorFluctuations) color = ApplyVariation(color, 0.2f);
         obj.GetComponent<Renderer>().material.color = color;
     }
 

@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using Patterns = System.Collections.Generic.List<(int,UnityEngine.Vector3Int)>;
 using UnityEngine;
-using UnityEngine.Rendering;
+using Patterns = System.Collections.Generic.List<(int, UnityEngine.Vector3Int)>;
 
 namespace XWFC
 {
@@ -40,7 +38,7 @@ namespace XWFC
                     new Vector3Int(1,3,1),
                     new Color32(150, 75, 10, 255)
                 ),
-                    
+
                 new(
                     "trunk",
                     new Vector3Int(1,1,1),
@@ -49,7 +47,7 @@ namespace XWFC
                 new(
                     "leaf",
                     new Vector3Int(1,1,1),
-                    new Color32(20, 100, 20, 200)
+                    new Color32(12, 44, 12, 200)
                 ),
                 new(
                     "void",
@@ -64,7 +62,7 @@ namespace XWFC
                     "water",
                     new Vector3Int(2,1,2),
                     new Color32(70,70,200, 255))
-                
+
             };
 
             var tileSet = new TileSet();
@@ -75,12 +73,12 @@ namespace XWFC
 
             return tileSet;
         }
-        
+
         public (string[] t, SampleGrid) TreeTrunkPattern()
         {
             var bricks = new string[] { "trunk3", "void" };
             var tiles = GetSet().GetSubset(bricks);
-            
+
             var t = new Dictionary<string, int>();
             foreach (var tile in bricks)
             {
@@ -92,17 +90,17 @@ namespace XWFC
                 (t["trunk3"], new Vector3Int(1, 0, 1)),
                 (t["trunk3"], new Vector3Int(1, 3, 1)),
             };
-            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1,0,1));
-            
-            return (bricks, grid );
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1, 0, 1));
+
+            return (bricks, grid);
         }
-        
-        
+
+
         public (string[] t, SampleGrid) TreeTrunkLeavesPattern()
         {
             var bricks = new string[] { "trunk3", "leaf", "void" };
             var tiles = GetSet().GetSubset(bricks);
-            
+
             var t = new Dictionary<string, int>();
             foreach (var tile in bricks)
             {
@@ -114,21 +112,21 @@ namespace XWFC
                 (t["trunk3"], new Vector3Int(1, 0, 1)),
                 (t["leaf"], new Vector3Int(1, 3, 1)),
             };
-            LayerAdd(ref stackedPattern, new Range3D(0,3,1,4,0,1), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(0,3,1,4,2,3), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(0,1,1,4,1,2), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(2,3,1,4,1,2), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(0, 3, 1, 4, 0, 1), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(0, 3, 1, 4, 2, 3), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(0, 1, 1, 4, 1, 2), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(2, 3, 1, 4, 1, 2), t["leaf"]);
             stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(1, 0, 1));
-            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1,1,1));
-            
-            return (bricks, grid );
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1, 1, 1));
+
+            return (bricks, grid);
         }
-        
+
         public (string[] t, SampleGrid) LeavesPattern()
         {
             var bricks = new string[] { "leaf", "void" };
             var tiles = GetSet().GetSubset(bricks);
-            
+
             var t = new Dictionary<string, int>();
             foreach (var tile in bricks)
             {
@@ -136,22 +134,22 @@ namespace XWFC
             }
 
             var stackedPattern = new Patterns();
-            LayerAdd(ref stackedPattern, new Range3D(1,3,0,1,1,3), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(0,4,1,3,1,3), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(1,3,3,4,1,3), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(1,3,1,3,0,1), t["leaf"]);
-            LayerAdd(ref stackedPattern, new Range3D(1,3,1,3,3,4), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(1, 3, 0, 1, 1, 3), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(0, 4, 1, 3, 1, 3), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(1, 3, 3, 4, 1, 3), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(1, 3, 1, 3, 0, 1), t["leaf"]);
+            LayerAdd(ref stackedPattern, new Range3D(1, 3, 1, 3, 3, 4), t["leaf"]);
             stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(1, 1, 1));
-            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1,1,1));
-            
-            return (bricks, grid );
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(1, 1, 1));
+
+            return (bricks, grid);
         }
-        
+
         public (string[] t, SampleGrid) WaterPattern()
         {
             var bricks = new string[] { "water", "grass", "void" };
             var tiles = GetSet().GetSubset(bricks);
-            
+
             var t = new Dictionary<string, int>();
             foreach (var tile in bricks)
             {
@@ -182,21 +180,21 @@ namespace XWFC
                             free = false;
                             break;
                         }
-                        
+
                     }
-                    if (free) stackedPattern.Add((t["grass"], new Vector3Int(i,0,j)));
+                    if (free) stackedPattern.Add((t["grass"], new Vector3Int(i, 0, j)));
                 }
             }
-            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(0,1,0));
-            
-            return (bricks, grid );
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(0, 1, 0));
+
+            return (bricks, grid);
         }
-        
+
         public (string[] t, SampleGrid) WaterEvenPattern()
         {
             var bricks = new string[] { "water", "grass", "void" };
             var tiles = GetSet().GetSubset(bricks);
-            
+
             var t = new Dictionary<string, int>();
             foreach (var tile in bricks)
             {
@@ -226,21 +224,21 @@ namespace XWFC
                             free = false;
                             break;
                         }
-                        
+
                     }
-                    if (free) stackedPattern.Add((t["grass"], new Vector3Int(i,0,j)));
+                    if (free) stackedPattern.Add((t["grass"], new Vector3Int(i, 0, j)));
                 }
             }
-            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(0,1,0));
-            
-            return (bricks, grid );
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(0, 1, 0));
+
+            return (bricks, grid);
         }
-        
+
         public (string[] t, SampleGrid) WaterSquarePattern()
         {
             var bricks = new string[] { "water", "grass", "void" };
             var tiles = GetSet().GetSubset(bricks);
-            
+
             var t = new Dictionary<string, int>();
             foreach (var tile in bricks)
             {
@@ -269,21 +267,21 @@ namespace XWFC
                             free = false;
                             break;
                         }
-                        
+
                     }
-                    if (free) stackedPattern.Add((t["grass"], new Vector3Int(i,0,j)));
+                    if (free) stackedPattern.Add((t["grass"], new Vector3Int(i, 0, j)));
                 }
             }
-            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(0,1,0));
-            
-            return (bricks, grid );
+            var grid = ToSampleGrid(stackedPattern, tiles, true, extraLayer: new Vector3Int(0, 1, 0));
+
+            return (bricks, grid);
         }
-        
+
         public (string[] t, SampleGrid) RootPattern()
         {
             var bricks = new string[] { "grass", "root", "trunk3", "void" };
             var tiles = GetSet().GetSubset(bricks);
-            
+
             var t = new Dictionary<string, int>();
             foreach (var tile in bricks)
             {
@@ -294,7 +292,7 @@ namespace XWFC
             {
                 (t["root"], new Vector3Int(1,0,1)),
                 (t["trunk3"], new Vector3Int(1,1,1)),
-                
+
                 (t["grass"], new Vector3Int(0,0,0)),
                 (t["grass"], new Vector3Int(1,0,0)),
                 (t["grass"], new Vector3Int(2,0,0)),
@@ -306,16 +304,16 @@ namespace XWFC
                 (t["grass"], new Vector3Int(0,0,3)),
                 (t["grass"], new Vector3Int(1,0,3)),
                 (t["grass"], new Vector3Int(2,0,3)),
-                
+
             };
-            
+
             var grid = ToSampleGrid(stackedPattern, tiles, true);
-            
-            return (bricks, grid );
+
+            return (bricks, grid);
         }
-        
-        
-        
+
+
+
         public static int BrickUnitSize(bool plateAtoms = true)
         {
             /*
@@ -333,10 +331,10 @@ namespace XWFC
             var water = WaterPattern();
             var water2 = WaterEvenPattern();
             var water3 = WaterSquarePattern();
-            var patterns = new[] { trunk, root, trunkLeaves, leaves, water, water2, water3};
+            var patterns = new[] { trunk, root, trunkLeaves, leaves, water, water2, water3 };
             return ExtractTilesAndSamples(patterns);
         }
-        
+
         public static Component[] Tree()
         {
             var set = new TerrainSet(false);
@@ -355,22 +353,22 @@ namespace XWFC
             weights["water"] = 200;
             weights["leaf"] = 0.01f;
             weights["void"] = 10;
-            
+
             var unit = LegoSet.BrickUnitSize(set.PlateAtoms);
             var unitV = new Vector3Int(1, unit, 1);
-            
+
             var c = new Component(
-                new Vector3Int(0,0,0), 
-                new Vector3Int(10,8,10), 
+                new Vector3Int(0, 0, 0),
+                new Vector3Int(10, 8, 10),
                 // new Vector3Int(40,8,20), 
                 t, s.ToArray(),
-                tileWeights:weights,
-                customSeed:1166925486
-                // 569
+                tileWeights: weights,
+                customSeed: 1166925486
+            // 569
             );
-            
-            
-            
+
+
+
             var components = new[] { c }; //  
 
             return components;
@@ -380,8 +378,8 @@ namespace XWFC
         private (TileSet legoTiles, List<SampleGrid> sampleGrids) ExtractTilesAndSamples((string[] bricks, SampleGrid)[] samples)
         {
             var bricks = new HashSet<string>();
-            var sampleGrids = new List<SampleGrid>(); 
-            foreach (var (b,s) in samples)
+            var sampleGrids = new List<SampleGrid>();
+            foreach (var (b, s) in samples)
             {
                 foreach (var s1 in b)
                 {
@@ -389,7 +387,7 @@ namespace XWFC
                 }
                 sampleGrids.Add(s);
             }
-            
+
             var legoTiles = GetSet().GetSubset(bricks);
 
             return (legoTiles, sampleGrids);
@@ -400,7 +398,7 @@ namespace XWFC
         {
             var unit = BrickUnitSize(PlateAtoms);
             var legoTiles = GetSet().GetSubset(bricks);
-            
+
             var t = new Dictionary<string, int>();
             foreach (var tile in bricks)
             {
@@ -412,7 +410,7 @@ namespace XWFC
 
         private static SampleGrid ToSampleGrid(Patterns patterns, TileSet tileSet, Vector3Int extent, bool fillWithVoids = true)
         {
-            var sampleGrid = new SampleGrid(extent, voidValue:"void");
+            var sampleGrid = new SampleGrid(extent, voidValue: "void");
             if (fillWithVoids) sampleGrid.Populate("void");
             foreach (var (id, c) in patterns)
             {
@@ -421,7 +419,7 @@ namespace XWFC
 
             return sampleGrid;
         }
-        private static SampleGrid ToSampleGrid(Patterns patterns, TileSet tileSet, bool fillWithVoids=true, Vector3Int? extraLayer=null)
+        private static SampleGrid ToSampleGrid(Patterns patterns, TileSet tileSet, bool fillWithVoids = true, Vector3Int? extraLayer = null)
         {
             var extent = new Vector3Int();
             foreach (var (id, c) in patterns)
@@ -431,7 +429,7 @@ namespace XWFC
             }
 
             if (extraLayer != null)
-                extent += (Vector3Int) extraLayer;
+                extent += (Vector3Int)extraLayer;
             return ToSampleGrid(patterns, tileSet, extent, fillWithVoids);
         }
 
@@ -454,7 +452,7 @@ namespace XWFC
                 {
                     for (int z = layers.ZRange.Start; z < layers.ZRange.End; z++)
                     {
-                        patterns.Add((id, new Vector3Int(x,y,z)));
+                        patterns.Add((id, new Vector3Int(x, y, z)));
                     }
                 }
             }
