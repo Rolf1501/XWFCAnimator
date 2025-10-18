@@ -20,6 +20,10 @@ The menu on the right has several options:
 - Run: run XWFC
 - Collapse once: perform one single collapse, i.e. sets the tile of one cell.
 - Reset: clear the grid.
-- For addition relevant options, select 'XWFC animator' in the hierarchy while running the scene.
+- For addition relevant options, such as setting STM or OM, select 'XWFC animator' in the hierarchy while running the scene.
 
 The other options are less straight forward and related to creating structured components (see thesis) or running XWFC with the simple tiled model.
+
+### Code
+Point of entry is Assets/Scripts/XWFC/XWFCAnimator.cs > Start.
+
