@@ -16,7 +16,7 @@ namespace XWFC
         public AdjacencyMatrix AdjMatrix;
         private GridManager _gridManager;
         private readonly float _maxEntropy;
-        protected CollapsePriorityQueue CollapseQueue;
+        protected ICollapsePriorityQueue CollapseQueue;
         public readonly Vector3Int[] Offsets;
         private Queue<Vector3Int> _propQueue = new();
         private SavePointManager _savePointManager;

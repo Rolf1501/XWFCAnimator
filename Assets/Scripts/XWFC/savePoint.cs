@@ -11,7 +11,7 @@ namespace XWFC
         private const int SavePointIntervals = 300; // < 1 ? in percentages : in cells.
         private int _savePointAttempts;
 
-        public void Save(float progress, GridManager gridMan, CollapsePriorityQueue collapseQueue, int counter)
+        public void Save(float progress, GridManager gridMan, ICollapsePriorityQueue collapseQueue, int counter)
         {
             // If absolute number of cells or percentage matches, save.
             if (AbsoluteIntervalMatch(counter) || RelativeIntervalMatch(progress))
@@ -46,10 +46,10 @@ namespace XWFC
     public record SavePoint
     {
         public GridManager GridManager;
-        public CollapsePriorityQueue CollapseQueue;
+        public ICollapsePriorityQueue CollapseQueue;
         public int Counter;
 
-        public SavePoint(GridManager gridManager, CollapsePriorityQueue collapseQueue, int counter)
+        public SavePoint(GridManager gridManager, ICollapsePriorityQueue collapseQueue, int counter)
         {
             GridManager = gridManager;
             CollapseQueue = collapseQueue;

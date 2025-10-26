@@ -28,7 +28,7 @@ namespace XWFC
         private int _blockedCellId;
         private Grid<int> _seededGrid;
         private float[] _weights;
-        
+
 
         public XwfcOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, int randomSeed, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, randomSeed, forceCompleteTiles)
         {
@@ -110,7 +110,8 @@ namespace XWFC
             {
                 _atomGrid = _seededGrid.Deepcopy();
             }
-            EliminateIncompletePatterns();
+            EliminateIncompletePatternsOther();
+            //EliminateIncompletePatterns();
             InitRootSave();
         }
 
@@ -435,6 +436,110 @@ namespace XWFC
             timer.Stop();
         }
 
+
+        private void EliminateIncompletePatternsOther()
+        {
+            Debug.Log("Eliminating patterns...");
+            var timer = new Timer();
+            timer.Start();
+            var e = _patternWave.GetExtent();
+            var propQueue = new Queue<Vector3Int>();
+            var pending = new HashSet<Vector3Int>();
+
+            var patternsAll = PatternMatrix.Patterns;
+
+
+            for (var i = 0; i < patternsAll.Length; i++)
+            {
+                var (patternMin, patternMax) = GetPatternExtents(i);
+
+                // Naive, but still better
+                for (int x = 0; x <= e.x - _kernelSize.x; x++)
+                {
+                    for (int y = 0; y <= e.y - _kernelSize.y; y++)
+                    {
+                        for (int z = 0; z <= e.z - _kernelSize.z; z++)
+                        {
+                            var coord = new Vector3Int(x, y, z);
+                            var allowed = true;
+
+                            // Placing pattern causes tiles to be out of bounds
+                            if (x < 0 - patternMin.x || x >= e.x - patternMax.x - 1 ||
+                                y < 0 - patternMin.y || y >= e.y - patternMax.y - 1 ||
+                                z < 0 - patternMin.z || z >= e.z - patternMax.z - 1)
+                            {
+                                allowed = PatternFits(i, coord);
+                            }
+
+                            if (_atomGrid.Get(x, y, z) != _atomGrid.DefaultFillValue)
+                            {
+                                allowed = PatternFits(i, coord);
+                            }
+
+                            if (!allowed)
+                            {
+                                pending.Add(coord);
+                                var emptyWave = EmptyWave();
+                                var patternWave = _patternWave.Get(x, y, z);
+                                for (int j = 0; j < patternWave.Length; j++)
+                                {
+                                    if (patternWave[j])
+                                    {
+                                        emptyWave[j] = true;
+                                    }
+                                }
+                                emptyWave[i] = allowed;
+                                _patternWave.Set(x, y, z, emptyWave);
+                            }
+                        }
+                    }
+                }
+            }
+
+            foreach (var i in pending)
+            {
+                propQueue.Enqueue(i);
+            }
+
+            timer.Stop();
+            timer.Start();
+            Propagate(propQueue, ref _patternWave, Offsets, ref _atomGrid, PatternMatrix);
+            timer.Stop();
+        }
+
+        private (Vector3Int minCoord, Vector3Int maxCoord) GetPatternExtents(int patternId)
+        {
+            var pattern = PatternMatrix.Patterns[patternId];
+            var minCoord = new Vector3Int(int.MaxValue, int.MaxValue, int.MaxValue);
+            var maxCoord = new Vector3Int(int.MinValue, int.MinValue, int.MinValue);
+            for (int x = 0; x < _kernelSize.x; x++)
+            {
+                for (int y = 0; y < _kernelSize.y; y++)
+                {
+                    for (int z = 0; z < _kernelSize.z; z++)
+                    {
+                        var patternCoord = new Vector3Int(x, y, z);
+
+                        var atomId = pattern[y, x, z];
+                        var (tileId, atomCoord, _) = PatternMatrix.AtomMapping.Get(atomId);
+                        var tile = AdjacencyMatrix.TileSet[tileId];
+                        var tileOriginDifInPattern = patternCoord - atomCoord;
+                        var tileMaxCoordDifInPattern = patternCoord + tile.Extent - atomCoord - new Vector3Int(1, 1, 1);
+
+                        if (minCoord.x > tileOriginDifInPattern.x) minCoord.x = tileOriginDifInPattern.x;
+                        if (minCoord.y > tileOriginDifInPattern.y) minCoord.y = tileOriginDifInPattern.y;
+                        if (minCoord.z > tileOriginDifInPattern.z) minCoord.z = tileOriginDifInPattern.z;
+
+                        if (maxCoord.x < tileMaxCoordDifInPattern.x) maxCoord.x = tileMaxCoordDifInPattern.x;
+                        if (maxCoord.y < tileMaxCoordDifInPattern.y) maxCoord.y = tileMaxCoordDifInPattern.y;
+                        if (maxCoord.z < tileMaxCoordDifInPattern.z) maxCoord.z = tileMaxCoordDifInPattern.z;
+                    }
+                }
+            }
+
+            return (minCoord, maxCoord);
+        }
+
         private bool PatternFits(int patternId, Vector3Int coord)
         {
             var pattern = PatternMatrix.Patterns[patternId];
@@ -468,7 +573,7 @@ namespace XWFC
 
                         var fullyCovered = true;
                         var coveredSelf = true;
-                        // If all coordinates of the tiles are already occupied, the tile will not be placed and the pattern is still allowed. 
+                        // If all coordinates of the tiles are already occupied, the tile 'fits' and will not be placed again; the pattern is still allowed. 
                         foreach (var index in indices)
                         {
                             var cellValue = _atomGrid.Get(tileOrigin + index);
@@ -631,11 +736,10 @@ namespace XWFC
                 enqueued.Add(i);
             }
 
-            var unionTime = 0f;
-
             while (propQueue.Count > 0)
             {
                 var coord = propQueue.Dequeue();
+
                 // enqueued.Remove(coord);
                 var choices = patternWave.Get(coord);
                 var choiceInts = new List<int>();
@@ -664,17 +768,13 @@ namespace XWFC
 
                     // Get union of allowed neighbors of the current cell.
                     var allowedNeighbors = patternMatrix.GetRowVectors(choiceInts[0], offset);
-                    // var allowedNeighbors = new bool[nPatterns];
 
-                    var timer = new Timer();
-                    timer.Start(false);
                     for (var i = 0; i < choiceInts.Count; i++)
                     {
                         var other = patternMatrix.GetRowVectors(choiceInts[i], offset);
                         allowedNeighbors = Vectorizor.Or(allowedNeighbors, other);
                     }
 
-                    unionTime += timer.Stop(false);
                     var neighborChoices = patternWave.Get(neighbor);
 
                     var post = new bool[nPatterns];
@@ -686,7 +786,6 @@ namespace XWFC
                     {
                         var allowed = Vectorizor.GetAtIndex(i, allowedNeighbors) == 1;
                         var isPatternAllowed = allowed && neighborChoices[i];
-                        // var isPatternAllowed = allowedNeighbors[i] && neighborChoices[i];
                         post[i] = isPatternAllowed;
                         if (isPatternAllowed != neighborChoices[i])
                         {

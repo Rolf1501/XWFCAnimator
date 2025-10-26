@@ -91,6 +91,7 @@
     <Compile Include="Assets\Scripts\XWFC\customExceptions.cs" />
     <Compile Include="Assets\Scripts\Auxiliary.cs" />
     <Compile Include="Assets\Scripts\XWFC\PatternMatrix.cs" />
+    <Compile Include="Assets\Scripts\XWFC\ICollapsePriorityQueue.cs" />
     <Compile Include="Assets\Scripts\XWFC\timer.cs" />
     <Compile Include="Assets\Scripts\XWFC\collapseQueue.cs" />
     <Compile Include="Assets\Scripts\XWFC\HashSetAdjacency.cs" />
@@ -98,6 +99,7 @@
     <Compile Include="Assets\Scripts\XWFC\voidMaskAdjacencyData.cs" />
     <Compile Include="Assets\TabbedMenu\TabbedMenuController.cs" />
     <Compile Include="Assets\Scripts\XWFC\CogSet.cs" />
+    <Compile Include="Assets\Scripts\XWFC\UrbanSet.cs" />
     <Compile Include="Assets\Scripts\XWFC\Ranges.cs" />
     <Compile Include="Assets\Scripts\XWFC\TetrisSet.cs" />
     <Compile Include="Assets\Scripts\XWFC\XwfcStm.cs" />
@@ -463,6 +465,10 @@
     </Reference>
     <Reference Include="UnityEditor.UnityConnectModule">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2022.3.19f1\Editor\Data\Managed\UnityEngine\UnityEditor.UnityConnectModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="NetTopologySuite">
+      <HintPath>Assets\Plugins\NetTopologySuite.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Python.Deployment">

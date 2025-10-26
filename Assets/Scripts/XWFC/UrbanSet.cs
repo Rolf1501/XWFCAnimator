@@ -46,6 +46,16 @@ public class UrbanSet : TileSet
                     mask: new bool[3,2,2] { { { true, true},{ false, true } }, { { true, true }, { false, true } }, { { true, true }, { false, true } } }
                 ),
                 new(
+                    "bmZ",
+                    new Vector3Int(1,4,4),
+                    new Color32(180,180,180, 255)
+                ),
+                new(
+                    "bmX",
+                    new Vector3Int(2,2,1),
+                    new Color32(50,100,200, 150)
+                ),
+                new(
                     "roof",
                     new Vector3Int(2,1,2),
                     new Color32(20,20,20, 255)
@@ -187,18 +197,10 @@ public class UrbanSet : TileSet
         stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(2, 1, 2));
         LayerAdd(ref stackedPattern, new Range3D(2, 6, 0, 1, 2, 6), t["root"]);
 
-        stackedPattern.Add((t["road"], new Vector3Int(0,0,0)));
-        stackedPattern.Add((t["road"], new Vector3Int(2,0,0)));
-        stackedPattern.Add((t["road"], new Vector3Int(4,0,0)));
-        stackedPattern.Add((t["road"], new Vector3Int(6,0,0)));
-        stackedPattern.Add((t["road"], new Vector3Int(0,0,6)));
-        stackedPattern.Add((t["road"], new Vector3Int(2,0,6)));
-        stackedPattern.Add((t["road"], new Vector3Int(4,0,6)));
-        stackedPattern.Add((t["road"], new Vector3Int(6,0,6)));
-        stackedPattern.Add((t["road"], new Vector3Int(6,0,2)));
-        stackedPattern.Add((t["road"], new Vector3Int(6,0,4)));
-        stackedPattern.Add((t["road"], new Vector3Int(0,0,2)));
-        stackedPattern.Add((t["road"], new Vector3Int(0,0,4)));
+        LayerAddNut(ref stackedPattern, new Range3D(0, 8, 0, 1, 0, 2), t["road"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(0, 8, 0, 1, 6, 8), t["road"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(0, 2, 0, 1, 2, 6), t["road"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(6, 8, 0, 1, 2, 6), t["road"], tiles);
 
         var grid = ToSampleGrid(stackedPattern, tiles, fillWithVoids: true);
 
@@ -260,6 +262,68 @@ public class UrbanSet : TileSet
         return (nuts, grid);
     }
 
+    public (string[] t, SampleGrid) BuildingMediumPattern()
+    {
+        var nuts = new string[] { "road", "root", "void", "bmX", "bmZ" };
+        var tiles = GetSet().GetSubset(nuts);
+
+        var t = new Dictionary<string, int>();
+        foreach (var tile in nuts)
+        {
+            t[tile] = tiles.GetTileIdFromValue(tile);
+        }
+
+        var stackedPattern = new Patterns()
+        {
+            (t["bmZ"], new Vector3Int(0, 0, 0)),
+            (t["bmZ"], new Vector3Int(0, 4, 0)),
+            (t["bmZ"], new Vector3Int(5, 0, 0)),
+            (t["bmZ"], new Vector3Int(5, 4, 0)),
+        };
+
+        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 0, 8, 0, 1), t["bmX"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 0, 8, 3, 4), t["bmX"], tiles);
+
+        stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(2, 1, 2));
+        LayerAdd(ref stackedPattern, new Range3D(2, 8, 0, 1, 2, 6), t["root"]);
+
+        LayerAddNut(ref stackedPattern, new Range3D(0, 10, 0, 1, 0, 2), t["road"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(0, 10, 0, 1, 6, 8), t["road"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(0, 2, 0, 1, 2, 6), t["road"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(8, 10, 0, 1, 2, 6), t["road"], tiles);
+
+        var grid = ToSampleGrid(stackedPattern, tiles, fillWithVoids: true);
+
+        return (nuts, grid);
+    }
+
+    public (string[] t, SampleGrid) BuildingMediumRoofPattern()
+    {
+        var nuts = new string[] { "void", "bmX", "bmZ", "roof" };
+        var tiles = GetSet().GetSubset(nuts);
+
+        var t = new Dictionary<string, int>();
+        foreach (var tile in nuts)
+        {
+            t[tile] = tiles.GetTileIdFromValue(tile);
+        }
+
+        var stackedPattern = new Patterns()
+        {
+            (t["bmZ"], new Vector3Int(0, 0, 0)),
+            (t["bmZ"], new Vector3Int(5, 0, 0)),
+        };
+
+        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 2, 4, 0, 1), t["bmX"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 2, 4, 3, 4), t["bmX"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(0, 6, 4, 5, 0, 4), t["roof"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 3, 4, 1, 3), t["void"], tiles);
+        
+
+        var grid = ToSampleGrid(stackedPattern, tiles, fillWithVoids: false);
+
+        return (nuts, grid);
+    }
 
     public static int BrickUnitSize(bool plateAtoms = true)
     {
@@ -276,7 +340,17 @@ public class UrbanSet : TileSet
         var buildingShort = BuildingShortPattern();
         var buildingRoof = BuildingShortRoofPattern();
         var roofTopAntenna = RoofTopAntennaPattern();
-        var patterns = new[] { root, roadRoot, buildingShort, buildingRoof, roofTopAntenna };
+        var buildingMedium = BuildingMediumPattern();
+        var buildingMediumRoof = BuildingMediumRoofPattern();
+        var patterns = new[] { 
+            root, 
+            roadRoot,
+            buildingShort,
+            buildingRoof,
+            roofTopAntenna,
+            buildingMedium,
+            buildingMediumRoof
+        };
         return ExtractTilesAndSamples(patterns);
     }
 
@@ -374,6 +448,22 @@ public class UrbanSet : TileSet
             for (int y = layers.YRange.Start; y < layers.YRange.End; y++)
             {
                 for (int z = layers.ZRange.Start; z < layers.ZRange.End; z++)
+                {
+                    patterns.Add((id, new Vector3Int(x, y, z)));
+                }
+            }
+        }
+    }
+
+
+    private static void LayerAddNut(ref Patterns patterns, Range3D layers, int id, TileSet tiles)
+    {
+        var extent = tiles[id].Extent;
+        for (int x = layers.XRange.Start; x < layers.XRange.End; x += extent.x)
+        {
+            for (int y = layers.YRange.Start; y < layers.YRange.End; y += extent.y)
+            {
+                for (int z = layers.ZRange.Start; z < layers.ZRange.End; z += extent.z)
                 {
                     patterns.Add((id, new Vector3Int(x, y, z)));
                 }

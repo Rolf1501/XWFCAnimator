@@ -1,117 +1,127 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NetTopologySuite.Utilities;
 using UnityEngine;
 using Random = System.Random;
 
 namespace XWFC
 {
-    public class CollapsePriorityQueue
+    public class CollapsePriorityQueue : ICollapsePriorityQueue
     {
-        private List<Collapse> _list;
+        //private List<Collapse> _list;
+        private PriorityQueue<Collapse> _list;
         private Bidict<Vector3, Collapse> _enqueuedCells;
+
 
         public CollapsePriorityQueue()
         {
-            _list = new List<Collapse>();
+            //_list = new List<Collapse>();
             _enqueuedCells = new Bidict<Vector3, Collapse>();
+            _list = new PriorityQueue<Collapse>();
         }
-        private CollapsePriorityQueue(List<Collapse> list)
+        private CollapsePriorityQueue(PriorityQueue<Collapse> list)
         {
             _list = list;
-            _enqueuedCells = new Bidict<Vector3, Collapse>();
-            foreach (var t in list)
-            {
-                _enqueuedCells.AddPair(t.Coord, t);
-            }
+            //_enqueuedCells = new Bidict<Vector3, Collapse>();
+            //foreach (var t in list)
+            //{
+            //    _enqueuedCells.AddPair(t.Coord, t);
+            //}
 
         }
-        
-        public void Insert(Vector3Int coord, float entropy) { Insert(new Collapse(coord, entropy));}
+
+        public void Insert(Vector3Int coord, float entropy) { Insert(new Collapse(coord, entropy)); }
         public void Insert(Collapse collapse)
         {
-            var enqueued = _enqueuedCells.Dict.Keys.Contains(collapse.Coord);
-            if (enqueued)
-            {
-                var enqueuedCollapse = _enqueuedCells.GetValue(collapse.Coord);
-                
-                // No need to update if the to be inserted item is worse.
-                if (collapse.Entropy > enqueuedCollapse.Entropy) return;
-                _list.Remove(enqueuedCollapse);
-            }
-            
-            int i = 0;
-            while (i < _list.Count && _list[i].Entropy <= collapse.Entropy)
-            {
-                i++;
-            }
+            //var enqueued = _enqueuedCells.Dict.Keys.Contains(collapse.Coord);
+            //if (enqueued)
+            //{
+            //    var enqueuedCollapse = _enqueuedCells.GetValue(collapse.Coord);
 
-            if (i == _list.Count)
-            {
-                _list.Add(collapse);
-            }
-            else
-            {
-                _list.Insert(i, collapse);
-            }
-            
-            _enqueuedCells.AddPair(collapse.Coord, new Collapse(collapse.Coord, collapse.Entropy));
+            //    // No need to update if the to be inserted item is worse.
+            //    if (collapse.Entropy > enqueuedCollapse.Entropy) return;
+            //    _list.Remove(enqueuedCollapse);
+            //}
+
+            //int i = 0;
+            //while (i < _list.Count && _list[i].Entropy <= collapse.Entropy)
+            //{
+            //    i++;
+            //}
+
+            //if (i == _list.Count)
+            //{
+            //    _list.Add(collapse);
+            //}
+            //else
+            //{
+            //    _list.Insert(i, collapse);
+            //}
+
+            _list.Add(collapse);
+
+            //_enqueuedCells.AddPair(collapse.Coord, new Collapse(collapse.Coord, collapse.Entropy));
         }
 
-        private int FindIndex(Collapse collapse, bool findInsertion=false)
-        {
-            // Divide and Conquer Log_2(n)
-            var (start, end) = (0, _list.Count);
-            while (true)
-            {
-                int center = (int)(end - start * 0.5);
-                var current = _list[center];
-                if (Math.Abs(current.Entropy - collapse.Entropy) < 0.0001)
-                {
-                    // found location.
-                    return center;
-                }
+        //private int FindIndex(Collapse collapse, bool findInsertion=false)
+        //{
+        //    // Divide and Conquer Log_2(n)
+        //    var (start, end) = (0, _list.Count);
+        //    while (true)
+        //    {
+        //        int center = (int)(end - start * 0.5);
+        //        var current = _list[center];
+        //        if (Math.Abs(current.Entropy - collapse.Entropy) < 0.0001)
+        //        {
+        //            // found location.
+        //            return center;
+        //        }
 
-                // If divided region is one element,
-                // and that element is not the element we're looking for,
-                // then the location for insertion has been found.
-                // If that is not what one is looking for, return -1, since the element is not in the list.
-                if (end - start <= 1) return findInsertion ? -1 : start; 
-                
-                if (current.Entropy > collapse.Entropy)
-                {
-                    // Go to left.
-                    end = center;
-                }
-                else
-                {
-                    // Go to right.
-                    start = center;
-                }
-            }
-        }
+        //        // If divided region is one element,
+        //        // and that element is not the element we're looking for,
+        //        // then the location for insertion has been found.
+        //        // If that is not what one is looking for, return -1, since the element is not in the list.
+        //        if (end - start <= 1) return findInsertion ? -1 : start; 
+
+        //        if (current.Entropy > collapse.Entropy)
+        //        {
+        //            // Go to left.
+        //            end = center;
+        //        }
+        //        else
+        //        {
+        //            // Go to right.
+        //            start = center;
+        //        }
+        //    }
+        //}
 
         public Collapse PeekHead()
         {
-            return _list[0];
+            //return _list[0];
+            return _list.Peek();
         }
 
         public bool IsDone()
         {
-            return _list.Count == 0;
+            return _list.IsEmpty();
+            //return _list.Count == 0;
         }
 
         public Collapse DeleteHead()
         {
-            var output = _list[0];
-            _list.RemoveAt(0);
-            return output;
+            return _list.Poll();
+            //var output = _list[0];
+            //_list.RemoveAt(0);
+            //return output;
         }
 
         public CollapsePriorityQueue Copy()
         {
-            var copy = new List<Collapse>();
-            foreach (var c in _list) 
+            var copy = new PriorityQueue<Collapse>();
+            //var copy = new List<Collapse>();
+            foreach (var c in _list)
                 copy.Add(new Collapse(new Vector3Int(c.Coord.x, c.Coord.y, c.Coord.z), c.Entropy));
             var output = new CollapsePriorityQueue(copy);
             return output;
@@ -127,10 +137,10 @@ namespace XWFC
             _list.Clear();
             _enqueuedCells.Clear();
         }
-        
+
     }
-    
-public class CollapseList : SkipList<Node>
+
+    public class CollapseList : SkipList<Node>
 {
     public HashSet<Vector3> EnqueuedCells = new();
     public Dictionary<Vector3, Node> Cells = new();
@@ -435,7 +445,7 @@ public class CollapseList : SkipList<Node>
     }
 }
 
-public record Collapse
+public record Collapse : IComparable<Collapse>
 {
     public Vector3Int Coord;
     public float Entropy;
@@ -470,7 +480,14 @@ public record Collapse
     {
         return new Collapse(new Vector3Int(Coord.x, Coord.y, Coord.z), Entropy);
     }
-}
+
+        public int CompareTo(Collapse other)
+        {
+            if (Entropy > other.Entropy) return 1;
+            if (Entropy < other.Entropy) return -1;
+            return 0;
+        }
+    }
 
     public abstract class SkipList<T>
     {
