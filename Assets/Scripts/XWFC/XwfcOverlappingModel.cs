@@ -28,6 +28,7 @@ namespace XWFC
         private int _blockedCellId;
         private Grid<int> _seededGrid;
         private float[] _weights;
+        
 
         public XwfcOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, int randomSeed, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, randomSeed, forceCompleteTiles)
         {
@@ -61,27 +62,8 @@ namespace XWFC
             _blockedCellId = BlockedCellId(_atomGrid.DefaultFillValue, AdjacencyMatrix.TileSet.Keys);
             CollapseQueue.Insert(StartCoord, AdjacencyMatrix.CalcEntropy(GetNPatterns()));
 
-
-            // while (!CollapseQueue.IsDone())
-            // {
-            //     Collapse(CollapseQueue.DeleteHead().Coord);
-            // }
-            //
-            // if (CollapseQueue.IsDone())
-            // {
-            //     FillInBlanks();
-            // }
         }
 
-        // public override void UpdateNutWeights(Dictionary<string, float> weights)
-        // {
-        //     foreach (var i in AdjacencyMatrix.TileWeigths.Keys)
-        //     {
-        //         var tileValue = AdjacencyMatrix.TileSet[i].UniformAtomValue;
-        //         AdjacencyMatrix.TileWeigths[i] = weights[tileValue];
-        //     }
-        //     CalcPatternWeights();
-        // }
 
         public void CalcPatternWeights()
         {
@@ -214,6 +196,7 @@ namespace XWFC
             CollapseQueue.Clear();
             CollapseQueue.Insert(StartCoord, AdjacencyMatrix.CalcEntropy(GetNPatterns()));
             _propagationQueue.Clear();
+            ProcessAtomSeeds();
             Debug.Log($"RESET OVERLAPPING MODEL; RANDOM SEED: {RandomSeed}");
         }
 
@@ -527,116 +510,7 @@ namespace XWFC
 
             var uniformWeights = Enumerable.Repeat(1.0f, GetNPatterns()).ToArray();
             var chosenPatternId = RandomChoice(choices, _weights, _random);
-
-            var wave = EmptyWave();
-            if (chosenPatternId < 0) throw new NoMoreChoicesException("No more choices...");
-            wave[chosenPatternId] = true;
-            _patternWave.Set(coord, wave);
-            _propagationQueue.Enqueue(coord);
-
-            SetOccupied(coord, chosenPatternId);
-
-
-            /*
-             * Collapse an entire pattern at once; this is allowed because when the pattern reference may be placed, so may the others by construction of the patterns.
-             * For each atom in the pattern, collapse its entire tile immediately and update neighbors.
-             */
-            // var pattern = PatternMatrix.Patterns[chosenPatternId];
-            // var (x, y, z) = (pattern.GetLength(1), pattern.GetLength(0), pattern.GetLength(2));
-
-            // for (int px = 0; px < x; px++)
-            // {
-            //     for (int py = 0; py < y; py++)
-            //     {
-            //         for (int pz = 0; pz < z; pz++)
-            //         {
-            //             var patternCoord = new Vector3Int(px, py, pz);
-            //             if (_atomGrid.IsChosen(patternCoord + coord)) continue;
-            //             var atomId = pattern[py, px, pz];
-            //             _atomGrid.Set(px,py,pz,atomId);
-            //             
-            //             /*
-            //              * Immediately collapse other atoms belonging to same tile.
-            //              */
-            //             var (tileId, chosenAtomCoord, orientation) = PatternMatrix.AtomMapping.GetKey(atomId);
-            //             var tile = AdjacencyMatrix.TileSet[tileId];
-            //             
-            //             foreach (var atomCoord in tile.OrientedIndices[orientation])
-            //             {
-            //                 // Find the grid coordinate corresponding to the relative position of the chosen atom coordinate and the other atom coordinate.
-            //                 var gridCoord = coord + atomCoord - chosenAtomCoord;
-            //                 _atomGrid.Set(gridCoord, PatternMatrix.AtomMapping.GetValue((tileId, atomCoord, orientation)));
-            //             }
-            //             
-            //             /*
-            //              * For each atom affected by tile placement, update with precomputed propagated pattern wave.
-            //              */
-            //             var tilePatternMask = TilePatternMasks[tileId];
-            //             foreach (var (relativeCoord, wave) in tilePatternMask)
-            //             {
-            //                 var gridCoord = coord + relativeCoord - chosenAtomCoord;
-            //
-            //                 if (!_patternWave.WithinBounds(gridCoord)) continue;
-            //
-            //                 var updatedWave = EmptyWave();
-            //                 var pre = _patternWave.Get(gridCoord);
-            //                 var preIsPost = true;
-            //                 for (var i = 0; i < wave.Length; i++)
-            //                 {
-            //                     updatedWave[i] = pre[i] && wave[i];
-            //                     if (updatedWave[i] != pre[i]) preIsPost = false;
-            //                 }
-            //
-            //                 if (!preIsPost) _propagationQueue.Enqueue(gridCoord);
-            //
-            //                 // Cells added through mask overlay have to be added manually.
-            //                 CollapseQueue.Insert(gridCoord, AdjacencyMatrix.CalcEntropy(updatedWave.Count(b =>b)));
-            //                 _patternWave.Set(gridCoord, updatedWave);
-            //             }
-            //         }
-            //     }
-            // }
-
-            // var chosenAtom = PatternMatrix.GetPatternAtomAtCoordinate(chosenPatternId, _patternAtomCoord);
-            //
-            // /*
-            //  * For each tile atom, find its grid coordinate and collapse those to the corresponding atom id. 
-            //  */
-            // var (tileId, chosenAtomCoord, orientation) = PatternMatrix.AtomMapping.GetKey(chosenAtom);
-            // var tile = AdjacencyMatrix.TileSet[tileId];
-            // var atomCoords = tile.OrientedIndices[orientation];
-            // var tilePatternMask = TilePatternMasks[tileId];
-            //
-            // foreach (var atomCoord in atomCoords)
-            // {
-            //     var gridCoord = coord + atomCoord - chosenAtomCoord;
-            //     _atomGrid.Set(gridCoord, PatternMatrix.AtomMapping.GetValue((tileId, atomCoord, orientation)));
-            // }
-            //
-            // /*
-            //  * For each atom affected by tile placement, update with precomputed propagated pattern wave.
-            //  */ 
-            // foreach (var (relativeCoord, wave) in tilePatternMask)
-            // {
-            //     var gridCoord = coord + relativeCoord - chosenAtomCoord;
-            //     
-            //     if (!_patternWave.WithinBounds(gridCoord)) continue;
-            //     
-            //     var updatedWave = EmptyWave();
-            //     var pre = _patternWave.Get(gridCoord);
-            //     var preIsPost = true;
-            //     for (var i = 0; i < wave.Length; i++)
-            //     {
-            //         updatedWave[i] = pre[i] && wave[i];
-            //         if (updatedWave[i] != pre[i]) preIsPost = false;
-            //     }
-            //     if (!preIsPost) _propagationQueue.Enqueue(gridCoord);
-            //     
-            //     // Cells added through mask overlay have to be added manually.
-            //     CollapseQueue.Insert(gridCoord, AdjacencyMatrix.CalcEntropy(updatedWave.Count(x=>x)));
-            //     _patternWave.Set(gridCoord, updatedWave);
-            // }
-            //
+            SetCollapsedInGrid(coord, chosenPatternId);
 
             var collapseItems = Propagate();
 
@@ -646,6 +520,18 @@ namespace XWFC
             }
 
             if (CollapseQueue.IsDone()) FillInBlanks();
+        }
+
+        private void SetCollapsedInGrid(Vector3Int coord, int chosenPatternId)
+        {
+            var wave = EmptyWave();
+            if (chosenPatternId < 0) throw new NoMoreChoicesException("No more choices...");
+
+            wave[chosenPatternId] = true;
+            _patternWave.Set(coord, wave);
+            _propagationQueue.Enqueue(coord);
+
+            SetOccupied(coord, chosenPatternId);
         }
 
         protected override void SetOccupied(Vector3Int coord, int id)
@@ -853,6 +739,28 @@ namespace XWFC
         public override Vector3Int GetExtent()
         {
             return _atomGrid.GetExtent();
+        }
+        protected override void ProcessAtomSeeds()
+        {
+            foreach (var (tileId, atomCoord, coord) in AtomSeeds)
+            {
+                var atomId = AdjMatrix.AtomMapping.Get((tileId, atomCoord, 0));
+                var patternId = FindPatternContainingAtZeroCoord(atomId);
+                if (patternId == -1) return;
+                SetCollapsedInGrid(coord, patternId);
+
+            }
+        }
+
+        private int FindPatternContainingAtZeroCoord(int atomId)
+        {
+            for (int i = 0; i < PatternMatrix.Patterns.Length; i++)
+            {
+                var item = PatternMatrix.Patterns[i];
+                if (item[0, 0, 0] == atomId) return i;
+            }
+
+            return -1;
         }
     }
 

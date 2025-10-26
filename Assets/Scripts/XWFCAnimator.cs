@@ -61,7 +61,9 @@ public class XWFCAnimator : MonoBehaviour
 
     [SerializeField] private bool ShowVoids = true;
     private bool _showingVoids = true;
-    
+
+    [SerializeField] private bool ShowNutOutlines = true;
+
     [Flags]
     private enum StateFlag
     {
@@ -158,13 +160,16 @@ public class XWFCAnimator : MonoBehaviour
             // var components = LegoSet.LegoHouse();
             // var components = ExampleSet.RedDotWFC();
             // var components = ExampleSet.RedDotExampleComparison();
-            var components = TerrainSet.Tree(); // 157178941
+            //var components = TerrainSet.Tree(); // 157178941
             //var components = CogSet.COG();
             // var components = LegoSet.SimpleHouseExample();
             // var components = LegoSet.LegoHouse2D();
             // plateAtoms = true;
             // var components = LegoSet.LegoTrain();
             // var houseComponents = HouseComponents();
+
+            var components = UrbanSet.UrbanGround();
+
             if (plateAtoms)
             {
                 unitTilePrefab = thinTilePrefab;
@@ -861,6 +866,10 @@ public class XWFCAnimator : MonoBehaviour
             _kernelSize = new Vector3Int(2, 2, 2);
             _xwfc = new XwfcOverlappingModel(component.AdjacencyMatrix.AtomizedSamples, component.AdjacencyMatrix,
                 ref component.Grid, _kernelSize, RandomSeed);
+            foreach (var (tileId, atomCoord, gridCoord) in component.ManualSeeds)
+            {
+                _xwfc.WithManualAtomSeeds(new List<(int tileId, Vector3Int coord, Vector3Int atomCoord)>{ (tileId, gridCoord, atomCoord) });
+            }
         }
         else
         {
@@ -1231,7 +1240,12 @@ public class XWFCAnimator : MonoBehaviour
         var atom = Instantiate(unitTilePrefab);
                 
         atom.transform.position = CalcAtomPosition(coord, origin);
-        var edges = DrawEdges(atomId, atom, adjacencyMatrix);
+
+        var edges = new HashSet<GameObject>();
+        if (ShowNutOutlines)
+        {
+            edges = DrawEdges(atomId, atom, adjacencyMatrix);
+        }
         if (adjacencyMatrix.TileSet[adjacencyMatrix.AtomMapping.GetKey(atomId).tileId].UniformAtomValue.Equals("void"))
         {
             atom.SetActive(false);

@@ -25,8 +25,9 @@ namespace XWFC
         private SavePoint _rootSave;
         public int RandomSeed = 3;
         private Random _random;
+        protected List<(int tileId, Vector3Int atomCoord, Vector3Int coord)> AtomSeeds = new();
 
-        #nullable enable
+#nullable enable
         public XwfcStm(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
             Vector3Int gridExtent, Dictionary<int, float>? defaultWeights = null, bool forceCompleteTiles = true)
         {
@@ -36,14 +37,14 @@ namespace XWFC
             _tileSet = tileSet;
             GridExtent = gridExtent;
             _forceCompleteTiles = forceCompleteTiles;
-            
+
             AdjMatrix = new AdjacencyMatrix(adjacencyConstraints, _tileSet, defaultWeights);
-            
+
             _maxEntropy = AdjMatrix.MaxEntropy();
             _defaultWeights = AdjMatrix.TileWeigths;
             CollapseQueue = new CollapsePriorityQueue();
             CollapseQueue.Insert(StartCoord, _maxEntropy);
-            
+
             Offsets = OffsetFactory.GetOffsets(3);
 
             Clean();
@@ -78,7 +79,7 @@ namespace XWFC
             AdjMatrix = new AdjacencyMatrix(tileSet, inputGrids, defaultWeights);
             _maxEntropy = AdjMatrix.MaxEntropy();
             _defaultWeights = AdjMatrix.TileWeigths;
-            
+
             Offsets = OffsetFactory.GetOffsets(3);
             Clean();
             _rootSave = new SavePoint(_gridManager, CollapseQueue, _counter);
@@ -92,26 +93,26 @@ namespace XWFC
             _forceCompleteTiles = forceCompleteTiles;
             _defaultWeights = adjacencyMatrix.TileWeigths;
             _maxEntropy = AdjMatrix.MaxEntropy();
-            
+
             Debug.Log($"Random Seed: {RandomSeed}");
             // 316068766
             //874075968
-            
+
             Offsets = OffsetFactory.GetOffsets(3);
-            
+
             _gridManager = new GridManager(seededGrid, _defaultWeights, _maxEntropy);
             StartCoord = CenterCoord();
             CleanState();
-            
+
             RemoveEmpty(ref seededGrid);
             var blockedCells = BlockOccupiedSeeds(ref seededGrid);
             // seededGrid = EliminateIncompleteBlockedCellNeighbors(blockedCells, seededGrid);
-            
+
             _gridManager.Grid = seededGrid;
             // CleanIncompleteTiles();
-            
+
             _rootSave = new SavePoint(_gridManager, CollapseQueue, _counter);
-            
+
             UpdateRandom(randomSeed);
         }
 
@@ -138,10 +139,10 @@ namespace XWFC
                     for (int z = 0; z < e.z; z++)
                     {
                         var value = seededGrid.Get(x, y, z);
-                        
+
                         if (value == seededGrid.DefaultFillValue) continue;
-                        
-                        seededGrid.Set(x,y,z, blockedCellId);
+
+                        seededGrid.Set(x, y, z, blockedCellId);
                         blockedCells.Add(new Vector3Int(x, y, z));
                     }
                 }
@@ -162,7 +163,7 @@ namespace XWFC
                     {
                         if (emptyIds.Contains(grid.Get(x, y, z)))
                         {
-                            grid.Set(x,y,z,grid.DefaultFillValue);
+                            grid.Set(x, y, z, grid.DefaultFillValue);
                         }
                     }
                 }
@@ -183,7 +184,7 @@ namespace XWFC
                     }
                 }
             }
-            
+
             // Elimination is expensive, so only perform it on cells for which it's strictly necessary.
             foreach (var neighbor in neighbors)
             {
@@ -192,7 +193,7 @@ namespace XWFC
 
             return seededGrid;
         }
-        
+
         private Grid<int> EliminateIncompleteTiles(Grid<int> grid)
         {
             /*
@@ -204,7 +205,7 @@ namespace XWFC
              */
 
             var e = grid.GetExtent();
-            
+
             // Z layers.
             for (int x = 0; x < e.x; x++)
             {
@@ -230,7 +231,7 @@ namespace XWFC
                     grid = EliminateIncompleteAtoms(end, grid);
                 }
             }
-            
+
             // X layers.
             for (int y = 0; y < e.y; y++)
             {
@@ -246,7 +247,7 @@ namespace XWFC
 
             return grid;
         }
-        
+
         private Grid<int> EliminateIncompleteAtoms(Vector3Int coord, Grid<int> grid)
         {
             var choices = _gridManager.Wave.Get(coord);
@@ -270,10 +271,10 @@ namespace XWFC
 
         private bool TileFits(int atomId, Vector3Int coord, Grid<int> seededGrid)
         {
-            var  (tileId, atomCoord, _) = AdjMatrix.AtomMapping.GetKey(atomId);
+            var (tileId, atomCoord, _) = AdjMatrix.AtomMapping.GetKey(atomId);
             var tileSource = coord - atomCoord;
             var tileEnd = tileSource + AdjMatrix.TileSet[tileId].Extent - new Vector3Int(1, 1, 1);
-            
+
             if (!(_gridManager.WithinBounds(tileSource) && _gridManager.WithinBounds(tileEnd))) return false;
 
             // Also check if all other cells in the tile's area are not blocked.
@@ -287,7 +288,7 @@ namespace XWFC
                     }
                 }
             }
-            
+
             return true;
         }
 
@@ -352,16 +353,16 @@ namespace XWFC
 
             var head = CollapseQueue.DeleteHead();
             if (CollapseList.IsDefaultCoord(head.Coord)) return;
-             
+
             var coll = head.Coord;
             var grid = GetGrid();
             if (!grid.WithinBounds(coll)) return;
-            
+
             while ((!grid.WithinBounds(coll) || grid.IsOccupied(coll)) && !CollapseQueue.IsDone())
             {
                 coll = CollapseQueue.DeleteHead().Coord;
             }
-            
+
             try
             {
                 Collapse(coll);
@@ -370,10 +371,10 @@ namespace XWFC
             {
                 RestoreSavePoint();
                 Debug.Log($"Restoring to earlier state... At progress {_progress}");
-                
+
                 // When rewinding, pass the coordinates of the cells that changed.
                 // The caller can then refer the grid manager to find what the values of the cells should be. 
-                
+
                 return;
             }
 
@@ -406,7 +407,7 @@ namespace XWFC
             _gridManager.Wave.Set(coord, updatedWave);
             _gridManager.Entropy.Set(coord, AdjacencyMatrix.CalcEntropy(1));
             _propQueue.Enqueue(coord);
-            
+
             // Whenever a cell is set to be occupied, progress is made and needs to be updated.
             UpdateProgress();
         }
@@ -432,9 +433,9 @@ namespace XWFC
         {
             Debug.Log("Restoring savepoint...");
             SavePoint savePoint = _savePointManager.Restore();
-            
+
             int undoneCells = _counter - savePoint.Counter;
-            
+
             LoadSavePoint(savePoint);
             return undoneCells;
         }
@@ -444,7 +445,7 @@ namespace XWFC
             _gridManager = savePoint.GridManager.Deepcopy();
             CollapseQueue = savePoint.CollapseQueue.Copy();
             _counter = savePoint.Counter;
-       
+
             // Important: clean the propagation queue.
             _propQueue.Clear();
         }
@@ -557,7 +558,7 @@ namespace XWFC
                 }
 
                 var cs = list.ToArray();
-                
+
                 foreach (var offset in Offsets)
                 {
                     var n = coord + offset;
@@ -640,6 +641,16 @@ namespace XWFC
             _rootSave = new SavePoint(new GridManager(GridExtent.x, GridExtent.y, GridExtent.z), q, 0);
             LoadSavePoint(_rootSave);
             // Clean();
+        }
+
+        protected virtual void ProcessAtomSeeds()
+        {
+
+        }
+
+        public void WithManualAtomSeeds(List<(int tileId, Vector3Int coord, Vector3Int atomCoord)> seeds)
+        {
+            AtomSeeds = seeds;
         }
     }
 }

@@ -20,6 +20,7 @@ namespace XWFC
         private Dictionary<Vector3, int[,]> _voidMasks = new ();
         public int CustomSeed;
         public Dictionary<string, float> TileWeights;
+        public List<(int tileId, Vector3Int atomCoord, Vector3Int gridCoord)> ManualSeeds = new();
 
         public Component(Vector3Int origin, Vector3Int extent, TileSet tileSet, SampleGrid[] inputGrids, Dictionary<string,float> tileWeights=null, OffsetMode offsetMode=OffsetMode.Min, int customSeed = -1)
         {
@@ -179,6 +180,11 @@ namespace XWFC
                 OffsetMode.Median => (items[(int)(items.Count * 0.5)], direction),
                 _ => (offset, direction)
             };
+        }
+
+        public void WithManualAtomSeeding(List<(int tileId, Vector3Int atomCoord, Vector3Int gridCoord)> seeds)
+        {
+            ManualSeeds = seeds;
         }
     }
 
