@@ -34,15 +34,16 @@ namespace XWFC
         public void Insert(Vector3Int coord, float entropy) { Insert(new Collapse(coord, entropy)); }
         public void Insert(Collapse collapse)
         {
-            //var enqueued = _enqueuedCells.Dict.Keys.Contains(collapse.Coord);
-            //if (enqueued)
-            //{
-            //    var enqueuedCollapse = _enqueuedCells.GetValue(collapse.Coord);
+            var enqueued = _enqueuedCells.Dict.Keys.Contains(collapse.Coord);
+            if (enqueued)
+            {
+                var enqueuedCollapse = _enqueuedCells.GetValue(collapse.Coord);
 
-            //    // No need to update if the to be inserted item is worse.
-            //    if (collapse.Entropy > enqueuedCollapse.Entropy) return;
-            //    _list.Remove(enqueuedCollapse);
-            //}
+                // No need to update if the to be inserted item is worse.
+                if (collapse.Entropy > enqueuedCollapse.Entropy) return;
+                _list.Add(collapse);
+                return;
+            }
 
             //int i = 0;
             //while (i < _list.Count && _list[i].Entropy <= collapse.Entropy)
@@ -61,7 +62,7 @@ namespace XWFC
 
             _list.Add(collapse);
 
-            //_enqueuedCells.AddPair(collapse.Coord, new Collapse(collapse.Coord, collapse.Entropy));
+            _enqueuedCells.AddPair(collapse.Coord, collapse);
         }
 
         //private int FindIndex(Collapse collapse, bool findInsertion=false)

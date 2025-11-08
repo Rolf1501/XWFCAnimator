@@ -726,6 +726,16 @@ namespace XWFC
             {
                 CollapseQueue.Insert(coord, entropy);
             }
+
+            //var updatedQueue = new CollapsePriorityQueue();
+            //while (!CollapseQueue.IsDone())
+            //{
+            //    var collapse = CollapseQueue.DeleteHead();
+            //    var entropy = AdjacencyMatrix.CalcEntropy(_patternWave.Get(collapse.Coord).Where(b=>b).ToList().Count);
+            //    updatedQueue.Insert(new Collapse(collapse.Coord, entropy));
+            //}
+            //CollapseQueue = updatedQueue;
+                //float entropy = 
         }
 
         private HashSet<(Vector3Int, float)> Propagate(Queue<Vector3Int> propQueue, ref PatternWave patternWave, IEnumerable<Vector3Int> offsets, ref Grid<int> atomGrid, PatternMatrix patternMatrix, bool ignoreConflict = false)
@@ -810,8 +820,10 @@ namespace XWFC
                         }
                     }
 
-                    if (!atomGrid.IsOccupied(neighbor) && (!CollapseQueue.Contains(neighbor) || !preIsPost))
-                        collapseItems.Add((neighbor, AdjacencyMatrix.CalcEntropy(remainingChoiceCount)));
+                    float entropy = AdjacencyMatrix.CalcEntropy(remainingChoiceCount);
+
+                    if (!atomGrid.IsOccupied(neighbor) && !preIsPost)
+                        collapseItems.Add((neighbor, entropy));
 
                     if (preIsPost) continue;
 
