@@ -14,7 +14,8 @@ namespace XWFC
         public Dictionary<Vector3Int, Range3D> OffsetRangeMapping;
         private IEnumerable<Vector3Int> _offsets;
         public readonly Dictionary<Vector3Int, bool[,]> PatternAdjacencyMatrix;
-        private Dictionary<Vector3Int, Dictionary<int, List<Vector<byte>>>> _vectorizedRows;
+        private Dictionary<Vector3Int, Dictionary<int, List<ulong>>> _vectorizedRows;
+        //private Dictionary<Vector3Int, Dictionary<int, List<Vector<byte>>>> _vectorizedRows;
  
 
         public PatternMatrix(IEnumerable<AtomGrid> atomizedSamples, Vector3Int kernelSize, AtomMapping atomMapping)
@@ -34,10 +35,10 @@ namespace XWFC
 
         private void VectorizeRows()
         {
-            _vectorizedRows = new Dictionary<Vector3Int, Dictionary<int, List<Vector<byte>>>>();
+            _vectorizedRows = new();
             foreach (var (offset, matrix) in PatternAdjacencyMatrix)
             {
-                _vectorizedRows[offset] = new Dictionary<int, List<Vector<byte>>>();
+                _vectorizedRows[offset] = new();
                 for (var i = 0; i < matrix.GetLength(0); i++)
                 {
                     var bools = new bool[matrix.GetLength(1)];
@@ -46,7 +47,7 @@ namespace XWFC
                         bools[j] = matrix[i, j];
                     }
 
-                    _vectorizedRows[offset][i] = Vectorizor.VectorizeBool(bools);
+                    _vectorizedRows[offset][i] = VectorizorOther.VectorizeBool(bools);
                 }
             }
         }
@@ -293,7 +294,7 @@ namespace XWFC
             }
         }
 
-        public List<Vector<byte>> GetRowVectors(int patternId, Vector3Int offset)
+        public List<ulong> GetRowVectors(int patternId, Vector3Int offset)
         {
             return _vectorizedRows[offset][patternId];
         }

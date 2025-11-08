@@ -188,12 +188,71 @@ namespace XWFC
             return output;
         }
 
+        public static List<Vector<byte>> And(List<Vector<byte>> left, List<Vector<byte>> right)
+        {
+            var output = new List<Vector<byte>>();
+            for (var i = 0; i < left.Count; i++)
+            {
+                output.Add(Vector.BitwiseAnd(left[i], right[i]));
+            }
+
+            return output;
+        }
+
         public static byte GetAtIndex(int index, List<Vector<byte>> list)
         {
             var count = Vector<byte>.Count;
             var listIndex = (int)(index / (1.0d * count));
             var vectorIndex = index - listIndex * count;
             return list[listIndex][vectorIndex];
+        }
+    }
+
+    public static class VectorizorOther
+    {
+        public static List<ulong> VectorizeBool(bool[] array)
+        {
+            if (array.Length == 0) return new List<ulong>() { new() };
+            var count = 64;
+            var nVectors = (int)Math.Ceiling(array.Length * 1.0 / count);
+            var output = new List<ulong>();
+            for (int i = 0; i < nVectors; i++)
+            {
+                ulong temp = 0;
+
+                for (int j = 0; j < count; j++)
+                {
+                    int shift = i * count + j;
+                    if (shift >= array.Length) break;
+                    ulong value = (ulong)(array[i * count + j] ? 1 : 0);
+                    temp |= value << shift;
+                }
+
+                output.Add(temp);
+            }
+
+            return output;
+        }
+
+        public static List<ulong> Or(List<ulong> left, List<ulong> right)
+        {
+            var output = new List<ulong>();
+            for (var i = 0; i < left.Count; i++)
+            {
+                output.Add(left[i] | right[i]);
+            }
+
+            return output;
+        }
+
+
+        public static int GetAtIndex(int index, List<ulong> list)
+        {
+            var count = 64;
+            var listIndex = (int)(index / (1.0d * count));
+            var vectorIndex = index - listIndex * count;
+            var valueOfInterest = list[listIndex];
+            return (int)(valueOfInterest >> vectorIndex) & 1;
         }
     }
 }

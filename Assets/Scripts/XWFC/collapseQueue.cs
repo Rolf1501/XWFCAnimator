@@ -245,7 +245,6 @@ namespace XWFC
             value.UpdateLayer(nLayers, null);
             Cells[_root].UpdateLayer(nLayers, value.Value);
             nLayers--;
-            Debug.Log("HERE 86");
         }
         
         // Make the last encountered nodes point to the inserted value. 

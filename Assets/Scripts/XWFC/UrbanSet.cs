@@ -650,7 +650,8 @@ public class UrbanSet : TileSet
         c.WithManualAtomSeeding(
             new List<(int tileId, Vector3Int atomCoord, Vector3Int gridCoord)>
             {
-                (t.GetTileIdFromValue("root"),new Vector3Int(0,0,0), new Vector3Int(6,0,6)),
+                (t.GetTileIdFromValue("road"),new Vector3Int(0,0,0), new Vector3Int(2,0,2)),
+                (t.GetTileIdFromValue("road"),new Vector3Int(0,0,0), new Vector3Int(16,0,14)),
             });
 
         var components = new[] { c };
