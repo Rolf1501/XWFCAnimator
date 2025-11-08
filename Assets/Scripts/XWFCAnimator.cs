@@ -868,7 +868,7 @@ public class XWFCAnimator : MonoBehaviour
                 ref component.Grid, _kernelSize, RandomSeed);
             foreach (var (tileId, atomCoord, gridCoord) in component.ManualSeeds)
             {
-                _xwfc.WithManualAtomSeeds(new List<(int tileId, Vector3Int coord, Vector3Int atomCoord)>{ (tileId, gridCoord, atomCoord) });
+                _xwfc.WithManualAtomSeeds(new List<(int tileId, Vector3Int atomCoord, Vector3Int coord)>{ (tileId, atomCoord, gridCoord) });
             }
         }
         else
