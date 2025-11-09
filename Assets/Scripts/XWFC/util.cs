@@ -153,9 +153,9 @@ namespace XWFC
         }
     }
 
-    public static class Vectorizor
+    public class Vectorizor
     {
-        public static List<Vector<byte>> VectorizeBool(bool[] array)
+        public List<Vector<byte>> VectorizeBool(bool[] array)
         {
             if (array.Length == 0) return new List<Vector<byte>>() { new () };
             var count = Vector<byte>.Count;
@@ -177,7 +177,7 @@ namespace XWFC
             return output;
         }
 
-        public static List<Vector<byte>> Or(List<Vector<byte>> left, List<Vector<byte>> right)
+        public List<Vector<byte>> Or(List<Vector<byte>> left, List<Vector<byte>> right)
         {
             var output = new List<Vector<byte>>();
             for (var i = 0; i < left.Count; i++)
@@ -188,7 +188,7 @@ namespace XWFC
             return output;
         }
 
-        public static List<Vector<byte>> And(List<Vector<byte>> left, List<Vector<byte>> right)
+        public List<Vector<byte>> And(List<Vector<byte>> left, List<Vector<byte>> right)
         {
             var output = new List<Vector<byte>>();
             for (var i = 0; i < left.Count; i++)
@@ -199,7 +199,7 @@ namespace XWFC
             return output;
         }
 
-        public static byte GetAtIndex(int index, List<Vector<byte>> list)
+        public byte GetAtIndex(int index, List<Vector<byte>> list)
         {
             var count = Vector<byte>.Count;
             var listIndex = (int)(index / (1.0d * count));
@@ -208,9 +208,9 @@ namespace XWFC
         }
     }
 
-    public static class VectorizorOther
+    public class VectorizorOther
     {
-        public static List<ulong> VectorizeBool(bool[] array)
+        public List<ulong> VectorizeBool(bool[] array)
         {
             if (array.Length == 0) return new List<ulong>() { new() };
             var count = 64;
@@ -234,7 +234,7 @@ namespace XWFC
             return output;
         }
 
-        public static List<ulong> Or(List<ulong> left, List<ulong> right)
+        public List<ulong> Or(List<ulong> left, List<ulong> right)
         {
             var output = new List<ulong>();
             for (var i = 0; i < left.Count; i++)
@@ -246,7 +246,7 @@ namespace XWFC
         }
 
 
-        public static int GetAtIndex(int index, List<ulong> list)
+        public int GetAtIndex(int index, List<ulong> list)
         {
             var count = 64;
             var listIndex = (int)(index / (1.0d * count));

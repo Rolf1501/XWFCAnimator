@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
-using UnityEngine.UIElements;
 using Debug = UnityEngine.Debug;
 using PatternWave = XWFC.Grid<bool[]>;
 using Random = System.Random;
@@ -32,6 +33,7 @@ namespace XWFC
         private Grid<int> _seededGrid;
         private float[] _weights;
         private Stopwatch _watch = new();
+        private readonly VectorizorOther _vectorizor = new();
 
 
         public XwfcOverlappingModel(IEnumerable<AtomGrid> atomizedSamples, [NotNull] AdjacencyMatrix adjacencyMatrix, [NotNull] ref Grid<int> seededGrid, Vector3Int kernelSize, int randomSeed, bool forceCompleteTiles = true) : base(adjacencyMatrix, ref seededGrid, randomSeed, forceCompleteTiles)
@@ -60,7 +62,7 @@ namespace XWFC
             // PrintAdjacencyData();
 
 
-            TilePatternMasks = CalcNutPatternPropagation();
+            //TilePatternMasks = CalcNutPatternPropagation();
 
             // Find first unoccupied cell in grid.
             _blockedCellId = BlockedCellId(_atomGrid.DefaultFillValue, AdjacencyMatrix.TileSet.Keys);
@@ -511,6 +513,7 @@ namespace XWFC
 
             timer.Stop();
             Debug.Log($"Propagation; of which vector matching: {_watch.ElapsedMilliseconds / 1000.0} seconds");
+            _watch.Reset();
         }
 
         private (Vector3Int minCoord, Vector3Int maxCoord) GetPatternExtents(int patternId)
@@ -641,8 +644,18 @@ namespace XWFC
             wave[chosenPatternId] = true;
             _patternWave.Set(coord, wave);
             _propagationQueue.Enqueue(coord);
-
             SetOccupied(coord, chosenPatternId);
+        }
+
+        private void SetCollapsedInGridPreProcess(Vector3Int coord, int chosenPatternId)
+        {
+            var wave = EmptyWave();
+            if (chosenPatternId < 0) throw new NoMoreChoicesException("No more choices...");
+
+            wave[chosenPatternId] = true;
+            _patternWave.Set(coord, wave);
+            _propagationQueue.Enqueue(coord);
+            CollapseQueue.Insert(coord, AdjacencyMatrix.CalcEntropy(1));
         }
 
         protected override void SetOccupied(Vector3Int coord, int id)
@@ -735,7 +748,7 @@ namespace XWFC
             //    updatedQueue.Insert(new Collapse(collapse.Coord, entropy));
             //}
             //CollapseQueue = updatedQueue;
-                //float entropy = 
+            //float entropy = 
         }
 
         private HashSet<(Vector3Int, float)> Propagate(Queue<Vector3Int> propQueue, ref PatternWave patternWave, IEnumerable<Vector3Int> offsets, ref Grid<int> atomGrid, PatternMatrix patternMatrix, bool ignoreConflict = false)
@@ -746,14 +759,12 @@ namespace XWFC
             var collapseItems = new HashSet<(Vector3Int, float)>();
             var offsetArray = offsets.ToArray();
 
-            
+
             var enqueued = new HashSet<Vector3Int>();
             foreach (var i in propQueue)
             {
                 enqueued.Add(i);
             }
-
-            
 
             while (propQueue.Count > 0)
             {
@@ -766,7 +777,6 @@ namespace XWFC
                 {
                     if (choices[i]) choiceInts.Add(i);
                 }
-
 
                 foreach (var offset in offsetArray)
                 {
@@ -787,14 +797,9 @@ namespace XWFC
 
                     // Get union of allowed neighbors of the current cell.
                     _watch.Start();
-                    var allowedNeighbors = patternMatrix.GetRowVectors(choiceInts[0], offset);
-
-                    for (var i = 1; i < choiceInts.Count; i++)
-                    {
-                        var other = patternMatrix.GetRowVectors(choiceInts[i], offset);
-                        allowedNeighbors = VectorizorOther.Or(allowedNeighbors, other);
-                    }
+                    var allowedNeighbors = UnionizeChoicesAsync(patternMatrix, choiceInts, offset, 0, choiceInts.Count - 1);
                     _watch.Stop();
+                    //var allowedNeighbors = UnionizeChoices(patternMatrix, choiceInts, offset);
 
                     var neighborChoices = patternWave.Get(neighbor);
 
@@ -805,7 +810,7 @@ namespace XWFC
 
                     for (int i = 0; i < neighborChoices.Length; i++)
                     {
-                        var allowed = VectorizorOther.GetAtIndex(i, allowedNeighbors) == 1;
+                        var allowed = _vectorizor.GetAtIndex(i, allowedNeighbors) == 1;
                         var isPatternAllowed = allowed && neighborChoices[i];
                         post[i] = isPatternAllowed;
                         if (isPatternAllowed != neighborChoices[i])
@@ -858,6 +863,51 @@ namespace XWFC
             return collapseItems;
         }
 
+        private List<ulong> UnionizeChoices(PatternMatrix patternMatrix, List<int> choiceInts, Vector3Int offset)
+        {
+            _watch.Start();
+            var allowedNeighbors = patternMatrix.GetRowVectors(choiceInts[0], offset);
+
+            for (var i = 1; i < choiceInts.Count; i++)
+            {
+                var other = patternMatrix.GetRowVectors(choiceInts[i], offset);
+                allowedNeighbors = _vectorizor.Or(allowedNeighbors, other);
+            }
+            _watch.Stop();
+            return allowedNeighbors;
+        }
+
+        private List<ulong> UnionizeChoicesAsync(PatternMatrix patternMatrix, List<int> choiceInts, Vector3Int offset, int firstIndex, int lastIndex)
+        {
+            if (lastIndex - firstIndex <= 6)
+            {
+                var result = patternMatrix.GetRowVectors(choiceInts[firstIndex], offset);
+                for (int i = firstIndex + 1; i <= lastIndex; i++)
+                {
+                    var other = patternMatrix.GetRowVectors(choiceInts[i], offset);
+                    result = _vectorizor.Or(result, other);
+                }
+                return result;
+            }
+
+            int center = firstIndex + (lastIndex - firstIndex) / 2;
+            var left = Task.Run(() => UnionizeChoicesAsync(patternMatrix, choiceInts, offset, firstIndex, center));
+            var right = Task.Run(() => UnionizeChoicesAsync(patternMatrix, choiceInts, offset, center + 1, lastIndex));
+
+            Task.WhenAll(left, right);
+            var rightResult = right.Result;
+            var leftResult = left.Result;
+            return _vectorizor.Or(leftResult, rightResult);
+            //var allowedNeighbors = patternMatrix.GetRowVectors(choiceInts[0], offset);
+
+            //for (var i = 1; i < choiceInts.Count; i++)
+            //{
+            //    var other = patternMatrix.GetRowVectors(choiceInts[i], offset);
+            //    allowedNeighbors = ;
+            //}
+            //return allowedNeighbors;
+        }
+
         public override Vector3Int GetExtent()
         {
             return _atomGrid.GetExtent();
@@ -869,9 +919,9 @@ namespace XWFC
                 var atomId = AdjMatrix.AtomMapping.Get((tileId, atomCoord, 0));
                 var patternId = FindPatternContainingAtZeroCoord(atomId);
                 if (patternId == -1) return;
-                SetCollapsedInGrid(coord, patternId);
-
+                SetCollapsedInGridPreProcess(coord, patternId);
             }
+
         }
 
         private int FindPatternContainingAtZeroCoord(int atomId)

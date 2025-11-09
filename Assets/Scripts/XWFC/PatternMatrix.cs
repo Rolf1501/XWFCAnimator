@@ -15,6 +15,7 @@ namespace XWFC
         private IEnumerable<Vector3Int> _offsets;
         public readonly Dictionary<Vector3Int, bool[,]> PatternAdjacencyMatrix;
         private Dictionary<Vector3Int, Dictionary<int, List<ulong>>> _vectorizedRows;
+        private VectorizorOther _vectorizor = new();
         //private Dictionary<Vector3Int, Dictionary<int, List<Vector<byte>>>> _vectorizedRows;
  
 
@@ -47,7 +48,7 @@ namespace XWFC
                         bools[j] = matrix[i, j];
                     }
 
-                    _vectorizedRows[offset][i] = VectorizorOther.VectorizeBool(bools);
+                    _vectorizedRows[offset][i] = _vectorizor.VectorizeBool(bools);
                 }
             }
         }
@@ -298,6 +299,10 @@ namespace XWFC
         {
             return _vectorizedRows[offset][patternId];
         }
+        //public List<ulong> GetRowVectors(int patternId, Vector3Int offset)
+        //{
+        //    return _vectorizedRows[offset][patternId];
+        //}
         public bool GetAdjacency(int patternId, int otherId, Vector3Int offset)
         {
             return PatternAdjacencyMatrix[offset][patternId, otherId];

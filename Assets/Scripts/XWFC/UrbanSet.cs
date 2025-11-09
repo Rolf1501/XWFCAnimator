@@ -14,7 +14,7 @@ public class UrbanSet : TileSet
                 new(
                     "road",
                     new Vector3Int(2,1,2),
-                    new Color32(40, 20, 0, 255)
+                    new Color32(60,60,65, 255)
                 ),
                 new(
                     "root",
@@ -24,26 +24,45 @@ public class UrbanSet : TileSet
                 new(
                     "bsNE",
                     new Vector3Int(2,3,2),
-                    new Color32(50,100,50, 255),
-                    mask: new bool[3,2,2] { { { false, true},{ true, true } }, { { false, true }, { true, true } }, { { false, true }, { true, true } } }
+                    new Color32(185,74,62, 255),
+                    mask: new bool[3,2,2] {
+                        { { false, true }, { true, true } },
+                        { { false, true }, { true, true } },
+                        { { false, false},{ false, true } },
+                        }
                 ),
                 new(
                     "bsSE",
                     new Vector3Int(2,3,2),
-                    new Color32(100,50,50, 255),
-                    mask: new bool[3,2,2] { { { true, false},{true, true } }, { { true, false }, {true, true } },{ { true, false }, {true, true } } }
+                    //new Color32(175,164,62, 255),
+                    new Color32(175,64,62, 255),
+                    mask: new bool[3,2,2] {
+                        { { true, false }, {true, true } },
+                        { { true, false }, {true, true } },
+                        { { false, false},{true, false } },
+                        }
                 ),
                 new(
                     "bsSW",
                     new Vector3Int(2,3,2),
-                    new Color32(100,100,50, 255),
-                    mask: new bool[3,2,2] { { { true, true},{ true, false } }, { { true, true }, { true, false } }, { { true, true }, { true, false } } }
+                    new Color32(195,84,62, 255),
+                    //new Color32(195,84,162, 255),
+                    mask: new bool[3,2,2] {
+                        { { true, true }, { true, false } },
+                        { { true, true }, { true, false } },
+                        { { true, false},{ false, false } },
+                        }
                 ),
                 new(
                     "bsNW",
                     new Vector3Int(2,3,2),
-                    new Color32(50,50,100, 255),
-                    mask: new bool[3,2,2] { { { true, true},{ false, true } }, { { true, true }, { false, true } }, { { true, true }, { false, true } } }
+                    //new Color32(65,54,62, 255),
+                    new Color32(165,54,62, 255),
+                    mask: new bool[3,2,2] {
+                            { { true, true }, { false, true } },
+                            { { true, true }, { false, true } }, 
+                            { { false, true},{ false, false } }, 
+                    }
                 ),
                 new(
                     "bmZ",
@@ -53,6 +72,16 @@ public class UrbanSet : TileSet
                 new(
                     "bmX",
                     new Vector3Int(2,2,1),
+                    new Color32(50,100,200, 150)
+                ),
+                new(
+                    "smallWindowX",
+                    new Vector3Int(2,1,1),
+                    new Color32(50,100,200, 150)
+                ),
+                new(
+                    "smallWindowZ",
+                    new Vector3Int(1,1,2),
                     new Color32(50,100,200, 150)
                 ),
                 new(
@@ -85,7 +114,7 @@ public class UrbanSet : TileSet
                 new(
                     "top",
                     new Vector3Int(2,1,2),
-                    new Color32(20,20,20, 255)
+                    new Color32(40,40,40, 255)
                 ),
                 new(
                     "antenna",
@@ -201,7 +230,7 @@ public class UrbanSet : TileSet
 
     public (string[] t, SampleGrid) BuildingShortPattern()
     {
-        var nuts = new string[] { "road", "root", "void", "bsNE", "bsSE", "bsSW", "bsNW" };
+        var nuts = new string[] { "road", "root", "void", "bsNE", "bsSE", "bsSW", "bsNW", "smallWindowX", "smallWindowZ" };
         var tiles = GetSet().GetSubset(nuts);
 
         var t = new Dictionary<string, int>();
@@ -220,6 +249,10 @@ public class UrbanSet : TileSet
             (t["bsNE"], new Vector3Int(2, 3, 2)),
             (t["bsSE"], new Vector3Int(2, 3, 0)),
             (t["bsSE"], new Vector3Int(2, 0, 0)),
+            (t["smallWindowX"], new Vector3Int(1, 2, 0)),
+            (t["smallWindowX"], new Vector3Int(1, 2, 3)),
+            (t["smallWindowZ"], new Vector3Int(0, 2, 1)),
+            (t["smallWindowZ"], new Vector3Int(3, 2, 1)),
         };
         stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(2, 1, 2));
         LayerAdd(ref stackedPattern, new Range3D(2, 6, 0, 1, 2, 6), t["root"]);
@@ -235,7 +268,7 @@ public class UrbanSet : TileSet
     }
     public (string[] t, SampleGrid) BuildingShortRoofPattern()
     {
-        var nuts = new string[] { "void", "bsNE", "bsSE", "bsSW", "bsNW", "roof" };
+        var nuts = new string[] { "void", "bsNE", "bsSE", "bsSW", "bsNW", "roof", "smallWindowX", "smallWindowZ" };
         var tiles = GetSet().GetSubset(nuts);
 
         var t = new Dictionary<string, int>();
@@ -254,6 +287,10 @@ public class UrbanSet : TileSet
             (t["roof"], new Vector3Int(0, 3, 2)),
             (t["roof"], new Vector3Int(2, 3, 0)),
             (t["roof"], new Vector3Int(2, 3, 2)),
+            (t["smallWindowX"], new Vector3Int(1, 2, 0)),
+            (t["smallWindowX"], new Vector3Int(1, 2, 3)),
+            (t["smallWindowZ"], new Vector3Int(0, 2, 1)),
+            (t["smallWindowZ"], new Vector3Int(3, 2, 1)),
         };
         LayerAdd(ref stackedPattern, new Range3D(0, 4, 4, 5, 0, 4), t["void"]);
         stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(1, 0, 1));
@@ -364,7 +401,7 @@ public class UrbanSet : TileSet
         {
             (t["layerR"], new Vector3Int(0, 0, 0)),
             (t["layerR"], new Vector3Int(2, 3, 0)),
-            (t["layerR"], new Vector3Int(0, 0, 2)),
+            (t["layerR"], new Vector3Int(0, 0, 1)),
             (t["layerR"], new Vector3Int(2, 3, 2)),
         };
 
@@ -604,7 +641,7 @@ public class UrbanSet : TileSet
         var buildingZigZagRL = BuildingZigZagPatternRL();
         var buildingZigZagPillars = BuildingZigZagPatternRPillar();
         var buildingZigZagRRoof = BuildingZigZagPatternRRoof();
-        //var buildingPillarRoot = BuildingPillarRootRoadPattern();
+        var buildingPillarRoot = BuildingPillarRootRoadPattern();
         var buildingPillarCross = BuildingPillarRootRoadCrossPattern();
 
         var patterns = new[] {
@@ -627,6 +664,46 @@ public class UrbanSet : TileSet
         return ExtractTilesAndSamples(patterns);
     }
 
+    public (TileSet legoTiles, List<SampleGrid> samples) UrbanGroundExampleGood801516()
+    {
+        var root = RootSelfPattern();
+        var roadRoot = RoadRootPattern();
+        var buildingShort = BuildingShortPattern();
+        var buildingRoof = BuildingShortRoofPattern();
+        var roofTopAntenna = RoofTopAntennaPattern();
+        var roofVoid = RoofVoidPattern();
+        var buildingMedium = BuildingMediumPattern();
+        var buildingMediumRoof = BuildingMediumRoofPattern();
+        var buildingZigZagR = BuildingZigZagPatternR();
+        var buildingZigZagL = BuildingZigZagPatternL();
+        var buildingZigZagRL = BuildingZigZagPatternRL();
+        var buildingZigZagPillars = BuildingZigZagPatternRPillar();
+        var buildingZigZagRRoof = BuildingZigZagPatternRRoof();
+        var buildingPillarRoot = BuildingPillarRootRoadPattern();
+        var buildingPillarCross = BuildingPillarRootRoadCrossPattern();
+
+        var patterns = new[] {
+            root,
+            roadRoot,
+            roofVoid,
+            buildingShort,
+            buildingRoof,
+            roofTopAntenna,
+            buildingMedium,
+            buildingMediumRoof,
+            //buildingZigZagR,
+            //buildingZigZagL,
+            //buildingZigZagRL,
+            //buildingZigZagPillars,
+            //buildingZigZagRRoof,
+            //buildingPillarRoot,
+            //buildingPillarCross,
+        };
+
+        // seed: 736404273. 80w 15h 16d
+        return ExtractTilesAndSamples(patterns);
+    }
+
     public static Component[] UrbanGround()
     {
         var set = new UrbanSet();
@@ -644,7 +721,7 @@ public class UrbanSet : TileSet
             new Vector3Int(20, 2, 20),
             t, s.ToArray(),
             tileWeights: weights,
-            customSeed: 1166925486
+            customSeed: 736377411
         );
 
         c.WithManualAtomSeeding(

@@ -24,6 +24,7 @@ public class XWFCAnimator : MonoBehaviour
     [SerializeField] private int RandomSeed;
     [SerializeField] private Dictionary<string, float> tileWeights;
     [SerializeField] private bool applyColorFluctuations = false;
+    [SerializeField] private bool showInputs = true;
     public Vector3Int extent;
     public float stepSize;
     public TileSet TileSet;
@@ -32,7 +33,6 @@ public class XWFCAnimator : MonoBehaviour
     public float delay;
 
     private float _updateDeltaTime;
-    private float _iterationDeltaTime;
 
     private Vector3 _unitSize;
     public static XWFCAnimator Instance { get; private set; }
@@ -271,10 +271,10 @@ public class XWFCAnimator : MonoBehaviour
         CompleteTileSet = TileSet;
         _activeStateFlag = 0;
         ResetDrawnGrid();
-        if (activeModel == XwfcModel.Overlapping) DrawPatterns();
+        if (activeModel == XwfcModel.Overlapping && showInputs) DrawPatterns();
         tileWeights = _currentComponent.TileWeights;
         // _xwfc.UpdateNutWeights(tileWeights);
-        DrawTiles();
+        if (showInputs) DrawTiles();
         /*
          * 1631111006
          */
@@ -864,12 +864,8 @@ public class XWFCAnimator : MonoBehaviour
         if (activeModel == XwfcModel.Overlapping)
         {
             _kernelSize = new Vector3Int(2, 2, 2);
-            _xwfc = new XwfcOverlappingModel(component.AdjacencyMatrix.AtomizedSamples, component.AdjacencyMatrix,
-                ref component.Grid, _kernelSize, RandomSeed);
-            foreach (var (tileId, atomCoord, gridCoord) in component.ManualSeeds)
-            {
-                _xwfc.WithManualAtomSeeds(new List<(int tileId, Vector3Int atomCoord, Vector3Int coord)>{ (tileId, atomCoord, gridCoord) });
-            }
+            _xwfc = new XwfcOverlappingModel(component.AdjacencyMatrix.AtomizedSamples, component.AdjacencyMatrix, ref component.Grid, _kernelSize, RandomSeed);
+           _xwfc.WithManualAtomSeeds(component.ManualSeeds);
         }
         else
         {

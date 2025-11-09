@@ -26,6 +26,7 @@ namespace XWFC
         public int RandomSeed = 3;
         private Random _random;
         protected List<(int tileId, Vector3Int atomCoord, Vector3Int coord)> AtomSeeds = new();
+        private Vectorizor _vectorizor = new();
 
 #nullable enable
         public XwfcStm(TileSet tileSet, HashSetAdjacency adjacencyConstraints,
@@ -521,13 +522,13 @@ namespace XWFC
             for (var i = 1; i < cs.Length; i++)
             {
                 var other = AdjMatrix.GetRowVectors(cs[i], offset);
-                choices = Vectorizor.Or(choices, other);
+                choices = _vectorizor.Or(choices, other);
             }
 
             var remainingChoices = new bool[AdjMatrix.GetNAtoms()];
             for (var j = 0; j < AdjMatrix.GetNAtoms(); j++)
             {
-                remainingChoices[j] = Vectorizor.GetAtIndex(j, choices) == 1;
+                remainingChoices[j] = _vectorizor.GetAtIndex(j, choices) == 1;
             }
             return remainingChoices;
         }

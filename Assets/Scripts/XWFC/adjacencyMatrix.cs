@@ -29,6 +29,7 @@ namespace XWFC
         public Dictionary<int, float> TileWeigths;
         public AtomGrid[] AtomizedSamples;
         private Dictionary<Vector3Int, Dictionary<int, List<Vector<byte>>>> _vectorizedRows;
+        private Vectorizor _vectorizor = new();
 
         public AdjacencyMatrix(HashSetAdjacency tileAdjacencyConstraints, TileSet tileSet, [CanBeNull] Dictionary<int, float> defaultWeights, int offsetsDimensions = 3)
         {
@@ -103,7 +104,7 @@ namespace XWFC
                         bools[j] = matrix[i, j];
                     }
 
-                    _vectorizedRows[offset][i] = Vectorizor.VectorizeBool(bools);
+                    _vectorizedRows[offset][i] = _vectorizor.VectorizeBool(bools);
                 }
             }
         }

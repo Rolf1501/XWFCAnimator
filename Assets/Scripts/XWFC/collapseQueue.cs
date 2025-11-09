@@ -20,14 +20,15 @@ namespace XWFC
             _enqueuedCells = new Bidict<Vector3, Collapse>();
             _list = new PriorityQueue<Collapse>();
         }
+        //private CollapsePriorityQueue(List<Collapse> list)
         private CollapsePriorityQueue(PriorityQueue<Collapse> list)
         {
             _list = list;
-            //_enqueuedCells = new Bidict<Vector3, Collapse>();
-            //foreach (var t in list)
-            //{
-            //    _enqueuedCells.AddPair(t.Coord, t);
-            //}
+            _enqueuedCells = new Bidict<Vector3, Collapse>();
+            foreach (var t in list)
+            {
+                _enqueuedCells.AddPair(t.Coord, t);
+            }
 
         }
 
@@ -41,9 +42,9 @@ namespace XWFC
 
                 // No need to update if the to be inserted item is worse.
                 if (collapse.Entropy > enqueuedCollapse.Entropy) return;
-                _list.Add(collapse);
-                return;
             }
+            _list.Add(collapse);
+            _enqueuedCells.AddPair(collapse.Coord, collapse);
 
             //int i = 0;
             //while (i < _list.Count && _list[i].Entropy <= collapse.Entropy)
@@ -60,9 +61,9 @@ namespace XWFC
             //    _list.Insert(i, collapse);
             //}
 
-            _list.Add(collapse);
+            //_list.Add(collapse);
 
-            _enqueuedCells.AddPair(collapse.Coord, collapse);
+            //_enqueuedCells.AddPair(collapse.Coord, collapse);
         }
 
         //private int FindIndex(Collapse collapse, bool findInsertion=false)
