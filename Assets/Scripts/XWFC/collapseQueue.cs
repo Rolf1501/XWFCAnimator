@@ -13,7 +13,6 @@ namespace XWFC
         private PriorityQueue<Collapse> _list;
         private Bidict<Vector3, Collapse> _enqueuedCells;
 
-
         public CollapsePriorityQueue()
         {
             //_list = new List<Collapse>();
@@ -29,7 +28,6 @@ namespace XWFC
             {
                 _enqueuedCells.AddPair(t.Coord, t);
             }
-
         }
 
         public void Insert(Vector3Int coord, float entropy) { Insert(new Collapse(coord, entropy)); }
@@ -107,13 +105,28 @@ namespace XWFC
 
         public bool IsDone()
         {
-            return _list.IsEmpty();
+            //return _list.IsEmpty();
             //return _list.Count == 0;
+            return _enqueuedCells.Dict.Count == 0;
         }
 
         public Collapse DeleteHead()
         {
-            return _list.Poll();
+            //return _list.Poll();
+
+            Collapse min = _enqueuedCells.Dict.First().Value;
+
+            foreach (var item in _enqueuedCells.Dict)
+            {
+                if (item.Value.LessThan(min))
+                {
+                    min = item.Value;
+                }
+            }
+            _enqueuedCells.Dict.Remove(min.Coord);
+            return min;
+
+
             //var output = _list[0];
             //_list.RemoveAt(0);
             //return output;

@@ -899,7 +899,7 @@ MonoBehaviour:
   tileLabelPrefab: {fileID: 3078947573050405680, guid: f3cbec5e06abcc5409468549833779dd, type: 3}
   RandomSeed: 20
   applyColorFluctuations: 0
-  showInputs: 0
+  showInputs: 1
   extent: {x: 10, y: 2, z: 10}
   stepSize: -1
   delay: 0

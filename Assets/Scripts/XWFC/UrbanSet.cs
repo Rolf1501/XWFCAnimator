@@ -122,8 +122,8 @@ public class UrbanSet : TileSet
                     new Color32(80,80,80, 180)
                 ),
                 new(
-                    "pillar",
-                    new Vector3Int(1,3,1),
+                    "connector",
+                    new Vector3Int(2,1,2),
                     new Color32(80,80,80, 255)
                 ),
                 new(
@@ -144,7 +144,7 @@ public class UrbanSet : TileSet
 
     public (string[] t, SampleGrid) RootSelfPattern()
     {
-        var nuts = new string[] { "root", "void", "bsNE", "bsSE", "bsSW", "bsNW", "layerR", "layerL" };
+        var nuts = new string[] { "root", "void", "bsNE", "bsSE", "bsSW", "bsNW" };
         var tiles = GetSet().GetSubset(nuts);
 
         var t = new Dictionary<string, int>();
@@ -163,7 +163,7 @@ public class UrbanSet : TileSet
 
     public (string[] t, SampleGrid) RoadRootPattern()
     {
-        var nuts = new string[] { "road", "root", "void", "" };
+        var nuts = new string[] { "road", "root", "void" };
         var tiles = GetSet().GetSubset(nuts);
 
         var t = new Dictionary<string, int>();
@@ -266,6 +266,45 @@ public class UrbanSet : TileSet
 
         return (nuts, grid);
     }
+
+    public (string[] t, SampleGrid) BuildingShortCrossPattern()
+    {
+        var nuts = new string[] { "road", "root", "void", "bsNE", "bsSE", "bsSW", "bsNW", "smallWindowX", "smallWindowZ" };
+        var tiles = GetSet().GetSubset(nuts);
+
+        var t = new Dictionary<string, int>();
+        foreach (var tile in nuts)
+        {
+            t[tile] = tiles.GetTileIdFromValue(tile);
+        }
+
+        var stackedPattern = new Patterns()
+        {
+            (t["bsNE"], new Vector3Int(0, 0, 0)),
+            (t["bsNE"], new Vector3Int(0, 3, 0)),
+            (t["bsSE"], new Vector3Int(0, 0, 2)),
+            (t["bsSE"], new Vector3Int(0, 3, 2)),
+            (t["bsSW"], new Vector3Int(2, 0, 2)),
+            (t["bsSW"], new Vector3Int(2, 3, 2)),
+            (t["bsNW"], new Vector3Int(2, 3, 0)),
+            (t["bsNW"], new Vector3Int(2, 0, 0)),
+            (t["smallWindowX"], new Vector3Int(1, 2, 0)),
+            (t["smallWindowX"], new Vector3Int(1, 2, 3)),
+            (t["smallWindowZ"], new Vector3Int(0, 2, 1)),
+            (t["smallWindowZ"], new Vector3Int(3, 2, 1)),
+        };
+        stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(2, 1, 2));
+        LayerAdd(ref stackedPattern, new Range3D(2, 6, 0, 1, 2, 6), t["root"]);
+
+        LayerAddNut(ref stackedPattern, new Range3D(0, 8, 0, 1, 0, 2), t["road"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(0, 8, 0, 1, 6, 8), t["road"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(0, 2, 0, 1, 2, 6), t["road"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(6, 8, 0, 1, 2, 6), t["road"], tiles);
+
+        var grid = ToSampleGrid(stackedPattern, tiles, fillWithVoids: true);
+
+        return (nuts, grid);
+    }
     public (string[] t, SampleGrid) BuildingShortRoofPattern()
     {
         var nuts = new string[] { "void", "bsNE", "bsSE", "bsSW", "bsNW", "roof", "smallWindowX", "smallWindowZ" };
@@ -291,6 +330,36 @@ public class UrbanSet : TileSet
             (t["smallWindowX"], new Vector3Int(1, 2, 3)),
             (t["smallWindowZ"], new Vector3Int(0, 2, 1)),
             (t["smallWindowZ"], new Vector3Int(3, 2, 1)),
+        };
+        LayerAdd(ref stackedPattern, new Range3D(0, 4, 4, 5, 0, 4), t["void"]);
+        stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(1, 0, 1));
+        var grid = ToSampleGrid(stackedPattern, tiles, fillWithVoids: true, new Vector3Int(1, 0, 1));
+
+        return (nuts, grid);
+    }
+
+    public (string[] t, SampleGrid) BuildingShortCrossRoofPattern()
+    {
+        var nuts = new string[] { "void", "bsNE", "bsSE", "bsSW", "bsNW", "roof", "smallWindowX", "smallWindowZ" };
+        var tiles = GetSet().GetSubset(nuts);
+
+        var t = new Dictionary<string, int>();
+        foreach (var tile in nuts)
+        {
+            t[tile] = tiles.GetTileIdFromValue(tile);
+        }
+
+        var stackedPattern = new Patterns()
+        {
+            (t["bsNE"], new Vector3Int(0, 0, 0)),
+            (t["bsSE"], new Vector3Int(0, 0, 2)),
+            (t["bsSW"], new Vector3Int(2, 0, 2)),
+            (t["bsNW"], new Vector3Int(2, 0, 0)),
+            (t["smallWindowX"], new Vector3Int(1, 2, 0)),
+            (t["smallWindowX"], new Vector3Int(1, 2, 3)),
+            (t["smallWindowZ"], new Vector3Int(0, 2, 1)),
+            (t["smallWindowZ"], new Vector3Int(3, 2, 1)),
+            (t["roof"], new Vector3Int(1, 3, 1)),
         };
         LayerAdd(ref stackedPattern, new Range3D(0, 4, 4, 5, 0, 4), t["void"]);
         stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(1, 0, 1));
@@ -353,7 +422,7 @@ public class UrbanSet : TileSet
 
     public (string[] t, SampleGrid) BuildingMediumPattern()
     {
-        var nuts = new string[] { "road", "root", "void", "bmX", "bmZ" };
+        var nuts = new string[] { "road", "root", "void", "smallWindowX", "bmZ" };
         var tiles = GetSet().GetSubset(nuts);
 
         var t = new Dictionary<string, int>();
@@ -370,8 +439,8 @@ public class UrbanSet : TileSet
             (t["bmZ"], new Vector3Int(5, 4, 0)),
         };
 
-        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 0, 8, 0, 1), t["bmX"], tiles);
-        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 0, 8, 3, 4), t["bmX"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 0, 8, 0, 1), t["smallWindowX"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 0, 8, 3, 4), t["smallWindowX"], tiles);
 
         stackedPattern = TranslatePattern(stackedPattern, new Vector3Int(2, 1, 2));
         LayerAdd(ref stackedPattern, new Range3D(2, 8, 0, 1, 2, 6), t["root"]);
@@ -385,6 +454,36 @@ public class UrbanSet : TileSet
 
         return (nuts, grid);
     }
+
+    public (string[] t, SampleGrid) BuildingMediumConnectionPattern()
+    {
+        var nuts = new string[] { "root", "void", "connector", "bmZ", "bsNE", "bsSE", "smallWindowZ" };
+        var tiles = GetSet().GetSubset(nuts);
+
+        var t = new Dictionary<string, int>();
+        foreach (var tile in nuts)
+        {
+            t[tile] = tiles.GetTileIdFromValue(tile);
+        }
+
+        var stackedPattern = new Patterns()
+        {
+            (t["bmZ"], new Vector3Int(0, 0, 0)),
+            (t["bmZ"], new Vector3Int(3, 0, 0)),
+            (t["connector"], new Vector3Int(1, 2, 1)),
+            (t["bsNE"], new Vector3Int(6, 1, 0)),
+            (t["bsSE"], new Vector3Int(6, 1, 2)),
+            (t["smallWindowZ"], new Vector3Int(6, 3, 1)),
+            (t["connector"], new Vector3Int(4, 2, 1)),
+        };
+
+        LayerAddNut(ref stackedPattern, new Range3D(6, 10, 0, 1, 0, 4), t["root"], tiles);
+        var grid = ToSampleGrid(stackedPattern, tiles, fillWithVoids: true);
+
+        return (nuts, grid);
+    }
+
+
 
     public (string[] t, SampleGrid) BuildingZigZagPatternR()
     {
@@ -592,7 +691,7 @@ public class UrbanSet : TileSet
 
     public (string[] t, SampleGrid) BuildingMediumRoofPattern()
     {
-        var nuts = new string[] { "void", "bmX", "bmZ", "roof" };
+        var nuts = new string[] { "void", "smallWindowX", "bmZ", "roof" };
         var tiles = GetSet().GetSubset(nuts);
 
         var t = new Dictionary<string, int>();
@@ -607,8 +706,8 @@ public class UrbanSet : TileSet
             (t["bmZ"], new Vector3Int(5, 0, 0)),
         };
 
-        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 0, 4, 0, 1), t["bmX"], tiles);
-        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 0, 4, 3, 4), t["bmX"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 0, 4, 0, 1), t["smallWindowX"], tiles);
+        LayerAddNut(ref stackedPattern, new Range3D(1, 5, 0, 4, 3, 4), t["smallWindowX"], tiles);
         LayerAddNut(ref stackedPattern, new Range3D(0, 6, 4, 5, 0, 4), t["roof"], tiles);
         LayerAddNut(ref stackedPattern, new Range3D(1, 5, 3, 4, 1, 3), t["void"], tiles);
 
@@ -631,35 +730,28 @@ public class UrbanSet : TileSet
         var root = RootSelfPattern();
         var roadRoot = RoadRootPattern();
         var buildingShort = BuildingShortPattern();
-        var buildingRoof = BuildingShortRoofPattern();
+        var buildingShortRoof = BuildingShortRoofPattern();
+        var buildingShortCross = BuildingShortCrossPattern();
+        var buildingShortCrossRoof = BuildingShortCrossRoofPattern();
         var roofTopAntenna = RoofTopAntennaPattern();
         var roofVoid = RoofVoidPattern();
         var buildingMedium = BuildingMediumPattern();
         var buildingMediumRoof = BuildingMediumRoofPattern();
-        var buildingZigZagR = BuildingZigZagPatternR();
-        var buildingZigZagL = BuildingZigZagPatternL();
-        var buildingZigZagRL = BuildingZigZagPatternRL();
-        var buildingZigZagPillars = BuildingZigZagPatternRPillar();
-        var buildingZigZagRRoof = BuildingZigZagPatternRRoof();
-        var buildingPillarRoot = BuildingPillarRootRoadPattern();
-        var buildingPillarCross = BuildingPillarRootRoadCrossPattern();
+        var connector = BuildingMediumConnectionPattern();
+
 
         var patterns = new[] {
             root,
             roadRoot,
             roofVoid,
             buildingShort,
-            buildingRoof,
+            buildingShortRoof,
+            buildingShortCross,
+            buildingShortCrossRoof,
             roofTopAntenna,
             buildingMedium,
             buildingMediumRoof,
-            //buildingZigZagR,
-            //buildingZigZagL,
-            //buildingZigZagRL,
-            //buildingZigZagPillars,
-            //buildingZigZagRRoof,
-            //buildingPillarRoot,
-            //buildingPillarCross,
+            connector,
         };
         return ExtractTilesAndSamples(patterns);
     }

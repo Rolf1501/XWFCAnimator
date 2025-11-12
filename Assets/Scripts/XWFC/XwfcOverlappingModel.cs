@@ -117,6 +117,7 @@ namespace XWFC
                 _atomGrid = _seededGrid.Deepcopy();
             }
             EliminateIncompletePatternsOther();
+            //EliminateIncompletePatternsIterative();
             //EliminateIncompletePatterns();
             InitRootSave();
         }
@@ -516,6 +517,103 @@ namespace XWFC
             _watch.Reset();
         }
 
+        private void EliminateIncompletePatternsIterative()
+        {
+            Debug.Log("Eliminating patterns...");
+            var timer = new Timer();
+            timer.Start();
+            var e = _patternWave.GetExtent();
+            var propQueue = new Queue<Vector3Int>();
+            var pending = new HashSet<Vector3Int>();
+
+            var patternsAll = PatternMatrix.Patterns;
+
+            var patternExtents = new Dictionary<int, (Vector3Int min, Vector3Int max)>();
+
+            for (var i = 0; i < patternsAll.Length; i++)
+            {
+                var (patternMin, patternMax) = GetPatternExtents(i);
+                patternExtents[i] = (patternMin, patternMax);
+            }
+
+            int propagationCounts = 0;
+                // Naive, but still better
+            for (int x = 0; x <= e.x - _kernelSize.x; x++)
+            {
+                for (int y = 0; y <= e.y - _kernelSize.y; y++)
+                {
+                    for (int z = 0; z <= e.z - _kernelSize.z; z++)
+                    {
+                        var changed = false;
+                        var coord = new Vector3Int(x, y, z);
+                        var changedWave = SuperImposedWave();
+                        for (var i = 0; i < patternExtents.Count; i++)
+                        {
+                            if (!_patternWave.Get(coord)[i])
+                            {
+                                changedWave[i] = false;
+                                continue;
+                            }
+
+                            var (patternMin, patternMax) = patternExtents[i];
+
+                            var allowed = true;
+
+                            // Placing pattern causes tiles to be out of bounds
+                            if (x < 0 - patternMin.x || x >= e.x - patternMax.x - 1 ||
+                                y < 0 - patternMin.y || y >= e.y - patternMax.y - 1 ||
+                                z < 0 - patternMin.z || z >= e.z - patternMax.z - 1)
+                            {
+                                allowed = PatternFits(i, coord);
+                            }
+
+                            if (_atomGrid.Get(x, y, z) != _atomGrid.DefaultFillValue)
+                            {
+                                allowed = PatternFits(i, coord);
+                            }
+
+                            if (!allowed)
+                            {
+                                changed = true;
+                                //var patternWave = _patternWave.Get(x, y, z);
+                                //for (int j = 0; j < patternWave.Length; j++)
+                                //{
+                                //    if (patternWave[j])
+                                //    {
+                                //        emptyWave[j] = true;
+                                //    }
+                                //}
+                                //emptyWave[i] = allowed;
+                                changedWave[i] = allowed;
+                            }
+                        }
+
+                        _patternWave.Set(x, y, z, changedWave);
+                        if (changed)
+                        {
+                            _propagationQueue.Enqueue(coord);
+                            propagationCounts++;
+                        }
+                    }
+                }
+                
+            }
+            Propagate();
+
+            //foreach (var i in pending)
+            //{
+            //    propQueue.Enqueue(i);
+            //}
+
+            //timer.Stop();
+            //timer.Start();
+            //Propagate(propQueue, ref _patternWave, Offsets, ref _atomGrid, PatternMatrix);
+
+            //timer.Stop();
+            Debug.Log($"Propagation; Propagation calls: {propagationCounts}. \nTime of which vector matching: {_watch.ElapsedMilliseconds / 1000.0} seconds");
+            _watch.Reset();
+        }
+
         private (Vector3Int minCoord, Vector3Int maxCoord) GetPatternExtents(int patternId)
         {
             var pattern = PatternMatrix.Patterns[patternId];
@@ -784,7 +882,10 @@ namespace XWFC
 
                     // Only consider cells within bounds.
                     // The outer positive layers can be ignored, those are filled in post-processing. Assumes pattern atom coord of 0,0,0.
-                    if (!atomGrid.WithinBounds(neighbor) || !atomGrid.WithinBounds(neighbor + _kernelSize - new Vector3Int(1, 1, 1))) continue;
+                    if (!atomGrid.WithinBounds(neighbor) ||
+                        atomGrid.IsOccupied(neighbor) ||
+                        !atomGrid.WithinBounds(neighbor + _kernelSize - new Vector3Int(1, 1, 1))
+                        ) continue;
 
                     // Edge case: if using a seeded grid, then the cells at the most positive layers are not propagated to.
                     // It could be that there's a gap smaller than the kernel size, resulting in an uncollapse cell.
@@ -796,9 +897,9 @@ namespace XWFC
                     if (!atBounds && atomGrid.IsOccupied(neighbor)) continue;
 
                     // Get union of allowed neighbors of the current cell.
-                    _watch.Start();
-                    var allowedNeighbors = UnionizeChoicesAsync(patternMatrix, choiceInts, offset, 0, choiceInts.Count - 1);
-                    _watch.Stop();
+                    //_watch.Start();
+                    var allowedNeighbors = UnionizeChoicesParallel(patternMatrix, choiceInts, offset, 0, choiceInts.Count - 1);
+                    //_watch.Stop();
                     //var allowedNeighbors = UnionizeChoices(patternMatrix, choiceInts, offset);
 
                     var neighborChoices = patternWave.Get(neighbor);
@@ -838,7 +939,8 @@ namespace XWFC
 
                     if (remainingChoiceCount == 1)
                     {
-                        SetOccupied(neighbor, latestChoice);
+                        SetCollapsedInGrid(neighbor, latestChoice);
+                        //SetOccupied(neighbor, latestChoice);
                     }
 
                     if (remainingChoiceCount == 0)
@@ -847,7 +949,6 @@ namespace XWFC
                          * Conflict...
                          */
                         if (ignoreConflict) continue;
-                        var p = PatternMatrix;
                         Debug.Log(GridToString(_atomGrid));
                         throw new NoMoreChoicesException($"No more choices remain for {neighbor}");
                     }
@@ -877,9 +978,9 @@ namespace XWFC
             return allowedNeighbors;
         }
 
-        private List<ulong> UnionizeChoicesAsync(PatternMatrix patternMatrix, List<int> choiceInts, Vector3Int offset, int firstIndex, int lastIndex)
+        private List<ulong> UnionizeChoicesParallel(PatternMatrix patternMatrix, List<int> choiceInts, Vector3Int offset, int firstIndex, int lastIndex)
         {
-            if (lastIndex - firstIndex <= 6)
+            if (lastIndex - firstIndex <= 30)
             {
                 var result = patternMatrix.GetRowVectors(choiceInts[firstIndex], offset);
                 for (int i = firstIndex + 1; i <= lastIndex; i++)
@@ -891,21 +992,13 @@ namespace XWFC
             }
 
             int center = firstIndex + (lastIndex - firstIndex) / 2;
-            var left = Task.Run(() => UnionizeChoicesAsync(patternMatrix, choiceInts, offset, firstIndex, center));
-            var right = Task.Run(() => UnionizeChoicesAsync(patternMatrix, choiceInts, offset, center + 1, lastIndex));
+            var left = Task.Run(() => UnionizeChoicesParallel(patternMatrix, choiceInts, offset, firstIndex, center));
+            var right = Task.Run(() => UnionizeChoicesParallel(patternMatrix, choiceInts, offset, center + 1, lastIndex));
 
             Task.WhenAll(left, right);
             var rightResult = right.Result;
             var leftResult = left.Result;
             return _vectorizor.Or(leftResult, rightResult);
-            //var allowedNeighbors = patternMatrix.GetRowVectors(choiceInts[0], offset);
-
-            //for (var i = 1; i < choiceInts.Count; i++)
-            //{
-            //    var other = patternMatrix.GetRowVectors(choiceInts[i], offset);
-            //    allowedNeighbors = ;
-            //}
-            //return allowedNeighbors;
         }
 
         public override Vector3Int GetExtent()
