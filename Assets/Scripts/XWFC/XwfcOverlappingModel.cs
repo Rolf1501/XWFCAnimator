@@ -799,7 +799,7 @@ namespace XWFC
             }
 
 
-            var nAttempts = 100;
+            var nAttempts = 5;
             var i = 0;
             while (i < nAttempts)
             {

@@ -453,7 +453,6 @@ namespace XWFC
 
         public void UpdateRandom(int newSeed)
         {
-            //Debug.Log($"Updated random to: {newSeed}");
             RandomSeed = newSeed;
             _random = new Random(RandomSeed);
         }

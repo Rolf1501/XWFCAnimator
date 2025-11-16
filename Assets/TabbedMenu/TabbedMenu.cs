@@ -94,7 +94,7 @@ public class TabbedMenu : MonoBehaviour
         _resetButton.clicked += delegate
         {
             Debug.Log("Reset!");
-            XWFCAnimator.Instance.Reset();
+            XWFCAnimator.Instance.ResetButtonAction();
         };
 
         _loadNextComponentButton.clicked += delegate
@@ -373,6 +373,9 @@ public class TabbedMenu : MonoBehaviour
         text.text =  tileName != null && tileName.Length > 0 ? tileName : $"{tileId}";
         entry.Add(text);
         var img = new Image();
+
+        if (!XWFCAnimator.Instance.drawnTilePositions.Keys.Contains(tileId)) return entry;
+
         var tt = new TileTexture(XWFCAnimator.Instance.drawnTilePositions[tileId], 5, new Vector2(45,45));
         
         img.image = tt.RenderTexture;

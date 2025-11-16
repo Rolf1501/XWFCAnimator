@@ -25,6 +25,17 @@ public class XWFCAnimator : MonoBehaviour
     [SerializeField] private Dictionary<string, float> tileWeights;
     [SerializeField] private bool applyColorFluctuations = false;
     [SerializeField] private bool showInputs = true;
+    [SerializeField] private bool enableAudioFeedback;
+    [SerializeField] private AudioSource audioFeedback;
+    [SerializeField] private bool captureMode = true;
+    [SerializeField] private int numberOfCaptures = 2;
+    private int pendingNumberOfCaptures = 0;
+    [SerializeField] private Camera sceneCamera;
+    [SerializeField] private Vector3[] cameraPositions;
+    [SerializeField] private Vector3[] cameraRotations;
+
+    private int numberOfCapturesToTakeForResult = 0;
+
     public Vector3Int extent;
     public float stepSize;
     public TileSet TileSet;
@@ -91,7 +102,7 @@ public class XWFCAnimator : MonoBehaviour
         TileSet = new TileSet();
 
         _adjacency = new HashSetAdjacency();
-
+        pendingNumberOfCaptures = numberOfCaptures;
         if (activeModel == XwfcModel.SimpleTiled)
         {
             // var legoTiles = LegoSet.GetLegoSubset(new []{"p211", "p212", "void"});
@@ -156,7 +167,7 @@ public class XWFCAnimator : MonoBehaviour
         else
         {
             var plateAtoms = false;
-            new InputReader().ReadNUT();
+            //new InputReader().ReadNUT();
             // var components = LegoSet.LegoHouse();
             // var components = ExampleSet.RedDotWFC();
             // var components = ExampleSet.RedDotExampleComparison();
@@ -1059,24 +1070,46 @@ public class XWFCAnimator : MonoBehaviour
         if ((_activeStateFlag & StateFlag.Collapsing) != 0)
         {
             _iterationsDone = 0;
-        
+
             // while (MayIterate() && MayCollapse())
 
-            if (stepSize < 0)
+            if (captureMode && pendingNumberOfCaptures > 0)
             {
-                _timer.Start();
+                while (MayIterate() && MayCollapse())
+                {
+                    CollapseOnce();
+                    _iterationsDone++;
+                }
+                // Set camera position and screenshot.
+                //Draw(new Vector3Int(0, 0, 0));
+                numberOfCapturesToTakeForResult = cameraPositions.Length;
+                pendingNumberOfCaptures--;
             }
-            while (MayIterate() && MayCollapse())
+            else
             {
-                CollapseOnce();
-                _iterationsDone++;
+                if (stepSize < 0)
+                {
+                    _timer.Start();
+                }
+                while (MayIterate() && MayCollapse())
+                {
+                    CollapseOnce();
+                    _iterationsDone++;
+                }
+
+                if (stepSize < 0)
+                {
+                    var time = _timer.Stop();
+                    Debug.Log($"Time taken: {time}");
+
+                    if (enableAudioFeedback)
+                    {
+                        audioFeedback.Play();
+                    }
+                }
             }
 
-            if (stepSize < 0)
-            {
-                var time = _timer.Stop();
-                Debug.Log($"Time taken: {time}");
-            }
+
             
             Draw(new Vector3Int(0,0,0));
         }
@@ -1116,13 +1149,56 @@ public class XWFCAnimator : MonoBehaviour
         _xwfc.RandomSeed = RandomSeed;
         if (_updateDeltaTime >= delay)
         {
-            Iterate();
+            if (numberOfCapturesToTakeForResult > 0)
+            {
+                string filePath = $"{_xwfc.GetExtent().x}x{_xwfc.GetExtent().y}x{_xwfc.GetExtent().z}-{RandomSeed}-{cameraPositions.Length - numberOfCapturesToTakeForResult}-{DateTime.Today.Day}{DateTime.Now.Hour}{DateTime.Now.Minute}{DateTime.Now.Second}.png";
+
+                var captureDir = Path.Combine(Application.dataPath, "Captures");
+                if (!Directory.Exists(captureDir))
+                {
+                    Directory.CreateDirectory(captureDir);
+                }
+                string path = Path.Combine(captureDir, filePath);
+                sceneCamera.transform.rotation = Quaternion.Euler(cameraRotations[cameraRotations.Length - numberOfCapturesToTakeForResult]);
+                sceneCamera.transform.position = cameraPositions[cameraPositions.Length - numberOfCapturesToTakeForResult];
+
+                if (sceneCamera.transform.position == cameraPositions[cameraPositions.Length - numberOfCapturesToTakeForResult])
+                {
+                    var texture = new RenderTexture(Screen.width, Screen.height, 32);
+                    sceneCamera.targetTexture = texture;
+                    RenderTexture.active = texture;
+                    sceneCamera.Render();
+
+                    Texture2D renderedTexture = new Texture2D(Screen.width, Screen.height);
+                    renderedTexture.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
+                    RenderTexture.active = null;
+
+                    byte[] byteArray = renderedTexture.EncodeToPNG();
+                    File.WriteAllBytes(path, byteArray);
+
+                    numberOfCapturesToTakeForResult--;
+                }
+                if (numberOfCapturesToTakeForResult <= 0)
+                {
+                    RandomSeed = new Random().Next();
+                    Reset();
+                    if (pendingNumberOfCaptures > 0)
+                    {
+                        _activeStateFlag = StateFlag.Collapsing;
+                    }
+                }
+            }
+            else
+            {
+                Iterate();
+            }
             _updateDeltaTime = 0;
         }
         else
         {
             _updateDeltaTime += Time.deltaTime;
         }
+
 
         if (_showingVoids != ShowVoids)
         {
@@ -1333,6 +1409,12 @@ public class XWFCAnimator : MonoBehaviour
         return Vector3Util.Mult(origin + coord, _unitSize);
     }
 
+    public void ResetButtonAction()
+    {
+        Reset();
+        pendingNumberOfCaptures = numberOfCaptures;
+    }
+
     public void Reset()
     {
         ResetDrawnGrid();
@@ -1351,6 +1433,10 @@ public class XWFCAnimator : MonoBehaviour
     {
         extent = newExtent;
         Reset();
+        if (enableAudioFeedback)
+        {
+            audioFeedback.Play();
+        }
     }
 
     public Vector3 GetGridCenter()

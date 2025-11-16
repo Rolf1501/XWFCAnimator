@@ -820,6 +820,38 @@ public class UrbanSet : TileSet
             new List<(int tileId, Vector3Int atomCoord, Vector3Int gridCoord)>
             {
                 (t.GetTileIdFromValue("road"),new Vector3Int(0,0,0), new Vector3Int(2,0,2)),
+                //(t.GetTileIdFromValue("road"),new Vector3Int(0,0,0), new Vector3Int(16,0,14)),
+            });
+
+        var components = new[] { c };
+
+
+        return components;
+    }
+    public static Component[] UrbanGroundGreat()
+    {
+        var set = new UrbanSet();
+
+        var (t, s) = set.UrbanGroundExample();
+
+        var weights = new Dictionary<string, float>();
+        foreach (var (tKey, value) in t)
+        {
+            weights[value.UniformAtomValue] = 1;
+        }
+
+        var c = new Component(
+            new Vector3Int(0, 0, 0),
+            new Vector3Int(20, 2, 20),
+            t, s.ToArray(),
+            tileWeights: weights,
+            customSeed: 736377411
+        );
+
+        c.WithManualAtomSeeding(
+            new List<(int tileId, Vector3Int atomCoord, Vector3Int gridCoord)>
+            {
+                (t.GetTileIdFromValue("road"),new Vector3Int(0,0,0), new Vector3Int(2,0,2)),
                 (t.GetTileIdFromValue("road"),new Vector3Int(0,0,0), new Vector3Int(16,0,14)),
             });
 

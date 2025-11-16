@@ -52,7 +52,7 @@ public class UIHandler : MonoBehaviour
             try { XWFCAnimator.Instance.UpdateDelay(float.Parse(delay.text)); }
             catch {}
         });
-        resetButton.onClick.AddListener(delegate { Debug.Log("RESET!!"); XWFCAnimator.Instance.Reset(); });
+        resetButton.onClick.AddListener(delegate { Debug.Log("RESET!!"); XWFCAnimator.Instance.ResetButtonAction(); });
     }
 
     private void InitGridValues()
